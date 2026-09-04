@@ -3446,15 +3446,15 @@
         {
           "breakupStrength": 1.0,
           "causticsIntensity": 0.3499999940395355,
-          "causticsScale": 0.07999999821186066,
+          "causticsScale": 0.019999999552965164,
           "causticsSpeed": 1.0,
           "drag": 4.0,
           "enabled": true,
           "gravityScale": 0.550000011920929,
           "halfSize": [
-            65.0999984741211,
+            118.80000305175781,
             331.20001220703125,
-            84.0999984741211
+            152.8000030517578
           ],
           "lightColor": [
             0.550000011920929,
@@ -10865,6 +10865,71 @@
         "translate": [
           0.0,
           0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "cullMode": "Back",
+          "enabled": true,
+          "environmentReflectionIntensity": 0.0,
+          "environmentReflectionOverride": true,
+          "localId": 1,
+          "materialOverrides": [],
+          "modelPath": "sand/sand.obj",
+          "type": "MeshRenderer",
+          "visualRotation": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 88,
+      "locked": false,
+      "modelPath": "sand/sand.obj",
+      "name": "Ground",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          129.49855041503906,
+          0.6299999952316284,
+          190.4447021484375
+        ],
+        "translate": [
+          0.0,
+          -3.1773033142089844,
           0.0
         ]
       }
