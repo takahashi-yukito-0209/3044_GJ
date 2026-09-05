@@ -3,11 +3,10 @@
 
 #include "SceneStatSystem.h"
 #include "SceneStateMachineSystem.h"
-#include "../../../engine/io/Input.h"
+#include "../SceneRuntimeInput.h"
 #include "../../../engine/math/Math.h"
 #include "../../../engine/scene/SceneDocument.h"
 #include "../../../engine/scene/SceneEntityQuery.h"
-#include "../../../engine/scene/SceneInputKey.h"
 #include "../../../engine/scene/SceneTransformResolver.h"
 
 #include <algorithm>
@@ -233,9 +232,23 @@ SceneEventResult SceneEventSystem::Update(
 				}
 				shouldFire = condition && !state.wasConditionTrue;
 			} else if (binding.triggerType == "OnKeyPressed") {
-				Input* input = Input::GetInstance();
-				const BYTE key = ResolveSceneInputKey(binding.triggerKey);
-				condition = input && key != 0 && input->TriggerKey(key);
+				condition = SceneRuntimeInput::EvaluateExpression(
+					binding.inputExpression,
+					binding.triggerKey
+				);
+				shouldFire = condition;
+			} else if (binding.triggerType == "OnFishingScoreAttackResultInput") {
+				condition =
+					(binding.targetEntityId != 0 || !binding.targetEntityName.empty()) &&
+					target &&
+					SceneEntityQuery::FindEnabledComponent(
+						*target, "FishingScoreAttackDirector"
+					) &&
+					target->id == signals.fishingResultInputReadyDirectorEntityId &&
+					SceneRuntimeInput::EvaluateExpression(
+						binding.inputExpression,
+						binding.triggerKey
+					);
 				shouldFire = condition;
 			} else if (binding.triggerType == "OnCameraPathCompleted") {
 				condition =
@@ -346,6 +359,21 @@ SceneEventResult SceneEventSystem::Update(
 		} else if (action.type == "ChangeState") {
 			if (target) {
 				stateMachineSystem.RequestState(target->id, action.stateName);
+			}
+		} else if (action.type == "AdjustFishingFishCount") {
+			const SceneComponent* director = target &&
+				SceneEntityQuery::IsEntityActiveInHierarchy(document, *target)
+				? SceneEntityQuery::FindEnabledComponent(
+					*target,
+					"FishingScoreAttackDirector"
+				)
+				: nullptr;
+			if (director && std::isfinite(action.value) &&
+				(action.value == 1.0f || action.value == -1.0f)) {
+				result.fishingFishCountRequests.push_back({
+					target->id,
+					static_cast<int>(action.value)
+				});
 			}
 		} else if (
 			action.type == "SceneTransition" &&

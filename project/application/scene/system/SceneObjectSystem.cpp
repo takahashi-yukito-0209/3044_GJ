@@ -386,44 +386,64 @@ void SceneObjectSystem::SyncSprites(const SceneDocument* document) {
 	for (const SceneEntity& entity : document->GetEntities()) {
 		const SceneComponent* spriteRenderer =
 			FindEnabledComponent(entity, "SpriteRenderer");
-		if (!spriteRenderer || spriteRenderer->texturePath.empty()) {
+		const auto overrideIterator = spriteOverrides_.find(entity.id);
+		const SceneSpriteRuntimeOverride* runtimeOverride =
+			overrideIterator != spriteOverrides_.end()
+			? &overrideIterator->second
+			: nullptr;
+		if (!spriteRenderer) {
+			continue;
+		}
+		const std::string& texturePath = runtimeOverride
+			? runtimeOverride->texturePath
+			: spriteRenderer->texturePath;
+		const bool visible = runtimeOverride
+			? runtimeOverride->visible
+			: true;
+		if (!visible || texturePath.empty()) {
 			continue;
 		}
 
-		requiredIds.insert(entity.id);
 		auto found = sprites_.find(entity.id);
 		if (
 			found != sprites_.end() &&
-			found->second.texturePath != spriteRenderer->texturePath
+			found->second.texturePath != texturePath
 		) {
 			sprites_.erase(found);
 			found = sprites_.end();
 		}
 
 		if (found == sprites_.end()) {
-			TextureManager::GetInstance()->LoadTexture(
-				spriteRenderer->texturePath
-			);
+			if (!TextureManager::GetInstance()->LoadTexture(texturePath)) {
+				continue;
+			}
 			SpriteRuntime runtime{};
 			runtime.sprite = std::make_unique<Sprite>();
 			runtime.sprite->Initialize(
 				SpriteCommon::GetInstance(),
-				spriteRenderer->texturePath
+				texturePath
 			);
-			runtime.texturePath = spriteRenderer->texturePath;
+			runtime.texturePath = texturePath;
 			found = sprites_.emplace(entity.id, std::move(runtime)).first;
 		}
 
+		requiredIds.insert(entity.id);
 		Sprite* sprite = found->second.sprite.get();
 		const Transform transform = ResolveScene2DTransform(*document, entity);
+		const Vector2 size = runtimeOverride
+			? runtimeOverride->size
+			: spriteRenderer->spriteSize;
+		const Vector4 color = runtimeOverride
+			? runtimeOverride->color
+			: spriteRenderer->spriteColor;
 		sprite->SetPosition({ transform.translate.x, transform.translate.y });
 		sprite->SetRotation(transform.rotate.z);
 		sprite->SetSize({
-			spriteRenderer->spriteSize.x * transform.scale.x,
-			spriteRenderer->spriteSize.y * transform.scale.y
+			size.x * transform.scale.x,
+			size.y * transform.scale.y
 		});
 		sprite->SetAnchorPoint(spriteRenderer->spriteAnchor);
-		sprite->SetColor(spriteRenderer->spriteColor);
+		sprite->SetColor(color);
 		sprite->SetIsFlipX(spriteRenderer->spriteFlipX);
 		sprite->SetIsFlipY(spriteRenderer->spriteFlipY);
 		if (IsEntityActiveInHierarchy(*document, entity)) {
@@ -438,6 +458,19 @@ void SceneObjectSystem::SyncSprites(const SceneDocument* document) {
 			++iterator;
 		}
 	}
+}
+
+void SceneObjectSystem::ClearSpriteOverrides() {
+	spriteOverrides_.clear();
+}
+
+void SceneObjectSystem::SetSpriteRuntimeOverride(
+	const SceneSpriteRuntimeOverride& overrideValue
+) {
+	if (overrideValue.entityId == 0) {
+		return;
+	}
+	spriteOverrides_[overrideValue.entityId] = overrideValue;
 }
 
 void SceneObjectSystem::BuildBindings(
@@ -512,10 +545,95 @@ void SceneObjectSystem::DrawSprites(
 			entity.id != skipEntityId &&
 			found != sprites_.end() &&
 			IsEntityActiveInHierarchy(document, entity) &&
-			found->second.sprite
+			found->second.sprite &&
+			[&entity]() {
+				const SceneComponent* spriteRenderer =
+					FindEnabledComponent(entity, "SpriteRenderer");
+				return spriteRenderer &&
+					spriteRenderer->spriteRenderSpace != "ScreenOverlay";
+			}()
 		) {
 			found->second.sprite->Draw();
 		}
+	}
+}
+
+bool SceneObjectSystem::HasScreenOverlaySprites(
+	const SceneDocument& document
+) const {
+	for (const SceneEntity& entity : document.GetEntities()) {
+		const SceneComponent* spriteRenderer =
+			FindEnabledComponent(entity, "SpriteRenderer");
+		if (
+			spriteRenderer &&
+			spriteRenderer->spriteRenderSpace == "ScreenOverlay" &&
+			IsEntityActiveInHierarchy(document, entity) &&
+			sprites_.contains(entity.id) &&
+			sprites_.at(entity.id).sprite
+		) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void SceneObjectSystem::DrawScreenOverlaySprites(
+	const SceneDocument& document,
+	uint32_t viewportWidth,
+	uint32_t viewportHeight
+) const {
+	if (!HasScreenOverlaySprites(document)) {
+		return;
+	}
+
+	SpriteCommon::GetInstance()->SetCommonRenderState();
+	for (const SceneEntity& entity : document.GetEntities()) {
+		const SceneComponent* spriteRenderer =
+			FindEnabledComponent(entity, "SpriteRenderer");
+		const auto found = sprites_.find(entity.id);
+		if (
+			!spriteRenderer ||
+			spriteRenderer->spriteRenderSpace != "ScreenOverlay" ||
+			found == sprites_.end() ||
+			!found->second.sprite ||
+			!IsEntityActiveInHierarchy(document, entity)
+		) {
+			continue;
+		}
+
+		const auto overrideIterator = spriteOverrides_.find(entity.id);
+		const SceneSpriteRuntimeOverride* runtimeOverride =
+			overrideIterator != spriteOverrides_.end()
+			? &overrideIterator->second
+			: nullptr;
+		if (runtimeOverride && !runtimeOverride->visible) {
+			continue;
+		}
+		const Transform transform = ResolveScene2DTransform(document, entity);
+		const Vector2 size = runtimeOverride
+			? runtimeOverride->size
+			: spriteRenderer->spriteSize;
+		const Vector4 color = runtimeOverride
+			? runtimeOverride->color
+			: spriteRenderer->spriteColor;
+		Sprite* sprite = found->second.sprite.get();
+		sprite->SetPosition({
+			spriteRenderer->spriteViewportAnchor.x * viewportWidth +
+				transform.translate.x,
+			spriteRenderer->spriteViewportAnchor.y * viewportHeight +
+				transform.translate.y
+		});
+		sprite->SetRotation(transform.rotate.z);
+		sprite->SetSize({
+			size.x * transform.scale.x,
+			size.y * transform.scale.y
+		});
+		sprite->SetAnchorPoint(spriteRenderer->spriteAnchor);
+		sprite->SetColor(color);
+		sprite->SetIsFlipX(spriteRenderer->spriteFlipX);
+		sprite->SetIsFlipY(spriteRenderer->spriteFlipY);
+		sprite->Update(viewportWidth, viewportHeight);
+		sprite->Draw();
 	}
 }
 
@@ -576,6 +694,7 @@ void SceneObjectSystem::ClearModels() {
 
 void SceneObjectSystem::ClearSprites() {
 	sprites_.clear();
+	spriteOverrides_.clear();
 }
 
 void SceneObjectSystem::Finalize() {

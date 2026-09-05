@@ -62,10 +62,16 @@ struct SceneTextMotionRequest {
 	std::string clipId;
 };
 
+struct SceneFishingFishCountRequest {
+	uint64_t directorEntityId = 0;
+	int delta = 0;
+};
+
 struct SceneEventRuntimeSignals {
 	uint64_t completedCameraPathEntityId = 0;
 	std::vector<uint64_t> finishedAudioEntityIds;
 	std::vector<SceneTextMotionCompletion> textMotionCompletions;
+	uint64_t fishingResultInputReadyDirectorEntityId = 0;
 };
 
 struct SceneEventResult {
@@ -74,6 +80,7 @@ struct SceneEventResult {
 	std::vector<SceneCameraRequest> cameraRequests;
 	std::vector<SceneAudioRequest> audioRequests;
 	std::vector<SceneTextMotionRequest> textMotionRequests;
+	std::vector<SceneFishingFishCountRequest> fishingFishCountRequests;
 };
 
 class SceneEventSystem {

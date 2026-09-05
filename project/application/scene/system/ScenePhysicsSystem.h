@@ -77,4 +77,5 @@ private:
 
 	PhysicsWorld physicsWorld_;
 	std::vector<Collider*> staticColliders_;
+	std::vector<Collider*> formationObstacleColliders_;
 };

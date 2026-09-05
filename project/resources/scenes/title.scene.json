@@ -15,7 +15,101 @@
       "active": true,
       "components": [
         {
+          "enabled": false,
+          "localId": 1,
+          "targetSceneId": "gameplay",
+          "triggerKey": "ENTER",
+          "triggerType": "Key",
+          "type": "SceneTransition"
+        },
+        {
+          "bindings": [
+            {
+              "actions": [
+                {
+                  "sceneId": "gameplay",
+                  "type": "SceneTransition"
+                }
+              ],
+              "inputExpression": {
+                "groups": [
+                  {
+                    "mode": "Any",
+                    "terms": [
+                      {
+                        "input": "ENTER",
+                        "phase": "Pressed"
+                      },
+                      {
+                        "input": "Gamepad A",
+                        "phase": "Pressed"
+                      }
+                    ]
+                  }
+                ],
+                "mode": "Any"
+              },
+              "triggerKey": "ENTER",
+              "triggerType": "OnKeyPressed",
+              "triggerOnce": false
+            }
+          ],
           "enabled": true,
+          "localId": 2,
+          "type": "EventTrigger"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 1,
+      "locked": false,
+      "modelPath": "",
+      "name": "Entity",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "enabled": false,
           "localId": 1,
           "targetSceneId": "gameplay",
           "triggerKey": "ENTER",
@@ -25,7 +119,7 @@
       ],
       "folder": false,
       "folderTeamEnabled": false,
-      "id": 1,
+      "id": 2,
       "locked": false,
       "modelPath": "",
       "name": "Entity",

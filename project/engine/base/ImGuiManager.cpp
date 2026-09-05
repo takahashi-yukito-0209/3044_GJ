@@ -63,6 +63,254 @@ namespace {
 	using SceneEntityQuery::IsEntityActiveInHierarchy;
 	using SceneTransformResolver::ResolveSceneWorldMatrix;
 
+	bool DrawSceneInputCombo(
+		const char* label,
+		std::string& inputName,
+		EditorLanguage language
+	) {
+		bool changed = false;
+		const char* preview = inputName.empty()
+			? SelectEditorText(language, "選択...", "Select...")
+			: inputName.c_str();
+		if (!ImGui::BeginCombo(label, preview)) {
+			return false;
+		}
+		ImGui::SeparatorText(SelectEditorText(language, "マウス", "Mouse"));
+		for (const SceneInputMouseDefinition& mouse : kSceneInputMouseDefinitions) {
+			if (ImGui::Selectable(mouse.name, inputName == mouse.name)) {
+				inputName = mouse.name;
+				changed = true;
+			}
+		}
+		ImGui::SeparatorText(SelectEditorText(language, "キーボード", "Keyboard"));
+		for (const SceneInputKeyDefinition& key : kSceneInputKeyDefinitions) {
+			if (ImGui::Selectable(key.name, inputName == key.name)) {
+				inputName = key.name;
+				changed = true;
+			}
+		}
+		ImGui::SeparatorText(SelectEditorText(language, "コントローラー", "Controller"));
+		for (const SceneInputGamepadDefinition& gamepad :
+			kSceneInputGamepadDefinitions) {
+			if (ImGui::Selectable(
+				gamepad.name,
+				inputName == gamepad.name
+			)) {
+				inputName = gamepad.name;
+				changed = true;
+			}
+		}
+		ImGui::EndCombo();
+		return changed;
+	}
+
+	std::string FirstInputExpressionTerm(
+		const std::optional<SceneInputExpression>& expression
+	) {
+		if (!expression) {
+			return {};
+		}
+		for (const SceneInputGroup& group : expression->groups) {
+			if (!group.terms.empty()) {
+				return group.terms.front().input;
+			}
+		}
+		return {};
+	}
+
+	std::string InputExpressionSummary(
+		const std::optional<SceneInputExpression>& expression,
+		const std::string& legacyInput,
+		EditorLanguage language
+	) {
+		if (!expression) {
+			return legacyInput.empty()
+				? SelectEditorText(language, "未設定", "Not set")
+				: legacyInput;
+		}
+		if (expression->groups.empty()) {
+			return SelectEditorText(language, "入力なし", "No input");
+		}
+		std::string result;
+		const char* rootOperator = expression->mode == "All" ? " AND " : " OR ";
+		for (size_t groupIndex = 0; groupIndex < expression->groups.size(); ++groupIndex) {
+			if (groupIndex != 0) {
+				result += rootOperator;
+			}
+			const SceneInputGroup& group = expression->groups[groupIndex];
+			if (expression->groups.size() > 1) {
+				result += "(";
+			}
+			const char* groupOperator = group.mode == "All" ? " AND " : " OR ";
+			for (size_t termIndex = 0; termIndex < group.terms.size(); ++termIndex) {
+				if (termIndex != 0) {
+					result += groupOperator;
+				}
+				const SceneInputTerm& term = group.terms[termIndex];
+				result += term.input.empty()
+					? SelectEditorText(language, "未設定", "Not set")
+					: term.input;
+				if (term.phase == "Held") {
+					result += SelectEditorText(language, "（押下中）", " (Held)");
+				}
+			}
+			if (expression->groups.size() > 1) {
+				result += ")";
+			}
+		}
+		return result;
+	}
+
+	bool DrawSceneInputExpressionEditor(
+		const char* label,
+		std::optional<SceneInputExpression>& expression,
+		std::string& legacyInput,
+		EditorLanguage language
+	) {
+		bool changed = false;
+		ImGui::PushID(label);
+		ImGui::Text("%s: %s", label, InputExpressionSummary(
+			expression, legacyInput, language
+		).c_str());
+		if (!expression) {
+			if (ImGui::SmallButton(SelectEditorText(
+				language,
+				"複数入力を編集###MaterializeInputExpression",
+				"Edit Multiple Inputs###MaterializeInputExpression"
+			))) {
+				SceneInputExpression materialized{};
+				SceneInputGroup group{};
+				group.terms.push_back({ legacyInput, "Pressed" });
+				materialized.groups.push_back(std::move(group));
+				expression = std::move(materialized);
+				changed = true;
+			}
+			ImGui::PopID();
+			return changed;
+		}
+
+		if (ImGui::BeginCombo(
+			SelectEditorText(language, "グループ間###InputExpressionRootMode", "Between Groups###InputExpressionRootMode"),
+			expression->mode.c_str()
+		)) {
+			for (const char* mode : { "Any", "All" }) {
+				if (ImGui::Selectable(mode, expression->mode == mode)) {
+					expression->mode = mode;
+					changed = true;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		for (size_t groupIndex = 0; groupIndex < expression->groups.size(); ++groupIndex) {
+			SceneInputGroup& group = expression->groups[groupIndex];
+			ImGui::PushID(static_cast<int>(groupIndex));
+			if (ImGui::TreeNodeEx(
+				"InputGroup",
+				ImGuiTreeNodeFlags_DefaultOpen,
+				SelectEditorText(language, "グループ %zu", "Group %zu"),
+				groupIndex + 1
+			)) {
+				if (ImGui::BeginCombo(
+					SelectEditorText(language, "条件###InputExpressionGroupMode", "Terms###InputExpressionGroupMode"),
+					group.mode.c_str()
+				)) {
+					for (const char* mode : { "Any", "All" }) {
+						if (ImGui::Selectable(mode, group.mode == mode)) {
+							group.mode = mode;
+							changed = true;
+						}
+					}
+					ImGui::EndCombo();
+				}
+				int removeTermIndex = -1;
+				for (size_t termIndex = 0; termIndex < group.terms.size(); ++termIndex) {
+					SceneInputTerm& term = group.terms[termIndex];
+					ImGui::PushID(static_cast<int>(termIndex));
+					changed |= DrawSceneInputCombo(
+						SelectEditorText(language, "入力###InputExpressionTerm", "Input###InputExpressionTerm"),
+						term.input,
+						language
+					);
+					if (ImGui::BeginCombo(
+						SelectEditorText(language, "状態###InputExpressionPhase", "Phase###InputExpressionPhase"),
+						term.phase.c_str()
+					)) {
+						for (const char* phase : { "Pressed", "Held" }) {
+							if (ImGui::Selectable(phase, term.phase == phase)) {
+								term.phase = phase;
+								changed = true;
+							}
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(SelectEditorText(
+						language, "削除###RemoveInputTerm", "Remove###RemoveInputTerm"
+					))) {
+						removeTermIndex = static_cast<int>(termIndex);
+					}
+					ImGui::PopID();
+				}
+				if (removeTermIndex >= 0) {
+					group.terms.erase(group.terms.begin() + removeTermIndex);
+					changed = true;
+				}
+				if (ImGui::SmallButton(SelectEditorText(
+					language, "条件を追加###AddInputTerm", "Add Term###AddInputTerm"
+				))) {
+					group.terms.push_back({ {}, "Pressed" });
+					changed = true;
+				}
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+		if (ImGui::SmallButton(SelectEditorText(
+			language, "グループを追加###AddInputGroup", "Add Group###AddInputGroup"
+		))) {
+			expression->groups.push_back({});
+			changed = true;
+		}
+		if (changed) {
+			legacyInput = FirstInputExpressionTerm(expression);
+		}
+		ImGui::PopID();
+		return changed;
+	}
+
+	void EnsureFishingHookRanks(SceneComponent& component) {
+		if (component.fishingHookRanks.size() == 10) {
+			return;
+		}
+		const std::vector<SceneFishingHookRankDefinition> previous =
+			std::move(component.fishingHookRanks);
+		component.fishingHookRanks.clear();
+		component.fishingHookRanks.reserve(10);
+		for (size_t index = 0; index < 10; ++index) {
+			SceneFishingHookRankDefinition rank{};
+			if (index < previous.size()) {
+				rank = previous[index];
+			} else {
+				rank.id = "rank_" + std::to_string(index + 1);
+				rank.displayName = "Rank " + std::to_string(index + 1);
+				if (index < component.fishingHookTierScoreMultipliers.size()) {
+					rank.scoreMultiplier =
+						component.fishingHookTierScoreMultipliers[index];
+				}
+				if (index < component.fishingHookMultiplierColors.size()) {
+					rank.color = component.fishingHookMultiplierColors[index];
+				}
+			}
+			if (rank.id.empty()) {
+				rank.id = "rank_" + std::to_string(index + 1);
+			}
+			if (rank.displayName.empty()) {
+				rank.displayName = "Rank " + std::to_string(index + 1);
+			}
+			component.fishingHookRanks.push_back(std::move(rank));
+		}
+	}
+
 	bool IsSameRotation(const Quaternion& left, const Quaternion& right) {
 		const Quaternion normalizedLeft = Normalize(left);
 		const Quaternion normalizedRight = Normalize(right);
@@ -1920,6 +2168,9 @@ void ImGuiManager::DrawEditorWorkspace(
 	}
 	if (showFishingScoreAttackConsole_) {
 		DrawFishingScoreAttackConsoleWindow();
+	}
+	if (showInputSettings_) {
+		DrawInputSettingsWindow();
 	}
 	if (showLoadedScenes_) {
 		DrawLoadedScenesWindow();
@@ -3930,6 +4181,11 @@ void ImGuiManager::DrawSettingsMenu() {
 			"Fishing Score Attack Console###ShowFishingScoreAttackConsoleWindow",
 			"Fishing Score Attack Console###ShowFishingScoreAttackConsoleWindow"
 		), nullptr, &showFishingScoreAttackConsole_);
+		ImGui::MenuItem(SelectEditorText(
+			editorLanguage_,
+			"入力設定###ShowInputSettingsWindow",
+			"Input Settings###ShowInputSettingsWindow"
+		), nullptr, &showInputSettings_);
 		ImGui::MenuItem(SelectEditorText(editorLanguage_, "読み込み済みScene###ShowLoadedScenesWindow", "Loaded Scenes###ShowLoadedScenesWindow"), nullptr, &showLoadedScenes_);
 		ImGui::Separator();
 		if (ImGui::MenuItem(SelectEditorText(
@@ -4355,6 +4611,10 @@ void ImGuiManager::BuildDefaultLayout() {
 	ImGui::DockBuilderDockWindow("Console", bottomId);
 	ImGui::DockBuilderDockWindow(
 		"Fishing Score Attack Console###FishingScoreAttackConsole",
+		rightId
+	);
+	ImGui::DockBuilderDockWindow(
+		"Input Settings###InputSettingsWindow",
 		rightId
 	);
 	ImGui::DockBuilderDockWindow("Loaded Scenes", bottomId);
@@ -9147,6 +9407,24 @@ void ImGuiManager::DrawInspectorWindow() {
 					0.0f,
 					1.0f
 				);
+				const char* renderSpaces[] = { "Scene2D", "ScreenOverlay" };
+				int renderSpaceIndex = component.spriteRenderSpace == "ScreenOverlay" ? 1 : 0;
+				if (ImGui::Combo(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Render Space"),
+					&renderSpaceIndex,
+					renderSpaces,
+					IM_ARRAYSIZE(renderSpaces)
+				)) {
+					component.spriteRenderSpace = renderSpaces[renderSpaceIndex];
+					spriteChanged = true;
+				}
+				spriteChanged |= ImGui::DragFloat2(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Viewport Anchor"),
+					&component.spriteViewportAnchor.x,
+					0.01f,
+					0.0f,
+					1.0f
+				);
 				spriteChanged |= ImGui::ColorEdit4(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Color"),
 					&component.spriteColor.x
@@ -11232,6 +11510,7 @@ void ImGuiManager::DrawInspectorWindow() {
 							for (const char* trigger : {
 								"OnStart", "OnInterval", "OnStatReachedMin", "OnStatCompare",
 								"OnPositionReached", "OnKeyPressed",
+								"OnFishingScoreAttackResultInput",
 								"OnCameraPathCompleted", "OnAudioFinished",
 								"OnTextMotionCompleted"
 							}) {
@@ -11242,6 +11521,12 @@ void ImGuiManager::DrawInspectorWindow() {
 									binding.triggerType = trigger;
 									if (binding.triggerType == "OnKeyPressed") {
 										binding.triggerOnce = false;
+									}
+									if (binding.triggerType == "OnFishingScoreAttackResultInput") {
+										binding.triggerOnce = true;
+										if (binding.triggerKey.empty()) {
+											binding.triggerKey = "ENTER";
+										}
 									}
 									if (binding.triggerType == "OnInterval") {
 										binding.triggerOnce = false;
@@ -11282,6 +11567,18 @@ void ImGuiManager::DrawInspectorWindow() {
 								binding.targetEntityName,
 								binding.textMotionClipId,
 								true
+							);
+						} else if (binding.triggerType == "OnFishingScoreAttackResultInput") {
+							drawComponentTargetCombo(
+								LocalizedComponentWidgetLabel(editorLanguage_, "Fishing Score Attack Director"),
+								binding.targetEntityId,
+								binding.targetEntityName,
+								"FishingScoreAttackDirector",
+								SelectEditorText(
+									editorLanguage_,
+									"FishingScoreAttackDirectorがありません",
+									"Missing FishingScoreAttackDirector"
+								)
 							);
 						} else if (triggerNeedsTarget) {
 							eventsChanged |= ImGui::InputScalar(
@@ -11330,24 +11627,20 @@ void ImGuiManager::DrawInspectorWindow() {
 							);
 						}
 						if (binding.triggerType == "OnKeyPressed") {
-							if (ImGui::BeginCombo(
-								LocalizedComponentWidgetLabel(editorLanguage_, "Key"),
-								binding.triggerKey.empty()
-									? "Select..."
-									: binding.triggerKey.c_str()
-							)) {
-								for (const SceneInputKeyDefinition& key :
-									kSceneInputKeyDefinitions) {
-									if (ImGui::Selectable(
-										key.name,
-										binding.triggerKey == key.name
-									)) {
-										binding.triggerKey = key.name;
-										eventsChanged = true;
-									}
-								}
-								ImGui::EndCombo();
-							}
+							eventsChanged |= DrawSceneInputExpressionEditor(
+								LocalizedComponentWidgetLabel(editorLanguage_, "Input"),
+								binding.inputExpression,
+								binding.triggerKey,
+								editorLanguage_
+							);
+						}
+						if (binding.triggerType == "OnFishingScoreAttackResultInput") {
+							eventsChanged |= DrawSceneInputExpressionEditor(
+								LocalizedComponentWidgetLabel(editorLanguage_, "Input"),
+								binding.inputExpression,
+								binding.triggerKey,
+								editorLanguage_
+							);
 						}
 						eventsChanged |= ImGui::Checkbox(
 							LocalizedComponentWidgetLabel(editorLanguage_, "Trigger Once"), &binding.triggerOnce
@@ -11381,7 +11674,8 @@ void ImGuiManager::DrawInspectorWindow() {
 										"ResetPostProcessProfile", "PlayCameraPath",
 										"StopCameraPath", "SelectCamera", "PlayAudio",
 									"StopAudio", "PauseAudio", "ResumeAudio",
-									"PlayTextMotion", "StopTextMotion", "ResetTextMotion"
+									"PlayTextMotion", "StopTextMotion", "ResetTextMotion",
+									"AdjustFishingFishCount"
 									}) {
 										if (ImGui::Selectable(
 											actionType,
@@ -11403,7 +11697,8 @@ void ImGuiManager::DrawInspectorWindow() {
 								action.type != "SelectCamera" &&
 								action.type != "PlayTextMotion" &&
 								action.type != "StopTextMotion" &&
-								action.type != "ResetTextMotion"
+												action.type != "ResetTextMotion" &&
+												action.type != "AdjustFishingFishCount"
 								) {
 									eventsChanged |= ImGui::InputScalar(
 										LocalizedComponentWidgetLabel(editorLanguage_, "Action Target Entity Id"),
@@ -11439,6 +11734,24 @@ void ImGuiManager::DrawInspectorWindow() {
 									eventsChanged |= ImGui::DragFloat(
 										LocalizedComponentWidgetLabel(editorLanguage_, "Value"), &action.value, 0.1f
 									);
+								} else if (action.type == "AdjustFishingFishCount") {
+									if (action.value != 1.0f && action.value != -1.0f) {
+										action.value = 1.0f;
+										eventsChanged = true;
+									}
+									if (ImGui::BeginCombo(
+										LocalizedComponentWidgetLabel(editorLanguage_, "Fish Count Delta"),
+										action.value > 0.0f ? "+1" : "-1"
+									)) {
+										for (const float delta : { 1.0f, -1.0f }) {
+											const char* deltaLabel = delta > 0.0f ? "+1" : "-1";
+											if (ImGui::Selectable(deltaLabel, action.value == delta)) {
+												action.value = delta;
+												eventsChanged = true;
+											}
+										}
+										ImGui::EndCombo();
+									}
 								} else if (action.type == "SetEntityActive") {
 									eventsChanged |= ImGui::Checkbox(
 										SelectEditorText(editorLanguage_, "有効###EventActionActive", "Active###EventActionActive"), &action.active
@@ -12557,6 +12870,33 @@ void ImGuiManager::DrawInspectorWindow() {
 					LocalizedComponentWidgetLabel(editorLanguage_, "Auto Forward"),
 					&component.playerAutoForward
 				);
+				if (ImGui::BeginCombo(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Input Mode"),
+					component.playerInputMode.c_str()
+				)) {
+					for (const char* mode : { "KeyboardMouse", "Gamepad", "Both" }) {
+						if (ImGui::Selectable(mode, component.playerInputMode == mode)) {
+							component.playerInputMode = mode;
+							playerChanged = true;
+						}
+					}
+					ImGui::EndCombo();
+				}
+				const bool gamepadMode = component.playerInputMode == "Gamepad" ||
+					component.playerInputMode == "Both";
+				ImGui::BeginDisabled(!gamepadMode);
+				playerChanged |= ImGui::SliderFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Gamepad Deadzone"),
+					&component.playerGamepadDeadzone,
+					0.0f,
+					0.95f
+				);
+				ImGui::EndDisabled();
+				component.playerGamepadDeadzone = std::clamp(
+					component.playerGamepadDeadzone,
+					0.0f,
+					0.95f
+				);
 				if (component.playerMoveSpeed < 0.0f) {
 					component.playerMoveSpeed = 0.0f;
 					playerChanged = true;
@@ -12651,6 +12991,12 @@ void ImGuiManager::DrawInspectorWindow() {
 					LocalizedComponentWidgetLabel(editorLanguage_, "Max Fish Count"),
 					&component.fishingMaxSelectableFishCount, 1, fishCountUpperBound
 				);
+				fishingChanged |= DrawSceneInputExpressionEditor(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Fish Count Confirm Input"),
+					component.fishingConfirmInputExpression,
+					component.fishingConfirmInput,
+					editorLanguage_
+				);
 				if (!component.fishingUseHookBandSettings) {
 					ImGui::SeparatorText(
 						LocalizedComponentWidgetLabel(editorLanguage_, "Legacy Distance Settings")
@@ -12700,6 +13046,11 @@ void ImGuiManager::DrawInspectorWindow() {
 							{ 0.85f, 0.18f, 1.00f, 1.00f },
 							{ 1.00f, 0.90f, 0.45f, 1.00f }
 						};
+						EnsureFishingHookRanks(component);
+						for (size_t tierIndex = 0; tierIndex < 10; ++tierIndex) {
+							component.fishingHookRanks[tierIndex].color =
+								component.fishingHookMultiplierColors[tierIndex];
+						}
 						fishingChanged = true;
 					}
 					fishingChanged |= ImGui::DragFloat(
@@ -12715,28 +13066,103 @@ void ImGuiManager::DrawInspectorWindow() {
 						&component.fishingFishMultiplierPerAdditionalFish,
 						0.05f, 0.0f, 100000.0f
 					);
-					if (component.fishingHookTierScoreMultipliers.size() != 10) {
-						component.fishingHookTierScoreMultipliers = {
-							1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
-							6.0f, 7.0f, 8.0f, 9.0f, 10.0f
-						};
-						fishingChanged = true;
-					}
+					const size_t rankCountBefore = component.fishingHookRanks.size();
+					EnsureFishingHookRanks(component);
+					fishingChanged |= rankCountBefore != component.fishingHookRanks.size();
 					ImGui::SeparatorText(
-						LocalizedComponentWidgetLabel(editorLanguage_, "Hook Tier Score Multipliers")
+						LocalizedComponentWidgetLabel(editorLanguage_, "Hook Rank Definitions")
 					);
 					for (size_t tierIndex = 0; tierIndex < 10; ++tierIndex) {
+						SceneFishingHookRankDefinition& rank =
+							component.fishingHookRanks[tierIndex];
 						ImGui::PushID(static_cast<int>(tierIndex));
-						const std::string label = SelectEditorText(
+						const std::string rankLabel = SelectEditorText(
 							editorLanguage_, "ランク", "Rank "
-						) + std::to_string(tierIndex + 1) + SelectEditorText(
-							editorLanguage_, " 得点倍率", " Score Multiplier"
+						) + std::to_string(tierIndex + 1);
+						ImGui::TextUnformatted(rankLabel.c_str());
+						fishingChanged |= InputTextString(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Stable ID"),
+							rank.id
 						);
+						fishingChanged |= InputTextString(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Display Name"),
+							rank.displayName
+						);
+						const char* currentModel = rank.modelPath.empty()
+							? "None" : rank.modelPath.c_str();
+						if (ImGui::BeginCombo(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Model"),
+							currentModel
+						)) {
+							if (ImGui::Selectable("None", rank.modelPath.empty())) {
+								rank.modelPath.clear();
+								fishingChanged = true;
+							}
+							for (const std::string& modelPath : GetCachedModelAssetPaths()) {
+								if (ImGui::Selectable(
+									modelPath.c_str(), rank.modelPath == modelPath
+								)) {
+									rank.modelPath = modelPath;
+									fishingChanged = true;
+								}
+							}
+							ImGui::EndCombo();
+						}
+						if (ImGui::BeginDragDropTarget()) {
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+								"PROJECT_MODEL_PATH"
+							)) {
+								const char* droppedPath =
+									static_cast<const char*>(payload->Data);
+								if (droppedPath && droppedPath[0] != '\0') {
+									rank.modelPath = GetModelPathRelativeToResources(droppedPath);
+									fishingChanged = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
+						const char* currentIconTexture = rank.iconTexturePath.empty()
+							? "None" : rank.iconTexturePath.c_str();
+						if (ImGui::BeginCombo(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Icon Texture"),
+							currentIconTexture
+						)) {
+							if (ImGui::Selectable("None", rank.iconTexturePath.empty())) {
+								rank.iconTexturePath.clear();
+								fishingChanged = true;
+							}
+							for (const std::string& texturePath : GetCachedTextureAssetPaths()) {
+								if (ImGui::Selectable(
+									texturePath.c_str(), rank.iconTexturePath == texturePath
+								)) {
+									rank.iconTexturePath = texturePath;
+									fishingChanged = true;
+								}
+							}
+							ImGui::EndCombo();
+						}
+						if (ImGui::BeginDragDropTarget()) {
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+								"PROJECT_TEXTURE_PATH"
+							)) {
+								const char* droppedPath = static_cast<const char*>(payload->Data);
+								if (droppedPath && droppedPath[0] != '\0') {
+									rank.iconTexturePath = GetProjectResourcePath(droppedPath);
+									fishingChanged = true;
+								}
+							}
+							ImGui::EndDragDropTarget();
+						}
 						fishingChanged |= ImGui::DragFloat(
-							label.c_str(),
-							&component.fishingHookTierScoreMultipliers[tierIndex],
+							LocalizedComponentWidgetLabel(editorLanguage_, "Score Multiplier"),
+							&rank.scoreMultiplier,
 							0.05f, 0.0f, 100000.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp
 						);
+						fishingChanged |= ImGui::ColorEdit4(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Color"),
+							&rank.color.x
+						);
+						ImGui::Separator();
 						ImGui::PopID();
 					}
 					fishingChanged |= ImGui::DragFloat(
@@ -12781,24 +13207,6 @@ void ImGuiManager::DrawInspectorWindow() {
 						}
 						ImGui::PopID();
 					}
-					if (ImGui::TreeNodeEx(
-						LocalizedComponentWidgetLabel(editorLanguage_, "Hook Multiplier Colors"),
-						ImGuiTreeNodeFlags_DefaultOpen
-					)) {
-						if (component.fishingHookMultiplierColors.size() != 10) {
-							component.fishingHookMultiplierColors.resize(
-								10, Vector4{ 1.0f, 1.0f, 1.0f, 1.0f }
-							);
-							fishingChanged = true;
-						}
-						for (size_t tierIndex = 0; tierIndex < 10; ++tierIndex) {
-							const std::string label = "x" + std::to_string(tierIndex + 1);
-							fishingChanged |= ImGui::ColorEdit4(
-								label.c_str(), &component.fishingHookMultiplierColors[tierIndex].x
-							);
-						}
-						ImGui::TreePop();
-					}
 				}
 				fishingChanged |= ImGui::Checkbox(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Randomize Seed On Play"),
@@ -12828,6 +13236,15 @@ void ImGuiManager::DrawInspectorWindow() {
 						editorLanguage_, "Formation Outline Color"
 					),
 					&component.fishingFormationOutlineColor.x
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Outline Bloom Intensity"
+					),
+					&component.fishingFormationOutlineBloomIntensity,
+					0.1f,
+					0.0f,
+					32.0f
 				);
 				fishingChanged |= ImGui::DragFloat(
 					LocalizedComponentWidgetLabel(
@@ -12930,6 +13347,25 @@ void ImGuiManager::DrawInspectorWindow() {
 							);
 							ImGui::PopID();
 						}
+						if (component.fishingHookLegendIconEntityIds.size() != 10) {
+							component.fishingHookLegendIconEntityIds.resize(10, 0);
+						}
+						for (size_t tierIndex = 0; tierIndex < 10; ++tierIndex) {
+							ImGui::PushID(static_cast<int>(tierIndex));
+							drawFishingEntityReference(
+								("Hook Legend Icon " + std::to_string(tierIndex + 1)).c_str(),
+								component.fishingHookLegendIconEntityIds[tierIndex],
+								"SpriteRenderer"
+							);
+							ImGui::PopID();
+						}
+						fishingChanged |= ImGui::DragFloat2(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Hook Legend Icon Size"),
+							&component.fishingHookLegendIconSize.x,
+							1.0f,
+							1.0f,
+							8192.0f
+						);
 						fishingChanged |= InputTextString(
 							LocalizedComponentWidgetLabel(editorLanguage_, "Hook Legend Title"),
 							component.fishingHookLegendTitle
@@ -20683,6 +21119,11 @@ void ImGuiManager::DrawPrefabInspector() {
 }
 
 void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
+	if (ImGuiWindow* inspectorWindow = ImGui::FindWindowByName("Inspector")) {
+		if (ImGuiDockNode* dockNode = inspectorWindow->DockNode) {
+			ImGui::SetNextWindowDockID(dockNode->ID, ImGuiCond_FirstUseEver);
+		}
+	}
 	ImGui::Begin(
 		"Fishing Score Attack Console###FishingScoreAttackConsole",
 		&showFishingScoreAttackConsole_
@@ -20822,6 +21263,12 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 	if (ImGui::TreeNodeEx("Game###FishingConsoleGame", ImGuiTreeNodeFlags_DefaultOpen, text("ゲーム", "Game"))) {
 		changed |= ImGui::DragFloat(text("制限時間（秒）", "Duration Seconds"), &director->fishingDurationSeconds, 0.1f, 0.1f, 3600.0f);
 		changed |= ImGui::SliderInt(text("魚の最大数", "Maximum Fish Count"), &director->fishingMaxSelectableFishCount, 1, fishCountUpperBound);
+		changed |= DrawSceneInputExpressionEditor(
+			text("魚数決定入力", "Fish Count Confirm Input"),
+			director->fishingConfirmInputExpression,
+			director->fishingConfirmInput,
+			editorLanguage_
+		);
 		changed |= ImGui::Checkbox(text("プレイ時にシードをランダム化", "Randomize Seed On Play"), &director->fishingRandomizeSeedOnPlay);
 		changed |= ImGui::InputInt(text("ランダムシード", "Random Seed"), &director->fishingRandomSeed);
 		drawReference(text("プレイヤー", "Player"), director->fishingPlayerEntityId, "PlayerBehavior");
@@ -20868,25 +21315,81 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 		changed |= ImGui::DragFloat(text("魚数倍率（基礎）", "Fish Multiplier Base"), &director->fishingFishMultiplierBase, 0.05f, 0.0f, 100000.0f);
 		changed |= ImGui::DragFloat(text("魚1匹追加ごとの倍率", "Fish Multiplier Per Additional Fish"), &director->fishingFishMultiplierPerAdditionalFish, 0.05f, 0.0f, 100000.0f);
 		if (director->fishingUseHookBandSettings) {
-			if (director->fishingHookTierScoreMultipliers.size() != 10 && directorCanEdit) {
-				director->fishingHookTierScoreMultipliers = {
-					1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
-					6.0f, 7.0f, 8.0f, 9.0f, 10.0f
-				};
+			const size_t rankCountBefore = director->fishingHookRanks.size();
+			if (directorCanEdit) {
+				EnsureFishingHookRanks(*director);
+			}
+			if (rankCountBefore != director->fishingHookRanks.size()) {
 				changed = true;
 			}
-			ImGui::SeparatorText(text("ランク別得点倍率", "Rank Score Multipliers"));
-			for (size_t tier = 0; tier < 10; ++tier) {
+			const bool ranksReady = director->fishingHookRanks.size() == 10;
+			ImGui::SeparatorText(text("ランク定義", "Hook Rank Definitions"));
+			if (!ranksReady) {
+				ImGui::TextDisabled(
+					"%s",
+					text("ランク定義が10個未満です。編集モードで初期化してください。", "Fewer than ten rank definitions are available. Initialize them in Edit mode.")
+				);
+			}
+			for (size_t tier = 0; ranksReady && tier < 10; ++tier) {
 				ImGui::PushID(static_cast<int>(tier));
-				const std::string label = text("ランク", "Rank ") + std::to_string(tier + 1);
-				if (tier < director->fishingHookTierScoreMultipliers.size()) {
-					changed |= ImGui::DragFloat(
-						label.c_str(), &director->fishingHookTierScoreMultipliers[tier],
-						0.05f, 0.0f, 100000.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp
-					);
-				} else {
-					ImGui::TextDisabled("%s", text("ランク倍率が未設定です", "Rank multiplier unavailable"));
+				SceneFishingHookRankDefinition& rank = director->fishingHookRanks[tier];
+				ImGui::Text(text("ランク %zu", "Rank %zu"), tier + 1);
+				changed |= InputTextString(text("ID", "Stable ID"), rank.id);
+				changed |= InputTextString(text("名前", "Display Name"), rank.displayName);
+				const char* currentModel = rank.modelPath.empty() ? "None" : rank.modelPath.c_str();
+				if (ImGui::BeginCombo(text("モデル", "Model"), currentModel)) {
+					if (ImGui::Selectable("None", rank.modelPath.empty())) {
+						rank.modelPath.clear();
+						changed = true;
+					}
+					for (const std::string& modelPath : GetCachedModelAssetPaths()) {
+						if (ImGui::Selectable(modelPath.c_str(), rank.modelPath == modelPath)) {
+							rank.modelPath = modelPath;
+							changed = true;
+						}
+					}
+					ImGui::EndCombo();
 				}
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PROJECT_MODEL_PATH")) {
+						const char* droppedPath = static_cast<const char*>(payload->Data);
+						if (droppedPath && droppedPath[0] != '\0') {
+							rank.modelPath = GetModelPathRelativeToResources(droppedPath);
+							changed = true;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+				const char* currentIconTexture = rank.iconTexturePath.empty()
+					? "None" : rank.iconTexturePath.c_str();
+				if (ImGui::BeginCombo(text("アイコンテクスチャ", "Icon Texture"), currentIconTexture)) {
+					if (ImGui::Selectable("None", rank.iconTexturePath.empty())) {
+						rank.iconTexturePath.clear();
+						changed = true;
+					}
+					for (const std::string& texturePath : GetCachedTextureAssetPaths()) {
+						if (ImGui::Selectable(texturePath.c_str(), rank.iconTexturePath == texturePath)) {
+							rank.iconTexturePath = texturePath;
+							changed = true;
+						}
+					}
+					ImGui::EndCombo();
+				}
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PROJECT_TEXTURE_PATH")) {
+						const char* droppedPath = static_cast<const char*>(payload->Data);
+						if (droppedPath && droppedPath[0] != '\0') {
+							rank.iconTexturePath = GetProjectResourcePath(droppedPath);
+							changed = true;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+				changed |= ImGui::DragFloat(
+					text("得点倍率", "Score Multiplier"), &rank.scoreMultiplier,
+					0.05f, 0.0f, 100000.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp
+				);
+				changed |= ImGui::ColorEdit4(text("色", "Color"), &rank.color.x);
 				ImGui::PopID();
 			}
 		}
@@ -20913,10 +21416,14 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 		)) {
 			ImGui::TableSetupColumn("Band");
 			for (int tier = 1; tier <= 10; ++tier) {
-				const float scoreMultiplier = tier <= static_cast<int>(director->fishingHookTierScoreMultipliers.size())
-					? director->fishingHookTierScoreMultipliers[static_cast<size_t>(tier - 1)]
+				const float scoreMultiplier = tier <= static_cast<int>(director->fishingHookRanks.size())
+					? director->fishingHookRanks[static_cast<size_t>(tier - 1)].scoreMultiplier
 					: 0.0f;
-				const std::string label = "R" + std::to_string(tier) + " x" + std::to_string(scoreMultiplier);
+				const std::string rankName = tier <= static_cast<int>(director->fishingHookRanks.size()) &&
+					!director->fishingHookRanks[static_cast<size_t>(tier - 1)].displayName.empty()
+					? director->fishingHookRanks[static_cast<size_t>(tier - 1)].displayName
+					: "R" + std::to_string(tier);
+				const std::string label = rankName + " x" + std::to_string(scoreMultiplier);
 				ImGui::TableSetupColumn(label.c_str());
 			}
 			ImGui::TableHeadersRow();
@@ -20927,10 +21434,10 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 				ImGui::Text("Band %zu (x%.2f)", bandIndex, band.distanceMultiplier);
 				for (int tier = 1; tier <= 10; ++tier) {
 					ImGui::TableSetColumnIndex(tier);
-					const double rankScoreMultiplier = tier <= static_cast<int>(director->fishingHookTierScoreMultipliers.size())
-						? static_cast<double>(director->fishingHookTierScoreMultipliers[
+					const double rankScoreMultiplier = tier <= static_cast<int>(director->fishingHookRanks.size())
+						? static_cast<double>(director->fishingHookRanks[
 							static_cast<size_t>(tier - 1)
-						])
+						].scoreMultiplier)
 						: 0.0;
 					const double score = static_cast<double>(director->fishingHookScoreUnit) *
 						static_cast<double>(band.distanceMultiplier) *
@@ -21039,15 +21546,10 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 
 	if (ImGui::TreeNodeEx("Appearance###FishingConsoleAppearance", ImGuiTreeNodeFlags_DefaultOpen, text("釣り針の表示", "Hook Appearance"))) {
 		changed |= ImGui::DragFloat(text("発光強度", "Color Emissive Intensity"), &director->fishingHookColorEmissiveIntensity, 0.05f, 0.0f, 100.0f);
-		if (director->fishingHookMultiplierColors.size() != 10 && directorCanEdit) {
-			director->fishingHookMultiplierColors.resize(10, Vector4{ 1.0f, 1.0f, 1.0f, 1.0f });
-			changed = true;
-		}
-		for (size_t tier = 0; tier < 10; ++tier) {
-			if (tier < director->fishingHookMultiplierColors.size()) {
-				changed |= ImGui::ColorEdit4(("x" + std::to_string(tier + 1)).c_str(), &director->fishingHookMultiplierColors[tier].x);
-			} else ImGui::TextDisabled("x%zu color unavailable", tier + 1);
-		}
+		ImGui::TextDisabled(
+			"%s",
+			text("ランクごとの色は「スコア > ランク定義」で設定します。", "Per-rank colors are configured under Score > Hook Rank Definitions.")
+		);
 		ImGui::TreePop();
 	}
 
@@ -21080,6 +21582,7 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 	if (ImGui::TreeNodeEx("HudFormation###FishingConsoleHudFormation", ImGuiTreeNodeFlags_DefaultOpen, text("HUD・群れ", "HUD & Formation"))) {
 		changed |= ImGui::Checkbox(text("群れのアウトラインを表示", "Formation Outline Visible"), &director->fishingFormationOutlineVisible);
 		changed |= ImGui::ColorEdit4(text("群れのアウトライン色", "Formation Outline Color"), &director->fishingFormationOutlineColor.x);
+		changed |= ImGui::DragFloat(text("枠の発光強度", "Formation Outline Bloom Intensity"), &director->fishingFormationOutlineBloomIntensity, 0.1f, 0.0f, 32.0f);
 		changed |= ImGui::DragFloat(text("群れのアウトラインYオフセット", "Formation Outline Y Offset"), &director->fishingFormationOutlineYOffset, 0.01f, -100.0f, 100.0f);
 		changed |= ImGui::SliderInt(text("群れのアウトライン分割数", "Formation Outline Segments"), &director->fishingFormationOutlineSegments, 12, 128);
 		changed |= InputTextString(text("魚数表示プレフィックス", "Fish Count Prefix"), director->fishingFishCountPrefix);
@@ -21090,6 +21593,168 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 	}
 	ImGui::EndDisabled();
 	if (changed) document.MarkDirty();
+	ImGui::End();
+}
+
+void ImGuiManager::DrawInputSettingsWindow() {
+	if (ImGuiWindow* inspectorWindow = ImGui::FindWindowByName("Inspector")) {
+		if (ImGuiDockNode* dockNode = inspectorWindow->DockNode) {
+			ImGui::SetNextWindowDockID(dockNode->ID, ImGuiCond_FirstUseEver);
+		}
+	}
+	ImGui::Begin(
+		SelectEditorText(
+			editorLanguage_,
+			"入力設定###InputSettingsWindow",
+			"Input Settings###InputSettingsWindow"
+		),
+		&showInputSettings_
+	);
+	if (!editorSession_) {
+		ImGui::TextDisabled("%s", SelectEditorText(
+			editorLanguage_,
+			"Sceneエディターを利用できません。",
+			"Scene editor is not available."
+		));
+		ImGui::End();
+		return;
+	}
+
+	SceneDocument& document = editorSession_->GetEditDocument();
+	const bool canEdit = editorSession_->IsEditing();
+	ImGui::TextColored(
+		canEdit
+			? ImVec4(0.35f, 0.85f, 0.4f, 1.0f)
+			: ImVec4(0.95f, 0.75f, 0.25f, 1.0f),
+		canEdit
+			? SelectEditorText(editorLanguage_, "編集モード", "Edit mode")
+			: SelectEditorText(editorLanguage_, "読み取り専用（プレイ／一時停止）", "Read-only (Play/Pause)")
+	);
+	ImGui::TextDisabled("%s", SelectEditorText(
+		editorLanguage_,
+		"入力式はグループ間と条件内でAny（OR）／All（AND）を個別に設定できます。",
+		"Input expressions support independent Any (OR) / All (AND) modes between groups and within each group."
+	));
+
+	bool changed = false;
+	for (SceneEntity& entity : document.GetEntities()) {
+		if (entity.folder) {
+			continue;
+		}
+		const std::string entityLabel = BuildEntityHierarchyLabel(document, entity);
+		for (size_t componentIndex = 0; componentIndex < entity.components.size(); ++componentIndex) {
+			SceneComponent& component = entity.components[componentIndex];
+			if (!component.enabled) {
+				continue;
+			}
+			ImGui::PushID(&entity);
+			ImGui::PushID(static_cast<int>(componentIndex));
+			const bool componentCanEdit = canEdit && !entity.locked;
+			if (component.type == "EventTrigger") {
+				bool hasInputBinding = false;
+				for (const SceneEventBinding& binding : component.eventBindings) {
+					hasInputBinding = hasInputBinding ||
+						binding.triggerType == "OnKeyPressed" ||
+						binding.triggerType == "OnFishingScoreAttackResultInput";
+				}
+				if (hasInputBinding && ImGui::TreeNodeEx(
+					"EventTriggerInputs",
+					ImGuiTreeNodeFlags_DefaultOpen,
+					"%s / %s",
+					entityLabel.c_str(),
+					SelectEditorText(editorLanguage_, "Event入力", "Event Inputs")
+				)) {
+					ImGui::BeginDisabled(!componentCanEdit);
+					for (size_t bindingIndex = 0; bindingIndex < component.eventBindings.size(); ++bindingIndex) {
+						SceneEventBinding& binding = component.eventBindings[bindingIndex];
+						if (binding.triggerType != "OnKeyPressed" &&
+							binding.triggerType != "OnFishingScoreAttackResultInput") {
+							continue;
+						}
+						ImGui::PushID(static_cast<int>(bindingIndex));
+						changed |= DrawSceneInputExpressionEditor(
+							binding.triggerType.c_str(),
+							binding.inputExpression,
+							binding.triggerKey,
+							editorLanguage_
+						);
+						ImGui::PopID();
+					}
+					ImGui::EndDisabled();
+					ImGui::TreePop();
+				}
+			} else if (component.type == "FishingScoreAttackDirector") {
+				if (ImGui::TreeNodeEx(
+					"FishingDirectorInputs",
+					ImGuiTreeNodeFlags_DefaultOpen,
+					"%s / %s",
+					entityLabel.c_str(),
+					SelectEditorText(editorLanguage_, "Fishing入力", "Fishing Inputs")
+				)) {
+					ImGui::BeginDisabled(!componentCanEdit);
+					changed |= DrawSceneInputExpressionEditor(
+						SelectEditorText(editorLanguage_, "魚数決定入力", "Fish Count Confirm Input"),
+						component.fishingConfirmInputExpression,
+						component.fishingConfirmInput,
+						editorLanguage_
+					);
+					ImGui::EndDisabled();
+					ImGui::TreePop();
+				}
+			} else if (component.type == "PlayerBehavior") {
+				if (ImGui::TreeNodeEx(
+					"PlayerInputs",
+					ImGuiTreeNodeFlags_DefaultOpen,
+					"%s / %s",
+					entityLabel.c_str(),
+					SelectEditorText(editorLanguage_, "Player入力", "Player Inputs")
+				)) {
+					ImGui::BeginDisabled(!componentCanEdit);
+					if (ImGui::BeginCombo(
+						SelectEditorText(editorLanguage_, "入力方式###InputSettingsMode", "Input Mode###InputSettingsMode"),
+						component.playerInputMode.c_str()
+					)) {
+						for (const char* mode : { "KeyboardMouse", "Gamepad", "Both" }) {
+							if (ImGui::Selectable(mode, component.playerInputMode == mode)) {
+								component.playerInputMode = mode;
+								changed = true;
+							}
+						}
+						ImGui::EndCombo();
+					}
+					const bool gamepadMode = component.playerInputMode == "Gamepad" ||
+						component.playerInputMode == "Both";
+					ImGui::BeginDisabled(!gamepadMode);
+					changed |= ImGui::SliderFloat(
+						SelectEditorText(editorLanguage_, "ゲームパッドデッドゾーン###InputSettingsDeadzone", "Gamepad Deadzone###InputSettingsDeadzone"),
+						&component.playerGamepadDeadzone,
+						0.0f,
+						0.95f
+					);
+					ImGui::EndDisabled();
+					component.playerGamepadDeadzone = std::clamp(
+						component.playerGamepadDeadzone,
+						0.0f,
+						0.95f
+					);
+					ImGui::EndDisabled();
+					ImGui::TreePop();
+				}
+			} else if (component.type == "SceneTransition") {
+				ImGui::TextDisabled(
+					"%s: %s",
+					entityLabel.c_str(),
+					SelectEditorText(editorLanguage_, "旧SceneTransition入力（読み取り専用）", "Legacy SceneTransition input (read-only)")
+				);
+				ImGui::Text("%s", component.sceneTransitionTriggerKey.c_str());
+			}
+			ImGui::PopID();
+			ImGui::PopID();
+		}
+	}
+	if (changed) {
+		document.MarkDirty();
+	}
 	ImGui::End();
 }
 

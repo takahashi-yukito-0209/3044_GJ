@@ -312,6 +312,7 @@ namespace {
 void PhysicsWorld::Clear() {
 	bodies_.clear();
 	staticColliders_.clear();
+	ignoredCollisions_.clear();
 }
 
 void PhysicsWorld::AddBody(PhysicsBody* body) {
@@ -326,6 +327,38 @@ void PhysicsWorld::AddStaticCollider(Collider* collider) {
 		return;
 	}
 	staticColliders_.push_back(collider);
+}
+
+void PhysicsWorld::AddIgnoredCollision(
+	PhysicsBody* body,
+	Collider* collider
+) {
+	if (!body || !collider) {
+		return;
+	}
+	const auto duplicate = std::find_if(
+		ignoredCollisions_.begin(),
+		ignoredCollisions_.end(),
+		[body, collider](const IgnoredCollisionPair& pair) {
+			return pair.body == body && pair.collider == collider;
+		}
+	);
+	if (duplicate == ignoredCollisions_.end()) {
+		ignoredCollisions_.push_back({ body, collider });
+	}
+}
+
+bool PhysicsWorld::IsCollisionIgnored(
+	const PhysicsBody& body,
+	const Collider& collider
+) const {
+	return std::find_if(
+		ignoredCollisions_.begin(),
+		ignoredCollisions_.end(),
+		[&body, &collider](const IgnoredCollisionPair& pair) {
+			return pair.body == &body && pair.collider == &collider;
+		}
+	) != ignoredCollisions_.end();
 }
 
 void PhysicsWorld::Step(float deltaTime) {
@@ -417,7 +450,8 @@ bool PhysicsWorld::CollidesWithStatic(const PhysicsBody& body) const {
 			other == &body ||
 			!other->collider ||
 			other->type == PhysicsBodyType::Dynamic ||
-			other->collider->IsTrigger()
+			other->collider->IsTrigger() ||
+			IsCollisionIgnored(body, *other->collider)
 		) {
 			continue;
 		}
@@ -431,6 +465,7 @@ bool PhysicsWorld::CollidesWithStatic(const PhysicsBody& body) const {
 			collider &&
 			collider != body.collider &&
 			!collider->IsTrigger() &&
+			!IsCollisionIgnored(body, *collider) &&
 			HasBlockingOverlap(*body.collider, *collider)
 		) {
 			return true;
@@ -496,6 +531,7 @@ bool PhysicsWorld::ResolveStaticPenetration(PhysicsBody& body) const {
 			!candidate ||
 			candidate == body.collider ||
 			candidate->IsTrigger() ||
+			IsCollisionIgnored(body, *candidate) ||
 			!body.collider->CanCollideWith(*candidate) ||
 			std::find(
 				testedColliders.begin(),

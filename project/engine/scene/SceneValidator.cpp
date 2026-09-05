@@ -6,10 +6,15 @@
 #include "SceneEntityQuery.h"
 #include "SceneInputKey.h"
 #include "../Audio/Audio.h"
+#include "../utility/EditableResourcePath.h"
+#include "../utility/StringUtility.h"
 
 #include <algorithm>
 #include <cmath>
+#include <cwctype>
+#include <filesystem>
 #include <sstream>
+#include <system_error>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -47,6 +52,152 @@ namespace {
 		}
 		return "AudioSource clip has " + std::to_string(channelCount) +
 			" channels, but " + spatialMode + " requires stereo.";
+	}
+
+	bool SamePathComponent(
+		const std::filesystem::path& left,
+		const std::filesystem::path& right
+	) {
+		std::wstring leftValue = left.wstring();
+		std::wstring rightValue = right.wstring();
+		std::transform(leftValue.begin(), leftValue.end(), leftValue.begin(), std::towlower);
+		std::transform(rightValue.begin(), rightValue.end(), rightValue.begin(), std::towlower);
+		return leftValue == rightValue;
+	}
+
+	bool IsPathWithin(
+		const std::filesystem::path& root,
+		const std::filesystem::path& candidate
+	) {
+		const std::filesystem::path normalizedRoot = root.lexically_normal();
+		const std::filesystem::path normalizedCandidate = candidate.lexically_normal();
+		auto rootIt = normalizedRoot.begin();
+		auto candidateIt = normalizedCandidate.begin();
+		const auto rootEnd = normalizedRoot.end();
+		const auto candidateEnd = normalizedCandidate.end();
+		for (; rootIt != rootEnd; ++rootIt, ++candidateIt) {
+			if (candidateIt == candidateEnd || !SamePathComponent(*rootIt, *candidateIt)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool IsResourceFontPathShape(const std::string& value) {
+		const std::filesystem::path path = StringUtility::ToPath(value);
+		if (path.empty() || path.is_absolute() || path.has_root_name()) {
+			return false;
+		}
+		for (const std::filesystem::path& component : path) {
+			if (component == "..") {
+				return false;
+			}
+		}
+		const std::filesystem::path normalizedPath = path.lexically_normal();
+		auto iterator = normalizedPath.begin();
+		const auto end = normalizedPath.end();
+		if (iterator == end || !SamePathComponent(*iterator, std::filesystem::path("resources"))) {
+			return false;
+		}
+		++iterator;
+		if (iterator == end || !SamePathComponent(*iterator, std::filesystem::path("fonts"))) {
+			return false;
+		}
+		const std::wstring extension = path.extension().wstring();
+		std::wstring lowerExtension = extension;
+		std::transform(lowerExtension.begin(), lowerExtension.end(), lowerExtension.begin(), std::towlower);
+		return normalizedPath.filename() != normalizedPath &&
+			(lowerExtension == L".ttf" || lowerExtension == L".otf" || lowerExtension == L".ttc");
+	}
+
+	bool IsResourceRelativeModelPath(const std::string& path) {
+		if (path.empty()) {
+			return true;
+		}
+		return path.find(':') == std::string::npos &&
+			path.front() != '/' && path.front() != '\\' &&
+			path.find("..") == std::string::npos;
+	}
+
+	template <typename AddIssue>
+	void ValidateSceneInputExpression(
+		const SceneInputExpression& expression,
+		uint64_t entityId,
+		const std::string& label,
+		AddIssue&& addIssue
+	) {
+		if (expression.mode != "Any" && expression.mode != "All") {
+			addIssue(
+				SceneValidationSeverity::Error,
+				entityId,
+				label + " has an unsupported expression mode: " + expression.mode
+			);
+		}
+		if (expression.groups.empty()) {
+			addIssue(
+				SceneValidationSeverity::Warning,
+				entityId,
+				label + " has no input groups and is disabled"
+			);
+		}
+		for (size_t groupIndex = 0;
+			groupIndex < expression.groups.size();
+			++groupIndex) {
+			const SceneInputGroup& group = expression.groups[groupIndex];
+			if (group.mode != "Any" && group.mode != "All") {
+				addIssue(
+					SceneValidationSeverity::Error,
+					entityId,
+					label + " group " + std::to_string(groupIndex) +
+						" has an unsupported mode: " + group.mode
+				);
+			}
+			if (group.terms.empty()) {
+				addIssue(
+					SceneValidationSeverity::Warning,
+					entityId,
+					label + " group " + std::to_string(groupIndex) +
+						" has no terms and is disabled"
+				);
+			}
+			std::unordered_set<std::string> terms;
+			int pressedTermCount = 0;
+			for (const SceneInputTerm& term : group.terms) {
+				if (!IsSupportedSceneInput(term.input)) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entityId,
+						label + " has an unsupported input: " + term.input
+					);
+				}
+				if (term.phase != "Pressed" && term.phase != "Held") {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entityId,
+						label + " has an unsupported input phase: " + term.phase
+					);
+				}
+				if (term.phase == "Pressed") {
+					++pressedTermCount;
+				}
+				const std::string duplicateKey = term.input + "\n" + term.phase;
+				if (!terms.insert(duplicateKey).second) {
+					addIssue(
+						SceneValidationSeverity::Warning,
+						entityId,
+						label + " contains a duplicate input term: " + term.input
+					);
+				}
+			}
+			if (group.mode == "All" && pressedTermCount > 1) {
+				addIssue(
+					SceneValidationSeverity::Warning,
+					entityId,
+					label + " group " + std::to_string(groupIndex) +
+						" requires multiple Pressed inputs in one frame"
+				);
+			}
+		}
 	}
 }
 
@@ -502,6 +653,18 @@ bool SceneValidator::ValidateDocument(
 						firstAudioListenerEntityId = entity.id;
 					}
 				}
+			} else if (component.type == "SpriteRenderer") {
+				if (
+					component.spriteRenderSpace != "ScreenOverlay" &&
+					component.spriteRenderSpace != "Scene2D"
+				) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"SpriteRenderer has an unknown renderSpace: " +
+							component.spriteRenderSpace
+					);
+				}
 			} else if (component.type == "TextRenderer") {
 				if (
 					component.textRenderSpace != "ScreenOverlay" &&
@@ -828,6 +991,82 @@ bool SceneValidator::ValidateDocument(
 							component.thirdPersonYawReference
 					);
 				}
+			} else if (component.type == "PlayerBehavior") {
+				if (
+					component.playerInputMode != "KeyboardMouse" &&
+					component.playerInputMode != "Gamepad" &&
+					component.playerInputMode != "Both"
+				) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"PlayerBehavior has an unsupported inputMode: " +
+							component.playerInputMode
+					);
+				}
+				if (
+					component.textFontSource != "System" &&
+					component.textFontSource != "Resource"
+				) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"TextRenderer has an unknown fontSource: " +
+							component.textFontSource
+					);
+				} else if (component.textFontSource == "Resource") {
+					if (
+						component.textFontResourcePath.empty() ||
+						!IsResourceFontPathShape(component.textFontResourcePath)
+					) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"TextRenderer Resource font path must be a relative .ttf, .otf, or .ttc under resources/fonts"
+						);
+					} else {
+						const std::filesystem::path projectRoot =
+							EditableResourcePath::FindProjectRoot();
+						const std::filesystem::path fontRoot =
+							projectRoot / "resources" / "fonts";
+						const std::filesystem::path filePath =
+							EditableResourcePath::Resolve(
+								StringUtility::ToPath(component.textFontResourcePath)
+							);
+						std::error_code pathError;
+						const std::filesystem::path canonicalRoot =
+							std::filesystem::weakly_canonical(fontRoot, pathError);
+						const std::filesystem::path canonicalFile =
+							std::filesystem::weakly_canonical(filePath, pathError);
+						if (pathError || !IsPathWithin(canonicalRoot, canonicalFile)) {
+							addIssue(
+								SceneValidationSeverity::Error,
+								entity.id,
+								"TextRenderer Resource font path resolves outside resources/fonts"
+							);
+						} else if (
+							!std::filesystem::is_regular_file(filePath, pathError) ||
+							pathError
+						) {
+							addIssue(
+								SceneValidationSeverity::Warning,
+								entity.id,
+								"TextRenderer Resource font file is missing; runtime fallback may be used"
+							);
+						}
+					}
+				}
+				if (
+					!std::isfinite(component.playerGamepadDeadzone) ||
+					component.playerGamepadDeadzone < 0.0f ||
+					component.playerGamepadDeadzone > 0.95f
+				) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"PlayerBehavior has an invalid gamepadDeadzone"
+					);
+				}
 			} else if (component.type == "AgentBehavior") {
 				validateEntityReference(
 					component.agentBoundsEntityId,
@@ -1084,9 +1323,51 @@ bool SceneValidator::ValidateDocument(
 							"Event target"
 						);
 					}
-					if (
+					if (binding.triggerType == "OnFishingScoreAttackResultInput") {
+						const SceneEntity* target = resolveEventTarget(
+							binding.targetEntityId,
+							binding.targetEntityName
+						);
+						if (
+							!target ||
+							!SceneEntityQuery::FindEnabledComponent(
+								*target, "FishingScoreAttackDirector"
+							) ||
+							!SceneEntityQuery::IsEntityActiveInHierarchy(document, *target)
+						) {
+							addIssue(
+								SceneValidationSeverity::Error,
+								entity.id,
+								"OnFishingScoreAttackResultInput target is unresolved, inactive, or disabled"
+							);
+						}
+						if (binding.inputExpression) {
+							ValidateSceneInputExpression(
+								*binding.inputExpression,
+								entity.id,
+								"OnFishingScoreAttackResultInput expression",
+								addIssue
+							);
+						} else if (!IsSupportedSceneInput(binding.triggerKey)) {
+							addIssue(
+								SceneValidationSeverity::Error,
+								entity.id,
+								"OnFishingScoreAttackResultInput has an unsupported input: " +
+									binding.triggerKey
+							);
+						}
+					}
+					if (binding.triggerType == "OnKeyPressed" &&
+						binding.inputExpression) {
+						ValidateSceneInputExpression(
+							*binding.inputExpression,
+							entity.id,
+							"OnKeyPressed expression",
+							addIssue
+						);
+					} else if (
 						binding.triggerType == "OnKeyPressed" &&
-						ResolveSceneInputKey(binding.triggerKey) == 0
+						!IsSupportedSceneInput(binding.triggerKey)
 					) {
 						addIssue(
 							SceneValidationSeverity::Warning,
@@ -1159,9 +1440,42 @@ bool SceneValidator::ValidateDocument(
 							action.type == "StopAudio" ||
 							action.type == "PauseAudio" ||
 							action.type == "ResumeAudio" ||
-							action.type == "PlayTextMotion" ||
-							action.type == "StopTextMotion" ||
-							action.type == "ResetTextMotion";
+								action.type == "PlayTextMotion" ||
+								action.type == "StopTextMotion" ||
+								action.type == "ResetTextMotion";
+						if (action.type == "AdjustFishingFishCount") {
+							const SceneEntity* target = resolveEventTarget(
+								action.targetEntityId,
+								action.targetEntityName
+							);
+							if (
+								!target ||
+								!SceneEntityQuery::FindEnabledComponent(
+									*target,
+									"FishingScoreAttackDirector"
+								) ||
+								!SceneEntityQuery::IsEntityActiveInHierarchy(
+									document,
+									*target
+								)
+							) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"AdjustFishingFishCount target is unresolved, inactive, or disabled"
+								);
+							}
+							if (
+								!std::isfinite(action.value) ||
+								(action.value != 1.0f && action.value != -1.0f)
+							) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"AdjustFishingFishCount value must be +1 or -1"
+								);
+							}
+						}
 						if (actionUsesTarget) {
 							validateEntityReference(
 								action.targetEntityId,
@@ -1604,6 +1918,21 @@ bool SceneValidator::ValidateDocument(
 					"Projectile homing target"
 				);
 			} else if (component.type == "FishingScoreAttackDirector") {
+				if (component.fishingConfirmInputExpression) {
+					ValidateSceneInputExpression(
+						*component.fishingConfirmInputExpression,
+						entity.id,
+						"FishingScoreAttackDirector confirm input expression",
+						addIssue
+					);
+				} else if (!IsSupportedSceneInput(component.fishingConfirmInput)) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingScoreAttackDirector has an unsupported fish count confirm input: " +
+							component.fishingConfirmInput
+					);
+				}
 				if (
 					!std::isfinite(component.fishingFormationOutlineColor.x) ||
 					!std::isfinite(component.fishingFormationOutlineColor.y) ||
@@ -1617,6 +1946,9 @@ bool SceneValidator::ValidateDocument(
 					component.fishingFormationOutlineColor.z > 1.0f ||
 					component.fishingFormationOutlineColor.w < 0.0f ||
 					component.fishingFormationOutlineColor.w > 1.0f ||
+					!std::isfinite(component.fishingFormationOutlineBloomIntensity) ||
+					component.fishingFormationOutlineBloomIntensity < 0.0f ||
+					component.fishingFormationOutlineBloomIntensity > 32.0f ||
 					!std::isfinite(component.fishingFormationOutlineYOffset) ||
 					component.fishingFormationOutlineSegments < 12 ||
 					component.fishingFormationOutlineSegments > 128
@@ -1788,7 +2120,11 @@ bool SceneValidator::ValidateDocument(
 						component.fishingFishMultiplierBase < 0.0f ||
 						!std::isfinite(component.fishingFishMultiplierPerAdditionalFish) ||
 						component.fishingFishMultiplierPerAdditionalFish < 0.0f ||
-						component.fishingHookTierScoreMultipliers.size() != 10 ||
+						component.fishingHookRanks.size() != 10 ||
+						!std::isfinite(component.fishingHookLegendIconSize.x) ||
+						!std::isfinite(component.fishingHookLegendIconSize.y) ||
+						component.fishingHookLegendIconSize.x <= 0.0f ||
+						component.fishingHookLegendIconSize.y <= 0.0f ||
 						!std::isfinite(component.fishingHookColorEmissiveIntensity) ||
 						component.fishingHookColorEmissiveIntensity < 0.0f) {
 						addIssue(
@@ -1797,24 +2133,20 @@ bool SceneValidator::ValidateDocument(
 							"FishingScoreAttackDirector contains invalid hook score settings"
 						);
 					}
-					for (const float multiplier : component.fishingHookTierScoreMultipliers) {
-						if (!std::isfinite(multiplier) || multiplier < 0.0f) {
+					std::unordered_set<std::string> rankIds;
+					for (const SceneFishingHookRankDefinition& rank : component.fishingHookRanks) {
+						if (rank.id.empty() || !rankIds.insert(rank.id).second ||
+							!std::isfinite(rank.scoreMultiplier) || rank.scoreMultiplier < 0.0f ||
+							!IsResourceRelativeModelPath(rank.modelPath) ||
+							!IsResourceRelativeModelPath(rank.iconTexturePath)) {
 							addIssue(
 								SceneValidationSeverity::Error,
 								entity.id,
-								"FishingScoreAttackDirector contains an invalid hook tier score multiplier"
+								"FishingScoreAttackDirector contains an invalid hook rank definition"
 							);
 							break;
 						}
-					}
-					if (component.fishingHookMultiplierColors.size() != 10) {
-						addIssue(
-							SceneValidationSeverity::Error,
-							entity.id,
-							"FishingScoreAttackDirector requires exactly ten hook multiplier colors"
-						);
-					}
-					for (const Vector4& color : component.fishingHookMultiplierColors) {
+						const Vector4& color = rank.color;
 						if (!std::isfinite(color.x) || !std::isfinite(color.y) ||
 							!std::isfinite(color.z) || !std::isfinite(color.w) ||
 							color.x < 0.0f || color.x > 1.0f ||
@@ -1824,10 +2156,17 @@ bool SceneValidator::ValidateDocument(
 							addIssue(
 								SceneValidationSeverity::Error,
 								entity.id,
-								"FishingScoreAttackDirector contains an invalid hook multiplier color"
+								"FishingScoreAttackDirector contains an invalid hook rank color"
 							);
 							break;
 						}
+					}
+					if (component.fishingHookLegendIconEntityIds.size() != 10) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingScoreAttackDirector requires ten hook legend Icon entities"
+						);
 					}
 					if (component.fishingHookLegendVisible) {
 						validateFishingComponentReference(
@@ -1853,6 +2192,45 @@ bool SceneValidator::ValidateDocument(
 									SceneValidationSeverity::Error,
 									entity.id,
 									"FishingScoreAttackDirector contains a duplicate hook legend Text Entity"
+								);
+							}
+						}
+						std::unordered_set<uint64_t> legendIconIds;
+						for (size_t tierIndex = 0;
+							tierIndex < component.fishingHookLegendIconEntityIds.size();
+							++tierIndex) {
+							const uint64_t iconId =
+								component.fishingHookLegendIconEntityIds[tierIndex];
+							if (iconId == 0) {
+								if (tierIndex < component.fishingHookRanks.size() &&
+									!component.fishingHookRanks[tierIndex].iconTexturePath.empty()) {
+									addIssue(
+										SceneValidationSeverity::Error,
+										entity.id,
+										"FishingScoreAttackDirector hook rank icon has no Icon Entity"
+									);
+								}
+								continue;
+							}
+							const SceneEntity* iconEntity = document.FindEntity(iconId);
+							const SceneComponent* iconRenderer = iconEntity
+								? SceneEntityQuery::FindEnabledComponent(*iconEntity, "SpriteRenderer")
+								: nullptr;
+							if (!iconRenderer || iconRenderer->spriteRenderSpace != "ScreenOverlay") {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									tierIndex < component.fishingHookRanks.size() &&
+										!component.fishingHookRanks[tierIndex].iconTexturePath.empty()
+									? "FishingScoreAttackDirector hook rank icon requires a valid ScreenOverlay Icon Entity"
+									: "FishingScoreAttackDirector hook legend Icon must reference an enabled ScreenOverlay SpriteRenderer"
+								);
+							}
+							if (!legendIconIds.insert(iconId).second) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"FishingScoreAttackDirector contains a duplicate hook legend Icon Entity"
 								);
 							}
 						}

@@ -198,6 +198,12 @@ void ScenePhysicsSystem::Step(
 	}
 	if (player && player->GetObject()) {
 		physicsWorld_.AddBody(&player->GetPhysicsBody());
+		for (Collider* collider : formationObstacleColliders_) {
+			physicsWorld_.AddIgnoredCollision(
+				&player->GetPhysicsBody(),
+				collider
+			);
+		}
 	}
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
 		if (
@@ -301,6 +307,7 @@ bool ScenePhysicsSystem::RaycastStatic(
 void ScenePhysicsSystem::Clear() {
 	physicsWorld_.Clear();
 	staticColliders_.clear();
+	formationObstacleColliders_.clear();
 }
 
 void ScenePhysicsSystem::ApplyPlayerBehavior(
@@ -326,6 +333,10 @@ void ScenePhysicsSystem::ApplyPlayerBehavior(
 		behavior->playerCameraRelativeMove,
 		behavior->playerAllowJump,
 		behavior->playerAutoForward
+	);
+	player->SetInputDeviceSettings(
+		behavior->playerInputMode,
+		behavior->playerGamepadDeadzone
 	);
 }
 
@@ -416,11 +427,28 @@ void ScenePhysicsSystem::RebuildStaticColliders(
 	const std::vector<SceneRuntimeObjectBinding>& bindings
 ) {
 	staticColliders_.clear();
+	formationObstacleColliders_.clear();
+	bool formationCollisionDelegated = false;
+	for (const SceneEntity& entity : document.GetEntities()) {
+		if (
+			!SceneEntityQuery::IsEntityActiveInHierarchy(document, entity)
+		) {
+			continue;
+		}
+		const SceneComponent* director =
+			SceneEntityQuery::FindEnabledComponent(
+				entity,
+				"FishingScoreAttackDirector"
+			);
+		if (director && director->fishingUseFormationCapsuleCollision) {
+			formationCollisionDelegated = true;
+			break;
+		}
+	}
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
 		if (
 			!binding.entity ||
 			!binding.collider ||
-			binding.body ||
 			SceneEntityQuery::HasComponent(
 				*binding.entity,
 				"PlayerBehavior"
@@ -430,6 +458,23 @@ void ScenePhysicsSystem::RebuildStaticColliders(
 				*binding.entity
 			)
 		) {
+			continue;
+		}
+		const SceneComponent* fishingObstacle =
+			SceneEntityQuery::FindEnabledComponent(
+				*binding.entity,
+				"FishingObstacle"
+			);
+		if (
+			formationCollisionDelegated &&
+			fishingObstacle &&
+			binding.collider->GetType() == Collider::Type::OBB &&
+			binding.collider->IsActive() &&
+			!binding.collider->IsTrigger()
+		) {
+			formationObstacleColliders_.push_back(binding.collider);
+		}
+		if (binding.body) {
 			continue;
 		}
 		staticColliders_.push_back(binding.collider);

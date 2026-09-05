@@ -2,6 +2,8 @@
 #include "SceneFishingScoreAttackSystem.h"
 
 #include "SceneAgentSystem.h"
+#include "FishingFormationMotion.h"
+#include "../SceneRuntimeInput.h"
 
 #include "../../../engine/collision/Collider.h"
 #include "../../../engine/collision/OBBCollider.h"
@@ -9,8 +11,10 @@
 #include "../../../engine/io/Input.h"
 #include "../../../engine/math/Math.h"
 #include "../../../engine/3d/Object3d.h"
+#include "../../../engine/3d/ModelManager.h"
 #include "../../../engine/scene/SceneDocument.h"
 #include "../../../engine/scene/SceneEntityQuery.h"
+#include "../../../engine/scene/SceneInputKey.h"
 #include "../../../engine/scene/SceneTransformResolver.h"
 
 #include <algorithm>
@@ -76,8 +80,38 @@ namespace {
 		return entity ? FindEnabledComponent(*entity, type) : nullptr;
 	}
 
+	SceneFishingHookRankDefinition ResolveFishingHookRank(
+		const SceneComponent& director,
+		int tier
+	) {
+		const size_t index = tier > 0
+			? static_cast<size_t>(tier - 1)
+			: static_cast<size_t>(10);
+		if (index < director.fishingHookRanks.size()) {
+			return director.fishingHookRanks[index];
+		}
+		SceneFishingHookRankDefinition rank{};
+		if (index < director.fishingHookTierScoreMultipliers.size()) {
+			rank.scoreMultiplier =
+				director.fishingHookTierScoreMultipliers[index];
+		}
+		if (index < director.fishingHookMultiplierColors.size()) {
+			rank.color = director.fishingHookMultiplierColors[index];
+		}
+		return rank;
+	}
+
 	bool IsFiniteNonNegative(float value) {
 		return std::isfinite(value) && value >= 0.0f;
+	}
+
+	bool IsResourceRelativeModelPath(const std::string& path) {
+		if (path.empty()) {
+			return true;
+		}
+		return path.find(':') == std::string::npos &&
+			path.front() != '/' && path.front() != '\\' &&
+			path.find("..") == std::string::npos;
 	}
 
 	bool IsIdentityRotationScale(const Transform& transform) {
@@ -704,6 +738,7 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 			state_ = SceneFishingScoreAttackState::Faulted;
 			diagnostic_ = "Multiple FishingScoreAttackDirector components are active";
 			textRequests_.clear();
+			iconRequests_.clear();
 		} else {
 			Clear();
 		}
@@ -715,6 +750,9 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 		directorEntityId_ = foundDirectorEntityId;
 	}
 	hasDirector_ = true;
+	if (state_ == SceneFishingScoreAttackState::Result) {
+		resultInputArmed_ = true;
+	}
 	if (state_ == SceneFishingScoreAttackState::Inactive) {
 		std::string diagnostic;
 		if (!Preflight(document, foundDirectorEntityId, *director, diagnostic)) {
@@ -749,9 +787,16 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	SceneDocument& document,
 	const std::vector<SceneRuntimeObjectBinding>& bindings,
 	const SceneAgentSystem& agentSystem,
-	bool playing
+	bool playing,
+	float deltaTime,
+	const Vector3& planarVelocity
 ) {
 	if (!playing || state_ != SceneFishingScoreAttackState::Navigating) {
+		return;
+	}
+	playerConstraintRequest_ = {};
+	hasPlayerConstraintRequest_ = false;
+	if (!std::isfinite(deltaTime) || deltaTime <= 0.0f) {
 		return;
 	}
 	const SceneEntity* directorEntity = document.FindEntity(directorEntityId_);
@@ -778,6 +823,126 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			"Fishing formation capsule is invalid for the Player Team"
 		);
 		return;
+	}
+	if (director->fishingUseFormationCapsuleCollision) {
+		if (!hasLastSafePlayerPlanarPosition_) {
+			Fault(
+				document,
+				*director,
+				"Fishing formation has no safe position for obstacle correction"
+			);
+			return;
+		}
+		std::vector<FishingFormationMotion::Obstacle> obstacles;
+		for (const SceneEntity& entity : document.GetEntities()) {
+			if (!IsEntityActiveInHierarchy(document, entity) ||
+				!FindEnabledComponent(entity, "FishingObstacle")) {
+				continue;
+			}
+			const SceneRuntimeObjectBinding* obstacleBinding = FindBinding(
+				bindings,
+				entity.id
+			);
+			if (!obstacleBinding || !obstacleBinding->collider ||
+				obstacleBinding->collider->GetType() != Collider::Type::OBB ||
+				!obstacleBinding->collider->IsActive() ||
+				obstacleBinding->collider->IsTrigger()) {
+				Fault(
+					document,
+					*director,
+					"FishingObstacle requires an active non-trigger OBB runtime binding"
+				);
+				return;
+			}
+			const auto* obstacleCollider = static_cast<const OBBCollider*>(
+				obstacleBinding->collider
+			);
+			const std::vector<XZPoint> hull = BuildObbProjection(
+				obstacleCollider->GetOBB()
+			);
+			FishingFormationMotion::Obstacle obstacle{};
+			obstacle.entityId = entity.id;
+			obstacle.hull.reserve(hull.size());
+			for (const XZPoint& point : hull) {
+				obstacle.hull.push_back({ point.x, point.z });
+			}
+			obstacles.push_back(std::move(obstacle));
+		}
+		FishingFormationMotion::Request motionRequest{};
+		motionRequest.startCenter = {
+			lastSafePlayerPlanarPosition_.x,
+			lastSafePlayerPlanarPosition_.z
+		};
+		motionRequest.desiredCenter = {
+			formationCapsule.center.x,
+			formationCapsule.center.z
+		};
+		motionRequest.desiredVelocity = { planarVelocity.x, planarVelocity.z };
+		motionRequest.startYaw = lastSafePlayerYaw_;
+		motionRequest.desiredYaw = formationCapsule.yaw;
+		motionRequest.radius = formationCapsule.radius;
+		motionRequest.halfSegmentLength = formationCapsule.halfSegmentLength;
+		motionRequest.bounds.enabled = hasPlayerWaterBounds_;
+		if (hasPlayerWaterBounds_) {
+			motionRequest.bounds.center = {
+				playerWaterBounds_.center.x,
+				playerWaterBounds_.center.z
+			};
+			motionRequest.bounds.yaw = playerWaterBounds_.yaw;
+			motionRequest.bounds.halfSizeX = playerWaterBounds_.halfSizeX;
+			motionRequest.bounds.halfSizeZ = playerWaterBounds_.halfSizeZ;
+		}
+		FishingFormationMotion::Result motionResult{};
+		if (!FishingFormationMotion::Solve(
+			motionRequest,
+			obstacles,
+			motionResult
+		)) {
+			Fault(
+				document,
+				*director,
+				"Fishing formation motion solver rejected the current pose"
+			);
+			return;
+		}
+		formationCapsule.center.x = motionResult.center.x;
+		formationCapsule.center.z = motionResult.center.y;
+		formationCapsule.yaw = motionResult.yaw;
+		lastSafePlayerPlanarPosition_ = formationCapsule.center;
+		lastSafePlayerPlanarPosition_.y = 0.0f;
+		lastSafePlayerYaw_ = formationCapsule.yaw;
+		hasLastSafePlayerPlanarPosition_ = true;
+		const bool positionChanged =
+			std::abs(motionResult.center.x - motionRequest.desiredCenter.x) >
+				kTransformEpsilon ||
+			std::abs(motionResult.center.y - motionRequest.desiredCenter.y) >
+				kTransformEpsilon;
+		const float yawDelta = std::atan2(
+			std::sin(motionResult.yaw - motionRequest.desiredYaw),
+			std::cos(motionResult.yaw - motionRequest.desiredYaw)
+		);
+		const bool yawChanged = std::abs(yawDelta) > kTransformEpsilon;
+		const bool velocityChanged =
+			std::abs(motionResult.velocity.x - planarVelocity.x) >
+				kTransformEpsilon ||
+			std::abs(motionResult.velocity.y - planarVelocity.z) >
+				kTransformEpsilon;
+		if (positionChanged || yawChanged || velocityChanged) {
+			playerConstraintRequest_.playerEntityId =
+				director->fishingPlayerEntityId;
+			playerConstraintRequest_.planarPosition = {
+				motionResult.center.x,
+				0.0f,
+				motionResult.center.y
+			};
+			playerConstraintRequest_.yaw = motionResult.yaw;
+			playerConstraintRequest_.planarVelocity = {
+				motionResult.velocity.x,
+				0.0f,
+				motionResult.velocity.y
+			};
+			hasPlayerConstraintRequest_ = true;
+		}
 	}
 	long long sharkPenaltyTotal = 0;
 	bool sharkPenaltyApplied = false;
@@ -840,69 +1005,13 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			totalScore_ -= sharkPenaltyTotal;
 		}
 		DeactivatePoolHooks(document, *director);
+		playerConstraintRequest_ = {};
+		hasPlayerConstraintRequest_ = false;
 		hasPlayerResetRequest_ = hasInitialPlayerTransform_;
 		state_ = SceneFishingScoreAttackState::SelectingNext;
 		SetFishPreview(document, *director);
 		BuildTextRequests(*director);
 		return;
-	}
-	if (director->fishingUseFormationCapsuleCollision) {
-		bool intersectsObstacle = false;
-		for (const SceneEntity& entity : document.GetEntities()) {
-			if (!IsEntityActiveInHierarchy(document, entity)) {
-				continue;
-			}
-			if (!FindEnabledComponent(entity, "FishingObstacle")) {
-				continue;
-			}
-			const SceneRuntimeObjectBinding* obstacleBinding = FindBinding(
-				bindings,
-				entity.id
-			);
-			if (!obstacleBinding || !obstacleBinding->collider ||
-				obstacleBinding->collider->GetType() != Collider::Type::OBB ||
-				!obstacleBinding->collider->IsActive() ||
-				obstacleBinding->collider->IsTrigger()) {
-				Fault(
-					document,
-					*director,
-					"FishingObstacle requires an active non-trigger OBB runtime binding"
-				);
-				return;
-			}
-			const auto* obstacleCollider = static_cast<const OBBCollider*>(
-				obstacleBinding->collider
-			);
-			if (IntersectsFormationCapsule(
-				formationCapsule,
-				obstacleCollider->GetOBB()
-			)) {
-				intersectsObstacle = true;
-				break;
-			}
-		}
-		if (intersectsObstacle) {
-			if (!hasLastSafePlayerPlanarPosition_) {
-				Fault(
-					document,
-					*director,
-					"Fishing formation has no safe position for obstacle correction"
-				);
-				return;
-			}
-			playerConstraintRequest_.playerEntityId = director->fishingPlayerEntityId;
-			playerConstraintRequest_.planarPosition = lastSafePlayerPlanarPosition_;
-			playerConstraintRequest_.yaw = lastSafePlayerYaw_;
-			hasPlayerConstraintRequest_ = true;
-			return;
-		}
-		lastSafePlayerPlanarPosition_ = {
-			formationCapsule.center.x,
-			0.0f,
-			formationCapsule.center.z
-		};
-		lastSafePlayerYaw_ = formationCapsule.yaw;
-		hasLastSafePlayerPlanarPosition_ = true;
 	}
 	const ActiveHook* hitHook = nullptr;
 	const SceneComponent* hitHookComponent = nullptr;
@@ -967,6 +1076,10 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	if (!hitHook || !hitHookComponent) {
 		return;
 	}
+	const SceneFishingHookRankDefinition rank = ResolveFishingHookRank(
+		*director,
+		hitHook->hookMultiplierTier
+	);
 	double score = 0.0;
 	if (director->fishingUseHookBandSettings) {
 		const double fishMultiplier = (std::max)(
@@ -978,9 +1091,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		score = std::round(
 			static_cast<double>(director->fishingHookScoreUnit) *
 			static_cast<double>(hitHook->multiplier) *
-			static_cast<double>(director->fishingHookTierScoreMultipliers[
-				static_cast<size_t>(hitHook->hookMultiplierTier - 1)
-			]) *
+			static_cast<double>(rank.scoreMultiplier) *
 			fishMultiplier
 		);
 	} else {
@@ -999,6 +1110,8 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		totalScore_ += static_cast<long long>(score);
 	}
 	DeactivatePoolHooks(document, *director);
+	playerConstraintRequest_ = {};
+	hasPlayerConstraintRequest_ = false;
 	hasPlayerResetRequest_ = hasInitialPlayerTransform_;
 	state_ = SceneFishingScoreAttackState::SelectingNext;
 	SetFishPreview(document, *director);
@@ -1008,32 +1121,81 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 void SceneFishingScoreAttackSystem::ApplyHookVisualOverrides(
 	const SceneDocument& document,
 	const std::vector<SceneRuntimeObjectBinding>& bindings
-) const {
+) {
 	const SceneEntity* directorEntity = document.FindEntity(directorEntityId_);
 	const SceneComponent* director = directorEntity
 		? FindEnabledComponent(*directorEntity, "FishingScoreAttackDirector")
 		: nullptr;
-	if (!director || !director->fishingUseHookBandSettings) {
+	if (!director) {
 		return;
 	}
+	const SceneComponent* pool = FindComponent(
+		document,
+		director->fishingHookPoolEntityId,
+		"FishingHookPool"
+	);
+	if (!pool) {
+		return;
+	}
+	std::unordered_map<uint64_t, int> activeHookTiers;
 	for (const ActiveHook& activeHook : activeHooks_) {
-		const int colorIndex = activeHook.hookMultiplierTier - 1;
-		if (colorIndex < 0 ||
-			colorIndex >= static_cast<int>(director->fishingHookMultiplierColors.size())) {
-			continue;
-		}
-		const SceneRuntimeObjectBinding* binding = FindBinding(bindings, activeHook.entityId);
+		activeHookTiers[activeHook.entityId] = activeHook.hookMultiplierTier;
+	}
+	for (const SceneFishingHookPoolEntry& entry : pool->fishingHookPoolEntries) {
+		const SceneRuntimeObjectBinding* binding = FindBinding(
+			bindings,
+			entry.hookEntityId
+		);
 		if (!binding || !binding->object) {
 			continue;
 		}
-		const Vector4& color = director->fishingHookMultiplierColors[
-			static_cast<size_t>(colorIndex)
-		];
-		binding->object->SetColor(color);
-		binding->object->SetEmissive(
-			director->fishingHookColorEmissiveIntensity,
-			color
+		const SceneEntity* hookEntity = document.FindEntity(entry.hookEntityId);
+		if (!hookEntity) {
+			continue;
+		}
+		const SceneComponent* meshRenderer = FindEnabledComponent(
+			*hookEntity,
+			"MeshRenderer"
 		);
+		const std::string authoredModelPath = meshRenderer
+			? meshRenderer->modelPath
+			: hookEntity->modelPath;
+		const auto activeIt = activeHookTiers.find(entry.hookEntityId);
+		const bool active = activeIt != activeHookTiers.end() &&
+			director->fishingUseHookBandSettings;
+		const SceneFishingHookRankDefinition rank = active
+			? ResolveFishingHookRank(*director, activeIt->second)
+			: SceneFishingHookRankDefinition{};
+		const std::string desiredModelPath = active && !rank.modelPath.empty()
+			? rank.modelPath
+			: authoredModelPath;
+		const auto modelIt = hookVisualModelPaths_.find(entry.hookEntityId);
+		if (modelIt == hookVisualModelPaths_.end() ||
+			modelIt->second != desiredModelPath) {
+			if (desiredModelPath.empty()) {
+				binding->object->SetModel(static_cast<Model*>(nullptr));
+				hookVisualModelPaths_[entry.hookEntityId] = desiredModelPath;
+			} else {
+				ModelManager::GetInstance()->LoadModel(desiredModelPath);
+				Model* model = ModelManager::GetInstance()->FindModel(
+					desiredModelPath
+				);
+				if (model) {
+					binding->object->SetModel(model);
+					hookVisualModelPaths_[entry.hookEntityId] = desiredModelPath;
+				}
+			}
+		}
+		if (active) {
+			binding->object->SetColor(rank.color);
+			binding->object->SetEmissive(
+				director->fishingHookColorEmissiveIntensity,
+				rank.color
+			);
+		} else {
+			binding->object->SetColor({ 1.0f, 1.0f, 1.0f, 1.0f });
+			binding->object->SetEmissive(0.0f);
+		}
 	}
 }
 
@@ -1043,6 +1205,35 @@ bool SceneFishingScoreAttackSystem::IsPlayerMovementAllowed() const {
 
 bool SceneFishingScoreAttackSystem::AcceptWheelZoom() const {
 	return !hasDirector_ || state_ == SceneFishingScoreAttackState::Navigating;
+}
+
+uint64_t SceneFishingScoreAttackSystem::GetResultInputReadyDirectorEntityId() const {
+	return state_ == SceneFishingScoreAttackState::Result && resultInputArmed_
+		? directorEntityId_
+		: 0;
+}
+
+void SceneFishingScoreAttackSystem::QueueFishCountAdjustment(
+	uint64_t directorEntityId,
+	int delta
+) {
+	if (
+		directorEntityId != directorEntityId_ ||
+		(state_ != SceneFishingScoreAttackState::SelectingInitial &&
+			state_ != SceneFishingScoreAttackState::SelectingNext) ||
+		(delta != 1 && delta != -1)
+	) {
+		return;
+	}
+	if (delta > 0) {
+		if (pendingFishCountDelta_ < (std::numeric_limits<int64_t>::max)()) {
+			++pendingFishCountDelta_;
+		}
+		return;
+	}
+	if (pendingFishCountDelta_ > (std::numeric_limits<int64_t>::min)()) {
+		--pendingFishCountDelta_;
+	}
 }
 
 bool SceneFishingScoreAttackSystem::TryGetPlayerWaterBounds(
@@ -1086,7 +1277,7 @@ bool SceneFishingScoreAttackSystem::ConsumePlayerResetRequest(
 			initialFishTransforms_[index]
 		});
 	}
-	hasPlayerResetRequest_ = false;
+	 hasPlayerResetRequest_ = false;
 	return true;
 }
 
@@ -1122,14 +1313,24 @@ void SceneFishingScoreAttackSystem::AddFormationOutlineDebugDraw(
 		return;
 	}
 	const Vector4 outlineColor = director->fishingFormationOutlineColor;
+	const float outlineBloomIntensity = director->fishingFormationOutlineBloomIntensity;
 	if (
 		!std::isfinite(outlineColor.x) ||
 		!std::isfinite(outlineColor.y) ||
 		!std::isfinite(outlineColor.z) ||
-		!std::isfinite(outlineColor.w)
+		!std::isfinite(outlineColor.w) ||
+		!std::isfinite(outlineBloomIntensity) ||
+		outlineBloomIntensity < 0.0f ||
+		outlineBloomIntensity > 32.0f
 	) {
 		return;
 	}
+	const Vector4 sanitizedOutlineColor = {
+		std::clamp(outlineColor.x, 0.0f, 1.0f) * outlineBloomIntensity,
+		std::clamp(outlineColor.y, 0.0f, 1.0f) * outlineBloomIntensity,
+		std::clamp(outlineColor.z, 0.0f, 1.0f) * outlineBloomIntensity,
+		std::clamp(outlineColor.w, 0.0f, 1.0f)
+	};
 	DebugRenderer* debugRenderer = DebugRenderer::GetInstance();
 	if (!debugRenderer) {
 		return;
@@ -1145,11 +1346,11 @@ void SceneFishingScoreAttackSystem::AddFormationOutlineDebugDraw(
 			capsule.center.z - point.x * sine + point.z * cosine
 		};
 	};
-	auto addLine = [debugRenderer, &toWorld, outlineColor](
+	auto addLine = [debugRenderer, &toWorld, sanitizedOutlineColor](
 		const XZPoint& start,
 		const XZPoint& end
 	) {
-		debugRenderer->AddLine(toWorld(start), toWorld(end), outlineColor);
+		debugRenderer->AddLine(toWorld(start), toWorld(end), sanitizedOutlineColor);
 	};
 
 	const int arcSegments = (std::max)(6, outlineSegments / 2);
@@ -1189,6 +1390,10 @@ bool SceneFishingScoreAttackSystem::Preflight(
 	std::string& diagnostic
 ) const {
 	const bool useHookBandSettings = director.fishingUseHookBandSettings;
+	if (!IsSupportedSceneInput(director.fishingConfirmInput)) {
+		diagnostic = "FishingScoreAttackDirector fish count confirm input is unsupported";
+		return false;
+	}
 	if (
 		director.fishingPlayerEntityId == 0 ||
 		director.fishingHookSpawnAreaEntityId == 0 ||
@@ -1241,26 +1446,23 @@ bool SceneFishingScoreAttackSystem::Preflight(
 			director.fishingHookScoreUnit <= 0.0f ||
 			!IsFiniteNonNegative(director.fishingFishMultiplierBase) ||
 			!IsFiniteNonNegative(director.fishingFishMultiplierPerAdditionalFish) ||
-			director.fishingHookTierScoreMultipliers.size() != 10 ||
-			!IsFiniteNonNegative(director.fishingHookColorEmissiveIntensity) ||
-			director.fishingHookMultiplierColors.size() != 10) {
+			director.fishingHookRanks.size() != 10 ||
+			!IsFiniteNonNegative(director.fishingHookColorEmissiveIntensity)) {
 			diagnostic = "FishingScoreAttackDirector hook score settings are invalid";
 			return false;
 		}
-		for (const float multiplier : director.fishingHookTierScoreMultipliers) {
-			if (!IsFiniteNonNegative(multiplier)) {
-				diagnostic = "FishingScoreAttackDirector hook tier score multipliers are invalid";
-				return false;
-			}
-		}
-		for (const Vector4& color : director.fishingHookMultiplierColors) {
-			if (!std::isfinite(color.x) || !std::isfinite(color.y) ||
-				!std::isfinite(color.z) || !std::isfinite(color.w) ||
-				color.x < 0.0f || color.x > 1.0f ||
-				color.y < 0.0f || color.y > 1.0f ||
-				color.z < 0.0f || color.z > 1.0f ||
-				color.w < 0.0f || color.w > 1.0f) {
-				diagnostic = "FishingScoreAttackDirector hook multiplier colors are invalid";
+		std::unordered_set<std::string> rankIds;
+		for (const SceneFishingHookRankDefinition& rank : director.fishingHookRanks) {
+			if (rank.id.empty() || !rankIds.insert(rank.id).second ||
+				!IsFiniteNonNegative(rank.scoreMultiplier) ||
+				!IsResourceRelativeModelPath(rank.modelPath) ||
+				!std::isfinite(rank.color.x) || !std::isfinite(rank.color.y) ||
+				!std::isfinite(rank.color.z) || !std::isfinite(rank.color.w) ||
+				rank.color.x < 0.0f || rank.color.x > 1.0f ||
+				rank.color.y < 0.0f || rank.color.y > 1.0f ||
+				rank.color.z < 0.0f || rank.color.z > 1.0f ||
+				rank.color.w < 0.0f || rank.color.w > 1.0f) {
+				diagnostic = "FishingScoreAttackDirector hook rank definitions are invalid";
 				return false;
 			}
 		}
@@ -1482,6 +1684,9 @@ bool SceneFishingScoreAttackSystem::Preflight(
 			const Vector4 color = director.fishingFormationOutlineColor;
 			if (
 				!std::isfinite(director.fishingFormationOutlineYOffset) ||
+				!std::isfinite(director.fishingFormationOutlineBloomIntensity) ||
+				director.fishingFormationOutlineBloomIntensity < 0.0f ||
+				director.fishingFormationOutlineBloomIntensity > 32.0f ||
 				director.fishingFormationOutlineSegments < 12 ||
 				director.fishingFormationOutlineSegments > 128 ||
 				!std::isfinite(color.x) || !std::isfinite(color.y) ||
@@ -1592,6 +1797,7 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 		random_.seed(static_cast<std::mt19937::result_type>(director.fishingRandomSeed));
 	}
 	selectedFishCount_ = 1;
+	pendingFishCountDelta_ = 0;
 	roundFishCount_ = 0;
 	roundDistanceBand_ = 0;
 	roundMultiplier_ = director.fishingUseHookBandSettings
@@ -1602,6 +1808,7 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 	elapsedSeconds_ = 0.0;
 	totalScore_ = 0;
 	timerRunning_ = false;
+	resultInputArmed_ = false;
 	diagnostic_.clear();
 	initialFishEntityIds_ = director.fishingFishEntityIds;
 	initialFishTransforms_.clear();
@@ -1720,21 +1927,50 @@ void SceneFishingScoreAttackSystem::UpdateSelection(
 	SceneDocument& document,
 	const SceneComponent& director
 ) {
+	const int64_t pendingDelta = pendingFishCountDelta_;
+	pendingFishCountDelta_ = 0;
 	Input* input = Input::GetInstance();
 	if (!input) {
 		return;
 	}
+	int64_t nextFishCount = selectedFishCount_;
+	if (
+		(pendingDelta > 0 && nextFishCount > (std::numeric_limits<int64_t>::max)() - pendingDelta) ||
+		(pendingDelta < 0 && nextFishCount < (std::numeric_limits<int64_t>::min)() - pendingDelta)
+	) {
+		nextFishCount = pendingDelta > 0
+			? (std::numeric_limits<int64_t>::max)()
+			: (std::numeric_limits<int64_t>::min)();
+	} else {
+		nextFishCount += pendingDelta;
+	}
 	const float wheel = input->GetMouseWheel();
 	if (std::abs(wheel) > 0.000001f) {
 		const int wheelNotches = static_cast<int>(std::round(wheel));
-		selectedFishCount_ = std::clamp(
-			selectedFishCount_ + wheelNotches,
-			1,
-			director.fishingMaxSelectableFishCount
-		);
+		if (
+			(wheelNotches > 0 && nextFishCount > (std::numeric_limits<int64_t>::max)() - wheelNotches) ||
+			(wheelNotches < 0 && nextFishCount < (std::numeric_limits<int64_t>::min)() - wheelNotches)
+		) {
+			nextFishCount = wheelNotches > 0
+				? (std::numeric_limits<int64_t>::max)()
+				: (std::numeric_limits<int64_t>::min)();
+		} else {
+			nextFishCount += wheelNotches;
+		}
+	}
+	const int64_t clampedFishCount = std::clamp<int64_t>(
+		nextFishCount,
+		1,
+		director.fishingMaxSelectableFishCount
+	);
+	if (selectedFishCount_ != clampedFishCount) {
+		selectedFishCount_ = static_cast<int>(clampedFishCount);
 		SetFishPreview(document, director);
 	}
-	if (!input->TriggerKey(DIK_RETURN)) {
+	if (!SceneRuntimeInput::EvaluateExpression(
+		director.fishingConfirmInputExpression,
+		director.fishingConfirmInput
+	)) {
 		return;
 	}
 	if (state_ == SceneFishingScoreAttackState::SelectingInitial) {
@@ -1970,6 +2206,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 	if (!ResetSharksForRound(document, director)) {
 		return;
 	}
+	pendingFishCountDelta_ = 0;
 	state_ = SceneFishingScoreAttackState::Navigating;
 	SetFishPreview(document, director);
 }
@@ -2583,6 +2820,8 @@ void SceneFishingScoreAttackSystem::Finish(
 	const SceneComponent& director
 ) {
 	timerRunning_ = false;
+	pendingFishCountDelta_ = 0;
+	resultInputArmed_ = false;
 	playerConstraintRequest_ = {};
 	hasPlayerConstraintRequest_ = false;
 	hasLastSafePlayerPlanarPosition_ = false;
@@ -2604,6 +2843,8 @@ void SceneFishingScoreAttackSystem::Fault(
 ) {
 	diagnostic_ = std::move(diagnostic);
 	timerRunning_ = false;
+	pendingFishCountDelta_ = 0;
+	resultInputArmed_ = false;
 	playerConstraintRequest_ = {};
 	hasPlayerConstraintRequest_ = false;
 	hasLastSafePlayerPlanarPosition_ = false;
@@ -2654,6 +2895,7 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 	const SceneComponent& director
 ) {
 	textRequests_.clear();
+	iconRequests_.clear();
 	const auto addText = [this](uint64_t entityId, std::string text) {
 		if (entityId != 0) {
 			textRequests_.push_back({ entityId, std::move(text) });
@@ -2695,14 +2937,14 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 			? director.fishingResultPrefix + std::to_string(totalScore_)
 			: std::string{}
 	);
+	const bool showLegend =
+		director.fishingUseHookBandSettings &&
+		director.fishingHookLegendVisible &&
+		(state_ == SceneFishingScoreAttackState::SelectingInitial ||
+			state_ == SceneFishingScoreAttackState::Navigating ||
+			state_ == SceneFishingScoreAttackState::SelectingNext) &&
+		director.fishingHookRanks.size() == 10;
 	if (director.fishingUseHookBandSettings) {
-		const bool showLegend =
-			director.fishingHookLegendVisible &&
-			(state_ == SceneFishingScoreAttackState::SelectingInitial ||
-				state_ == SceneFishingScoreAttackState::Navigating ||
-				state_ == SceneFishingScoreAttackState::SelectingNext) &&
-			director.fishingHookMultiplierColors.size() == 10 &&
-			director.fishingHookTierScoreMultipliers.size() == 10;
 		if (director.fishingHookLegendTitleTextEntityId != 0) {
 			textRequests_.push_back({
 				director.fishingHookLegendTitleTextEntityId,
@@ -2722,22 +2964,42 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 				entityId,
 				showLegend
 					? director.fishingHookLegendPrefix + FormatHookScoreMultiplier(
-						director.fishingHookTierScoreMultipliers[tierIndex]
+						director.fishingHookRanks[tierIndex].scoreMultiplier
 					)
 					: std::string{},
 				showLegend,
 				showLegend
-					? director.fishingHookMultiplierColors[tierIndex]
+					? director.fishingHookRanks[tierIndex].color
 					: Vector4{}
 			});
 		}
+	}
+	for (size_t tierIndex = 0; tierIndex < 10; ++tierIndex) {
+		const uint64_t iconEntityId = tierIndex < director.fishingHookLegendIconEntityIds.size()
+			? director.fishingHookLegendIconEntityIds[tierIndex]
+			: 0;
+		if (iconEntityId == 0) {
+			continue;
+		}
+		const bool rankReady = director.fishingHookRanks.size() == 10;
+		const std::string texturePath = rankReady
+			? director.fishingHookRanks[tierIndex].iconTexturePath
+			: std::string{};
+		iconRequests_.push_back({
+			iconEntityId,
+			texturePath,
+			director.fishingHookLegendIconSize,
+			showLegend && !texturePath.empty()
+		});
 	}
 }
 
 void SceneFishingScoreAttackSystem::Clear() {
 	state_ = SceneFishingScoreAttackState::Inactive;
 	directorEntityId_ = 0;
+	resultInputArmed_ = false;
 	activeHooks_.clear();
+	hookVisualModelPaths_.clear();
 	sharkRuntimes_.clear();
 	initialPlayerTransform_ = {};
 	playerWaterBounds_ = {};
@@ -2754,6 +3016,7 @@ void SceneFishingScoreAttackSystem::Clear() {
 	initialFishTransforms_.clear();
 	fishingTeamName_.clear();
 	selectedFishCount_ = 0;
+	pendingFishCountDelta_ = 0;
 	roundFishCount_ = 0;
 	roundDistanceBand_ = 0;
 	roundMultiplier_ = 0.0f;
@@ -2763,4 +3026,5 @@ void SceneFishingScoreAttackSystem::Clear() {
 	hasDirector_ = false;
 	diagnostic_.clear();
 	textRequests_.clear();
+	iconRequests_.clear();
 }

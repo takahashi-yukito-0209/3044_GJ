@@ -3,6 +3,8 @@
 
 #include "../SceneRuntimeObjectBinding.h"
 #include "../../../engine/math/Transform.h"
+#include "../../../engine/math/Vector2.h"
+#include "../../../engine/math/Vector3.h"
 #include "../../../engine/math/Vector4.h"
 
 #include <cstdint>
@@ -31,6 +33,13 @@ struct SceneFishingScoreAttackTextRequest {
 	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 };
 
+struct SceneFishingScoreAttackIconRequest {
+	uint64_t entityId = 0;
+	std::string texturePath;
+	Vector2 size = { 32.0f, 32.0f };
+	bool visible = false;
+};
+
 struct SceneFishingScoreAttackPlayerWaterBounds {
 	uint64_t playerEntityId = 0;
 	Vector3 center{};
@@ -43,6 +52,7 @@ struct SceneFishingScoreAttackPlayerConstraintRequest {
 	uint64_t playerEntityId = 0;
 	Vector3 planarPosition{};
 	float yaw = 0.0f;
+	Vector3 planarVelocity{};
 };
 
 struct SceneFishingScoreAttackPlayerResetRequest {
@@ -68,15 +78,19 @@ public:
 		SceneDocument& document,
 		const std::vector<SceneRuntimeObjectBinding>& bindings,
 		const SceneAgentSystem& agentSystem,
-		bool playing
+		bool playing,
+		float deltaTime,
+		const Vector3& planarVelocity
 	);
 	void ApplyHookVisualOverrides(
 		const SceneDocument& document,
 		const std::vector<SceneRuntimeObjectBinding>& bindings
-	) const;
+	);
 
 	bool IsPlayerMovementAllowed() const;
 	bool AcceptWheelZoom() const;
+	uint64_t GetResultInputReadyDirectorEntityId() const;
+	void QueueFishCountAdjustment(uint64_t directorEntityId, int delta);
 	bool TryGetPlayerWaterBounds(SceneFishingScoreAttackPlayerWaterBounds& bounds) const;
 	bool ConsumePlayerConstraintRequest(
 		SceneFishingScoreAttackPlayerConstraintRequest& request
@@ -88,6 +102,9 @@ public:
 	) const;
 	const std::vector<SceneFishingScoreAttackTextRequest>& GetTextRequests() const {
 		return textRequests_;
+	}
+	const std::vector<SceneFishingScoreAttackIconRequest>& GetIconRequests() const {
+		return iconRequests_;
 	}
 	const std::string& GetDiagnostic() const { return diagnostic_; }
 	void Clear();
@@ -160,8 +177,11 @@ private:
 	SceneFishingScoreAttackPlayerConstraintRequest playerConstraintRequest_{};
 	bool hasPlayerConstraintRequest_ = false;
 	bool hasPlayerResetRequest_ = false;
+	bool resultInputArmed_ = false;
+	std::unordered_map<uint64_t, std::string> hookVisualModelPaths_;
 	bool startFromPositiveWaterZ_ = false;
 	int selectedFishCount_ = 0;
+	int64_t pendingFishCountDelta_ = 0;
 	int roundFishCount_ = 0;
 	int roundDistanceBand_ = 0;
 	float roundMultiplier_ = 0.0f;
@@ -172,4 +192,5 @@ private:
 	std::mt19937 random_{};
 	std::string diagnostic_;
 	std::vector<SceneFishingScoreAttackTextRequest> textRequests_;
+	std::vector<SceneFishingScoreAttackIconRequest> iconRequests_;
 };

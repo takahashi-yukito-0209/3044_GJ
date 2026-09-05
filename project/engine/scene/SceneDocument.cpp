@@ -31,6 +31,146 @@ namespace {
 	using SceneEntityQuery::FindComponent;
 	using SceneTransformResolver::ResolveSceneWorldMatrix;
 
+	json SceneInputExpressionToJson(const SceneInputExpression& expression) {
+		json groups = json::array();
+		for (const SceneInputGroup& group : expression.groups) {
+			json terms = json::array();
+			for (const SceneInputTerm& term : group.terms) {
+				terms.push_back({
+					{ "input", term.input },
+					{ "phase", term.phase }
+				});
+			}
+			groups.push_back({
+				{ "mode", group.mode },
+				{ "terms", std::move(terms) }
+			});
+		}
+		return {
+			{ "mode", expression.mode },
+			{ "groups", std::move(groups) }
+		};
+	}
+
+	std::string FirstSceneInputExpressionTerm(
+		const std::optional<SceneInputExpression>& expression
+	) {
+		if (!expression) {
+			return {};
+		}
+		for (const SceneInputGroup& group : expression->groups) {
+			if (!group.terms.empty()) {
+				return group.terms.front().input;
+			}
+		}
+		return {};
+	}
+
+	SceneInputExpression ReadSceneInputExpression(const json& source) {
+		SceneInputExpression expression{};
+		if (!source.is_object()) {
+			expression.mode = "__INVALID_MODE__";
+			return expression;
+		}
+		if (const auto mode = source.find("mode"); mode != source.end()) {
+			expression.mode = mode->is_string()
+				? mode->get<std::string>()
+				: "__INVALID_MODE__";
+		}
+		const auto groups = source.find("groups");
+		if (groups == source.end()) {
+			return expression;
+		}
+		if (!groups->is_array()) {
+			expression.groups.push_back({ "__INVALID_MODE__", {} });
+			return expression;
+		}
+		for (const json& groupValue : *groups) {
+			SceneInputGroup group{};
+			if (!groupValue.is_object()) {
+				group.mode = "__INVALID_MODE__";
+				group.terms.push_back({ "__INVALID_INPUT__", "__INVALID_PHASE__" });
+				expression.groups.push_back(std::move(group));
+				continue;
+			}
+			if (const auto mode = groupValue.find("mode");
+				mode != groupValue.end()) {
+				group.mode = mode->is_string()
+					? mode->get<std::string>()
+					: "__INVALID_MODE__";
+			}
+			const auto terms = groupValue.find("terms");
+			if (terms == groupValue.end()) {
+				expression.groups.push_back(std::move(group));
+				continue;
+			}
+			if (!terms->is_array()) {
+				group.terms.push_back({ "__INVALID_INPUT__", "__INVALID_PHASE__" });
+				expression.groups.push_back(std::move(group));
+				continue;
+			}
+			for (const json& termValue : *terms) {
+				SceneInputTerm term{};
+				if (!termValue.is_object()) {
+					term.input = "__INVALID_INPUT__";
+					term.phase = "__INVALID_PHASE__";
+					group.terms.push_back(std::move(term));
+					continue;
+				}
+				if (const auto input = termValue.find("input");
+					input != termValue.end()) {
+					term.input = input->is_string()
+						? input->get<std::string>()
+						: "__INVALID_INPUT__";
+				}
+				if (const auto phase = termValue.find("phase");
+					phase != termValue.end()) {
+					term.phase = phase->is_string()
+						? phase->get<std::string>()
+						: "__INVALID_PHASE__";
+				}
+				group.terms.push_back(std::move(term));
+			}
+			expression.groups.push_back(std::move(group));
+		}
+		return expression;
+	}
+
+	std::vector<SceneFishingHookRankDefinition> BuildLegacyFishingHookRanks(
+		const std::vector<float>& scoreMultipliers,
+		const std::vector<Vector4>& colors
+	) {
+		std::vector<SceneFishingHookRankDefinition> ranks;
+		ranks.reserve(10);
+		for (size_t index = 0; index < 10; ++index) {
+			SceneFishingHookRankDefinition rank{};
+			rank.id = "rank_" + std::to_string(index + 1);
+			rank.displayName = "Rank " + std::to_string(index + 1);
+			if (index < scoreMultipliers.size()) {
+				rank.scoreMultiplier = scoreMultipliers[index];
+			}
+			if (index < colors.size()) {
+				rank.color = colors[index];
+			}
+			ranks.push_back(std::move(rank));
+		}
+		return ranks;
+	}
+
+	const std::vector<SceneFishingHookRankDefinition>& ResolveFishingHookRanksForSave(
+		const SceneComponent& component,
+		std::vector<SceneFishingHookRankDefinition>& legacyFallback
+	) {
+		if (!component.fishingHookRanks.empty()) {
+			return component.fishingHookRanks;
+		}
+		legacyFallback = BuildLegacyFishingHookRanks(
+			component.fishingHookTierScoreMultipliers,
+			component.fishingHookMultiplierColors
+		);
+		return legacyFallback;
+	}
+
 	bool IsPrefabDocumentPath(const std::string& filePath) {
 		std::string fileName = StringUtility::ToUtf8(
 			StringUtility::ToPath(filePath).filename()
@@ -1161,9 +1301,11 @@ namespace {
 	json EventsToJson(const std::vector<SceneEventBinding>& bindings) {
 		json result = json::array();
 		for (const SceneEventBinding& binding : bindings) {
-			result.push_back({
+			json bindingValue = {
 				{ "triggerType", binding.triggerType },
-				{ "triggerKey", binding.triggerKey },
+				{ "triggerKey", binding.inputExpression
+					? FirstSceneInputExpressionTerm(binding.inputExpression)
+					: binding.triggerKey },
 				{ "targetEntityId", binding.targetEntityId },
 				{ "targetEntityName", binding.targetEntityName },
 				{ "statId", binding.statId },
@@ -1175,7 +1317,12 @@ namespace {
 				{ "cooldown", binding.cooldown },
 				{ "textMotionClipId", binding.textMotionClipId },
 				{ "actions", EventActionsToJson(binding.actions) }
-			});
+			};
+			if (binding.inputExpression) {
+				bindingValue["inputExpression"] =
+					SceneInputExpressionToJson(*binding.inputExpression);
+			}
+			result.push_back(std::move(bindingValue));
 		}
 		return result;
 	}
@@ -1428,12 +1575,16 @@ namespace {
 			result["texturePath"] = component.texturePath;
 			result["size"] = VectorToJson(component.spriteSize);
 			result["anchor"] = VectorToJson(component.spriteAnchor);
+			result["renderSpace"] = component.spriteRenderSpace;
+			result["viewportAnchor"] = VectorToJson(component.spriteViewportAnchor);
 			result["color"] = VectorToJson(component.spriteColor);
 			result["flipX"] = component.spriteFlipX;
 			result["flipY"] = component.spriteFlipY;
 		} else if (component.type == "TextRenderer") {
 			result["text"] = component.textValue;
 			result["renderSpace"] = component.textRenderSpace;
+			result["fontSource"] = component.textFontSource;
+			result["fontResourcePath"] = component.textFontResourcePath;
 			result["fontFamily"] = component.textFontFamily;
 			result["fontSize"] = component.textFontSize;
 			result["fontWeight"] = component.textFontWeight;
@@ -1531,6 +1682,15 @@ namespace {
 			result["waterVolumeEntityId"] = component.fishingWaterVolumeEntityId;
 			result["durationSeconds"] = component.fishingDurationSeconds;
 			result["maxSelectableFishCount"] = component.fishingMaxSelectableFishCount;
+			result["confirmInput"] = component.fishingConfirmInputExpression
+				? FirstSceneInputExpressionTerm(component.fishingConfirmInputExpression)
+				: component.fishingConfirmInput;
+			if (component.fishingConfirmInputExpression) {
+				result["confirmInputExpression"] =
+					SceneInputExpressionToJson(
+						*component.fishingConfirmInputExpression
+					);
+			}
 			result["distanceBandCount"] = component.fishingDistanceBandCount;
 			result["hooksPerDistanceBand"] = component.fishingHooksPerDistanceBand;
 			result["distanceMultiplierBase"] = component.fishingDistanceMultiplierBase;
@@ -1549,12 +1709,28 @@ namespace {
 			result["fishMultiplierBase"] = component.fishingFishMultiplierBase;
 			result["fishMultiplierPerAdditionalFish"] =
 				component.fishingFishMultiplierPerAdditionalFish;
-			result["hookTierScoreMultipliers"] = component.fishingHookTierScoreMultipliers;
-			json hookMultiplierColors = json::array();
-			for (const Vector4& color : component.fishingHookMultiplierColors) {
-				hookMultiplierColors.push_back(VectorToJson(color));
+			std::vector<SceneFishingHookRankDefinition> legacyRanks;
+			const std::vector<SceneFishingHookRankDefinition>& ranks =
+				ResolveFishingHookRanksForSave(component, legacyRanks);
+			json hookRanks = json::array();
+			std::vector<float> legacyScoreMultipliers;
+			json legacyColors = json::array();
+			legacyScoreMultipliers.reserve(ranks.size());
+			for (const SceneFishingHookRankDefinition& rank : ranks) {
+					hookRanks.push_back({
+					{ "id", rank.id },
+					{ "displayName", rank.displayName },
+					{ "modelPath", rank.modelPath },
+					{ "iconTexturePath", rank.iconTexturePath },
+					{ "scoreMultiplier", rank.scoreMultiplier },
+					{ "color", VectorToJson(rank.color) }
+				});
+				legacyScoreMultipliers.push_back(rank.scoreMultiplier);
+				legacyColors.push_back(VectorToJson(rank.color));
 			}
-			result["hookMultiplierColors"] = std::move(hookMultiplierColors);
+			result["hookRanks"] = std::move(hookRanks);
+			result["hookTierScoreMultipliers"] = std::move(legacyScoreMultipliers);
+			result["hookMultiplierColors"] = std::move(legacyColors);
 			result["hookColorEmissiveIntensity"] =
 				component.fishingHookColorEmissiveIntensity;
 			result["hookLegendVisible"] = component.fishingHookLegendVisible;
@@ -1563,6 +1739,8 @@ namespace {
 			result["hookLegendTextEntityIds"] = component.fishingHookLegendTextEntityIds;
 			result["hookLegendTitle"] = component.fishingHookLegendTitle;
 			result["hookLegendPrefix"] = component.fishingHookLegendPrefix;
+			result["hookLegendIconEntityIds"] = component.fishingHookLegendIconEntityIds;
+			result["hookLegendIconSize"] = VectorToJson(component.fishingHookLegendIconSize);
 			result["randomizeSeedOnPlay"] = component.fishingRandomizeSeedOnPlay;
 			result["randomSeed"] = component.fishingRandomSeed;
 			result["fishCountTextEntityId"] = component.fishingFishCountTextEntityId;
@@ -1581,6 +1759,8 @@ namespace {
 				component.fishingFormationOutlineVisible;
 			result["formationOutlineColor"] =
 				VectorToJson(component.fishingFormationOutlineColor);
+			result["formationOutlineBloomIntensity"] =
+				component.fishingFormationOutlineBloomIntensity;
 			result["formationOutlineYOffset"] =
 				component.fishingFormationOutlineYOffset;
 			result["formationOutlineSegments"] =
@@ -1747,6 +1927,8 @@ namespace {
 			result["cameraRelativeMove"] = component.playerCameraRelativeMove;
 			result["allowJump"] = component.playerAllowJump;
 			result["autoForward"] = component.playerAutoForward;
+			result["inputMode"] = component.playerInputMode;
+			result["gamepadDeadzone"] = component.playerGamepadDeadzone;
 		} else if (component.type == "AgentBehavior") {
 			result["behaviorName"] = component.agentBehaviorName;
 			result["movementMode"] = component.agentMovementMode;
@@ -2108,6 +2290,13 @@ namespace {
 				"triggerType", binding.triggerType
 			);
 			binding.triggerKey = value.value("triggerKey", binding.triggerKey);
+			if (const auto inputExpression = value.find("inputExpression");
+				inputExpression != value.end()) {
+				binding.inputExpression = ReadSceneInputExpression(*inputExpression);
+				binding.triggerKey = FirstSceneInputExpressionTerm(
+					binding.inputExpression
+				);
+			}
 			binding.targetEntityId = value.value(
 				"targetEntityId", binding.targetEntityId
 			);
@@ -2559,6 +2748,9 @@ namespace {
 		for (uint64_t& textEntityId : component.fishingHookLegendTextEntityIds) {
 			textEntityId = RemapEntityId(textEntityId, idMap, preserveUnmappedIds);
 		}
+		for (uint64_t& iconEntityId : component.fishingHookLegendIconEntityIds) {
+			iconEntityId = RemapEntityId(iconEntityId, idMap, preserveUnmappedIds);
+		}
 		for (SceneFishingHookPoolEntry& entry : component.fishingHookPoolEntries) {
 			entry.hookEntityId = RemapEntityId(
 				entry.hookEntityId, idMap, preserveUnmappedIds
@@ -2709,6 +2901,15 @@ namespace {
 						component.spriteAnchor
 					);
 				}
+				component.spriteRenderSpace = value.value(
+					"renderSpace", component.spriteRenderSpace
+				);
+				if (value.contains("viewportAnchor")) {
+					component.spriteViewportAnchor = JsonToVector(
+						value.at("viewportAnchor"),
+						component.spriteViewportAnchor
+					);
+				}
 				if (value.contains("color")) {
 					component.spriteColor = JsonToVector(
 						value.at("color"),
@@ -2723,6 +2924,12 @@ namespace {
 					);
 					component.textRenderSpace = value.value(
 						"renderSpace", component.textRenderSpace
+					);
+					component.textFontSource = value.value(
+						"fontSource", component.textFontSource
+					);
+					component.textFontResourcePath = value.value(
+						"fontResourcePath", component.textFontResourcePath
 					);
 					component.textFontFamily = value.value(
 						"fontFamily", component.textFontFamily
@@ -2945,6 +3152,18 @@ namespace {
 						value.value("maxSelectableFishCount", component.fishingMaxSelectableFishCount),
 						1, (std::numeric_limits<int>::max)()
 					);
+					component.fishingConfirmInput = value.value(
+						"confirmInput", component.fishingConfirmInput
+					);
+					if (const auto inputExpression = value.find(
+						"confirmInputExpression"
+					); inputExpression != value.end()) {
+						component.fishingConfirmInputExpression =
+							ReadSceneInputExpression(*inputExpression);
+						component.fishingConfirmInput = FirstSceneInputExpressionTerm(
+							component.fishingConfirmInputExpression
+						);
+					}
 					component.fishingDistanceBandCount = (std::max)(
 						value.value("distanceBandCount", component.fishingDistanceBandCount),
 						1
@@ -3022,6 +3241,44 @@ namespace {
 							);
 						}
 					}
+					component.fishingHookRanks.clear();
+					if (const auto ranks = value.find("hookRanks");
+						ranks != value.end() && ranks->is_array()) {
+						std::vector<SceneFishingHookRankDefinition> parsedRanks;
+						for (const json& rankValue : *ranks) {
+							if (!rankValue.is_object()) {
+								continue;
+							}
+							SceneFishingHookRankDefinition rank{};
+							rank.id = rankValue.value("id", std::string{});
+							rank.displayName = rankValue.value(
+								"displayName", std::string{}
+							);
+							 rank.modelPath = rankValue.value(
+								"modelPath", std::string{}
+							);
+							rank.iconTexturePath = rankValue.value(
+								"iconTexturePath", std::string{}
+							);
+							rank.scoreMultiplier = rankValue.value(
+								"scoreMultiplier", rank.scoreMultiplier
+							);
+							if (const auto color = rankValue.find("color");
+								color != rankValue.end()) {
+								rank.color = JsonToVector(*color, rank.color);
+							}
+							parsedRanks.push_back(std::move(rank));
+						}
+						if (parsedRanks.size() == 10) {
+							component.fishingHookRanks = std::move(parsedRanks);
+						}
+					}
+					if (component.fishingHookRanks.empty()) {
+						component.fishingHookRanks = BuildLegacyFishingHookRanks(
+							component.fishingHookTierScoreMultipliers,
+							component.fishingHookMultiplierColors
+						);
+					}
 					component.fishingHookColorEmissiveIntensity = value.value(
 						"hookColorEmissiveIntensity",
 						component.fishingHookColorEmissiveIntensity
@@ -3042,6 +3299,15 @@ namespace {
 					component.fishingHookLegendPrefix = value.value(
 						"hookLegendPrefix", component.fishingHookLegendPrefix
 					);
+					component.fishingHookLegendIconEntityIds = value.value(
+						"hookLegendIconEntityIds", std::vector<uint64_t>(10, 0)
+					);
+					if (value.contains("hookLegendIconSize")) {
+						component.fishingHookLegendIconSize = JsonToVector(
+							value.at("hookLegendIconSize"),
+							component.fishingHookLegendIconSize
+						);
+					}
 					component.fishingRandomizeSeedOnPlay = value.value(
 						"randomizeSeedOnPlay", component.fishingRandomizeSeedOnPlay
 					);
@@ -3092,6 +3358,14 @@ namespace {
 							component.fishingFormationOutlineColor
 						);
 					}
+					const float outlineBloomIntensity = value.value(
+						"formationOutlineBloomIntensity",
+						component.fishingFormationOutlineBloomIntensity
+					);
+					component.fishingFormationOutlineBloomIntensity =
+						std::isfinite(outlineBloomIntensity)
+							? std::clamp(outlineBloomIntensity, 0.0f, 32.0f)
+							: 1.0f;
 					component.fishingFormationOutlineYOffset = value.value(
 						"formationOutlineYOffset",
 						component.fishingFormationOutlineYOffset
@@ -3681,6 +3955,23 @@ namespace {
 					"autoForward",
 					component.playerAutoForward
 				);
+				component.playerInputMode = value.value(
+					"inputMode",
+					component.playerInputMode
+				);
+				component.playerGamepadDeadzone = value.value(
+					"gamepadDeadzone",
+					component.playerGamepadDeadzone
+				);
+				if (!std::isfinite(component.playerGamepadDeadzone)) {
+					component.playerGamepadDeadzone = 0.20f;
+				} else {
+					component.playerGamepadDeadzone = std::clamp(
+						component.playerGamepadDeadzone,
+						0.0f,
+						0.95f
+					);
+				}
 				component.agentBehaviorName = value.value(
 					"behaviorName",
 					component.agentBehaviorName
@@ -8368,6 +8659,11 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 			)
 				? found->fishingFormationOutlineYOffset
 				: 0.0f;
+			const float outlineBloomIntensity = std::isfinite(
+				found->fishingFormationOutlineBloomIntensity
+			)
+				? std::clamp(found->fishingFormationOutlineBloomIntensity, 0.0f, 32.0f)
+				: 1.0f;
 			const int outlineSegments = std::clamp(
 				found->fishingFormationOutlineSegments,
 				12,
@@ -8388,6 +8684,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 					: 1.0f
 			};
 			if (
+				found->fishingFormationOutlineBloomIntensity != outlineBloomIntensity ||
 				found->fishingFormationOutlineYOffset != outlineYOffset ||
 				found->fishingFormationOutlineSegments != outlineSegments ||
 				found->fishingFormationOutlineColor.x != outlineColor.x ||
@@ -8396,6 +8693,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 				found->fishingFormationOutlineColor.w != outlineColor.w
 			) {
 				found->fishingFormationOutlineYOffset = outlineYOffset;
+				found->fishingFormationOutlineBloomIntensity = outlineBloomIntensity;
 				found->fishingFormationOutlineSegments = outlineSegments;
 				found->fishingFormationOutlineColor = outlineColor;
 				changed = true;
@@ -8780,12 +9078,16 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.texturePath = entity->spriteTexturePath;
 		component.spriteSize = entity->spriteSize;
 		component.spriteAnchor = entity->spriteAnchor;
+		component.spriteRenderSpace = "Scene2D";
+		component.spriteViewportAnchor = { 0.0f, 0.0f };
 		component.spriteColor = entity->spriteColor;
 		component.spriteFlipX = entity->spriteFlipX;
 		component.spriteFlipY = entity->spriteFlipY;
 	} else if (type == "TextRenderer") {
 		component.textValue = "Text";
 		component.textRenderSpace = "ScreenOverlay";
+		component.textFontSource = "System";
+		component.textFontResourcePath.clear();
 		component.textFontFamily = "Yu Gothic UI";
 		component.textFontSize = 32.0f;
 		component.textFontWeight = "Regular";
@@ -8818,6 +9120,8 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingWaterVolumeEntityId = 0;
 		component.fishingDurationSeconds = 60.0f;
 		component.fishingMaxSelectableFishCount = 5;
+		component.fishingConfirmInput = "ENTER";
+		component.fishingConfirmInputExpression.reset();
 		component.fishingDistanceBandCount = 5;
 		component.fishingHooksPerDistanceBand = 2;
 		component.fishingDistanceMultiplierBase = 1.0f;
@@ -8843,12 +9147,18 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 			{ 0.85f, 0.18f, 1.00f, 1.00f },
 			{ 1.00f, 0.90f, 0.45f, 1.00f }
 		};
+		component.fishingHookRanks = BuildLegacyFishingHookRanks(
+			component.fishingHookTierScoreMultipliers,
+			component.fishingHookMultiplierColors
+		);
 		component.fishingHookColorEmissiveIntensity = 0.35f;
 		component.fishingHookLegendVisible = false;
 		component.fishingHookLegendTitleTextEntityId = 0;
 		component.fishingHookLegendTextEntityIds.clear();
 		component.fishingHookLegendTitle = "HOOK BONUS";
 		component.fishingHookLegendPrefix = "x";
+		component.fishingHookLegendIconEntityIds.assign(10, 0);
+		component.fishingHookLegendIconSize = { 32.0f, 32.0f };
 		component.fishingRandomizeSeedOnPlay = true;
 		component.fishingRandomSeed = 1;
 		component.fishingFishCountTextEntityId = 0;
@@ -8864,6 +9174,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingUseFormationCapsuleCollision = false;
 		component.fishingFormationOutlineVisible = false;
 		component.fishingFormationOutlineColor = { 0.1f, 0.9f, 1.0f, 1.0f };
+		component.fishingFormationOutlineBloomIntensity = 1.0f;
 		component.fishingFormationOutlineYOffset = 0.25f;
 		component.fishingFormationOutlineSegments = 48;
 	} else if (type == "FishingHookSpawnArea") {
@@ -8995,6 +9306,8 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.playerCameraRelativeMove = true;
 		component.playerAllowJump = true;
 		component.playerAutoForward = false;
+		component.playerInputMode = "KeyboardMouse";
+		component.playerGamepadDeadzone = 0.20f;
 	} else if (type == "AgentBehavior") {
 		component.agentBehaviorName = "Agent";
 		component.agentMovementMode = "Free3D";

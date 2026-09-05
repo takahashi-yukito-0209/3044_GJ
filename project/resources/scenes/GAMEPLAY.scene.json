@@ -3572,11 +3572,13 @@
           "cameraRelativeMove": false,
           "dashMultiplier": 1.649999976158142,
           "enabled": true,
+          "gamepadDeadzone": 0.20000000298023224,
           "jumpVelocity": 37.20000076293945,
           "localId": 2,
           "moveSpeed": 19.799999237060547,
           "turnResponsiveness": 0.05000000074505806,
-          "type": "PlayerBehavior"
+          "type": "PlayerBehavior",
+          "inputMode": "Both"
         },
         {
           "active": true,
@@ -4651,6 +4653,25 @@
       "active": true,
       "components": [
         {
+          "confirmInput": "Mouse Left",
+          "confirmInputExpression": {
+            "groups": [
+              {
+                "mode": "Any",
+                "terms": [
+                  {
+                    "input": "Mouse Left",
+                    "phase": "Pressed"
+                  },
+                  {
+                    "input": "Gamepad A",
+                    "phase": "Pressed"
+                  }
+                ]
+              }
+            ],
+            "mode": "Any"
+          },
           "distanceBandCount": 5,
           "distanceMultiplierBase": 1.0,
           "distanceMultiplierStep": 0.20000000298023224,
@@ -4693,11 +4714,12 @@
           "fishMultiplierBase": 1.0,
           "fishMultiplierPerAdditionalFish": 1.0,
           "formationOutlineColor": [
-            0.10000000149011612,
-            0.8999999761581421,
+            1.0,
+            1.0,
             1.0,
             1.0
           ],
+          "formationOutlineBloomIntensity": 3.0,
           "formationOutlineSegments": 48,
           "formationOutlineVisible": true,
           "formationOutlineYOffset": 0.25,
@@ -4784,6 +4806,22 @@
             }
           ],
           "hookColorEmissiveIntensity": 0.3499999940395355,
+          "hookLegendIconEntityIds": [
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99
+          ],
+          "hookLegendIconSize": [
+            24.0,
+            24.0
+          ],
           "hookLegendPrefix": "x",
           "hookLegendTextEntityIds": [
             72,
@@ -4863,8 +4901,152 @@
             ]
           ],
           "hookPoolEntityId": 13,
+          "hookRanks": [
+            {
+              "color": [
+                0.25,
+                0.550000011920929,
+                1.0,
+                1.0
+              ],
+              "displayName": "Rank 1",
+              "iconTexturePath": "",
+              "id": "rank_1",
+              "modelPath": "",
+              "scoreMultiplier": 1.0
+            },
+            {
+              "color": [
+                0.15000000596046448,
+                0.8500000238418579,
+                1.0,
+                1.0
+              ],
+              "displayName": "Rank 2",
+              "iconTexturePath": "",
+              "id": "rank_2",
+              "modelPath": "",
+              "scoreMultiplier": 2.0
+            },
+            {
+              "color": [
+                0.20000000298023224,
+                0.949999988079071,
+                0.550000011920929,
+                1.0
+              ],
+              "displayName": "Rank 3",
+              "iconTexturePath": "",
+              "id": "rank_3",
+              "modelPath": "",
+              "scoreMultiplier": 3.0
+            },
+            {
+              "color": [
+                0.550000011920929,
+                0.949999988079071,
+                0.25,
+                1.0
+              ],
+              "displayName": "Rank 4",
+              "iconTexturePath": "",
+              "id": "rank_4",
+              "modelPath": "",
+              "scoreMultiplier": 4.0
+            },
+            {
+              "color": [
+                0.949999988079071,
+                0.8500000238418579,
+                0.20000000298023224,
+                1.0
+              ],
+              "displayName": "Rank 5",
+              "iconTexturePath": "",
+              "id": "rank_5",
+              "modelPath": "",
+              "scoreMultiplier": 5.0
+            },
+            {
+              "color": [
+                1.0,
+                0.5799999833106995,
+                0.15000000596046448,
+                1.0
+              ],
+              "displayName": "Rank 6",
+              "iconTexturePath": "",
+              "id": "rank_6",
+              "modelPath": "",
+              "scoreMultiplier": 6.0
+            },
+            {
+              "color": [
+                1.0,
+                0.30000001192092896,
+                0.11999999731779099,
+                1.0
+              ],
+              "displayName": "Rank 7",
+              "iconTexturePath": "",
+              "id": "rank_7",
+              "modelPath": "",
+              "scoreMultiplier": 7.0
+            },
+            {
+              "color": [
+                1.0,
+                0.11999999731779099,
+                0.2800000011920929,
+                1.0
+              ],
+              "displayName": "Rank 8",
+              "iconTexturePath": "",
+              "id": "rank_8",
+              "modelPath": "",
+              "scoreMultiplier": 8.0
+            },
+            {
+              "color": [
+                0.8500000238418579,
+                0.18000000715255737,
+                1.0,
+                1.0
+              ],
+              "displayName": "Rank 9",
+              "iconTexturePath": "",
+              "id": "rank_9",
+              "modelPath": "",
+              "scoreMultiplier": 9.0
+            },
+            {
+              "color": [
+                1.0,
+                0.8999999761581421,
+                0.44999998807907104,
+                1.0
+              ],
+              "displayName": "Rank 10",
+              "iconTexturePath": "",
+              "id": "rank_10",
+              "modelPath": "",
+              "scoreMultiplier": 10.0
+            }
+          ],
           "hookScoreUnit": 100.0,
           "hookSpawnAreaEntityId": 12,
+          "hookTierScoreMultipliers": [
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            5.0,
+            6.0,
+            7.0,
+            8.0,
+            9.0,
+            10.0
+          ],
           "hooksPerDistanceBand": 2,
           "localId": 1,
           "maxSelectableFishCount": 30,
@@ -4883,6 +5065,67 @@
           "useFormationCapsuleCollision": true,
           "useHookBandSettings": true,
           "waterVolumeEntityId": 3
+        },
+        {
+          "bindings": [
+            {
+              "actions": [
+                {
+                  "targetEntityId": 11,
+                  "type": "AdjustFishingFishCount",
+                  "value": 1.0
+                }
+              ],
+              "inputExpression": {
+                "groups": [
+                  {
+                    "mode": "Any",
+                    "terms": [
+                      {
+                        "input": "Gamepad DPad Up",
+                        "phase": "Pressed"
+                      }
+                    ]
+                  }
+                ],
+                "mode": "Any"
+              },
+              "targetEntityId": 11,
+              "triggerKey": "Gamepad DPad Up",
+              "triggerType": "OnKeyPressed",
+              "triggerOnce": false
+            },
+            {
+              "actions": [
+                {
+                  "targetEntityId": 11,
+                  "type": "AdjustFishingFishCount",
+                  "value": -1.0
+                }
+              ],
+              "inputExpression": {
+                "groups": [
+                  {
+                    "mode": "Any",
+                    "terms": [
+                      {
+                        "input": "Gamepad DPad Down",
+                        "phase": "Pressed"
+                      }
+                    ]
+                  }
+                ],
+                "mode": "Any"
+              },
+              "targetEntityId": 11,
+              "triggerKey": "Gamepad DPad Down",
+              "triggerType": "OnKeyPressed",
+              "triggerOnce": false
+            }
+          ],
+          "enabled": true,
+          "localId": 2,
+          "type": "EventTrigger"
         }
       ],
       "folder": false,
@@ -10912,7 +11155,7 @@
       }
     },
     {
-      "active": true,
+      "active": false,
       "components": [
         {
           "bgmFadeSeconds": 0.5,
@@ -10938,6 +11181,101 @@
       "folder": false,
       "folderTeamEnabled": false,
       "id": 87,
+      "locked": false,
+      "modelPath": "",
+      "name": "Sound",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "enabled": false,
+          "localId": 1,
+          "targetSceneId": "result",
+          "triggerKey": "ENTER",
+          "triggerType": "Key",
+          "type": "SceneTransition"
+        },
+        {
+          "bindings": [
+            {
+              "actions": [
+                {
+                  "sceneId": "result",
+                  "type": "SceneTransition"
+                }
+              ],
+              "inputExpression": {
+                "groups": [
+                  {
+                    "mode": "Any",
+                    "terms": [
+                      {
+                        "input": "ENTER",
+                        "phase": "Pressed"
+                      },
+                      {
+                        "input": "Gamepad A",
+                        "phase": "Pressed"
+                      }
+                    ]
+                  }
+                ],
+                "mode": "Any"
+              },
+              "targetEntityId": 11,
+              "triggerKey": "ENTER",
+              "triggerType": "OnFishingScoreAttackResultInput",
+              "triggerOnce": false
+            }
+          ],
+          "enabled": true,
+          "localId": 2,
+          "type": "EventTrigger"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 89,
       "locked": false,
       "modelPath": "",
       "name": "Entity",
@@ -10985,21 +11323,40 @@
       "active": true,
       "components": [
         {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
           "enabled": true,
+          "flipX": false,
+          "flipY": false,
           "localId": 1,
-          "targetSceneId": "gameplay",
-          "triggerKey": "ENTER",
-          "triggerType": "Key",
-          "type": "SceneTransition"
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
         }
       ],
       "folder": false,
       "folderTeamEnabled": false,
-      "id": 89,
+      "id": 90,
       "locked": false,
       "modelPath": "",
-      "name": "Entity",
-      "parentId": 0,
+      "name": "Fishing Hook Legend Icon 1",
+      "parentId": 86,
       "sprite": {
         "anchor": [
           0.5,
@@ -11014,8 +11371,8 @@
         "flipX": false,
         "flipY": false,
         "size": [
-          100.0,
-          100.0
+          24.0,
+          24.0
         ],
         "texturePath": ""
       },
@@ -11033,8 +11390,701 @@
           1.0
         ],
         "translate": [
+          -145.0,
+          -171.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 91,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 2",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
           0.0,
           0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -145.0,
+          -139.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 92,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 3",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -145.0,
+          -107.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 93,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 4",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -145.0,
+          -75.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 94,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 5",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -145.0,
+          -43.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 95,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 6",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -57.0,
+          -171.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 96,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 7",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -57.0,
+          -139.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 97,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 8",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -57.0,
+          -107.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 98,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 9",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -57.0,
+          -75.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            24.0,
+            24.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 99,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Legend Icon 10",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          24.0,
+          24.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -57.0,
+          -43.0,
           0.0
         ]
       }
@@ -11128,7 +12178,7 @@
       0.6800000071525574,
       1.0
     ],
-    "vignetteEnabled": true,
+    "vignetteEnabled": false,
     "vignetteIntensity": 0.9190000295639038,
     "vignettePower": 0.800000011920929,
     "vignetteScale": 16.0,

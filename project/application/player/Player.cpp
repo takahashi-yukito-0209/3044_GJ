@@ -58,20 +58,43 @@ void Player::Update(
 		return;
 	}
 	const float dt = std::clamp(deltaTime, 0.0f, 0.1f);
-	Vector3 inputMove{};
 	Input* input = acceptGameplayInput ? Input::GetInstance() : nullptr;
+	const bool allowKeyboardMouse = inputMode_ != "Gamepad";
+	const bool allowGamepad = inputMode_ == "Gamepad" || inputMode_ == "Both";
+	Vector3 keyboardMove{};
+	if (input && allowKeyboardMouse && input->PushKey(DIK_W)) {
+		keyboardMove.x += 1.0f;
+	}
+	if (input && allowKeyboardMouse && input->PushKey(DIK_S)) {
+		keyboardMove.x -= 1.0f;
+	}
+	if (input && allowKeyboardMouse && input->PushKey(DIK_A)) {
+		keyboardMove.z += 1.0f;
+	}
+	if (input && allowKeyboardMouse && input->PushKey(DIK_D)) {
+		keyboardMove.z -= 1.0f;
+	}
 
-	if (input && input->PushKey(DIK_W)) {
-		inputMove.x += 1.0f;
+	Vector3 gamepadMove{};
+	if (input && allowGamepad) {
+		const Vector2 stick = input->GetGamepadLeftStick(gamepadDeadzone_);
+		// Existing Player axes are W/S = +X/-X and A/D = +Z/-Z.
+		gamepadMove.x = stick.y;
+		gamepadMove.z = -stick.x;
 	}
-	if (input && input->PushKey(DIK_S)) {
-		inputMove.x -= 1.0f;
-	}
-	if (input && input->PushKey(DIK_A)) {
-		inputMove.z += 1.0f;
-	}
-	if (input && input->PushKey(DIK_D)) {
-		inputMove.z -= 1.0f;
+
+	Vector3 inputMove{};
+	const float keyboardLength = Math::Length(keyboardMove);
+	const float gamepadLength = Math::Length(gamepadMove);
+	if (keyboardLength > 0.000001f && gamepadLength > 0.000001f) {
+		inputMove = input->GetLastActiveInputDevice() ==
+			Input::InputDeviceKind::Gamepad
+			? gamepadMove
+			: keyboardMove;
+	} else if (keyboardLength > 0.000001f) {
+		inputMove = keyboardMove;
+	} else if (gamepadLength > 0.000001f) {
+		inputMove = gamepadMove;
 	}
 
 	Vector3 desiredVelocity = physicsBody_.velocity;
@@ -82,7 +105,10 @@ void Player::Update(
 	const Vector3 movementForward = { 0.0f, 0.0f, 1.0f };
 
 	const bool dash =
-		input && (input->PushKey(DIK_LSHIFT) || input->PushKey(DIK_RSHIFT));
+		(input && allowKeyboardMouse &&
+			(input->PushKey(DIK_LSHIFT) || input->PushKey(DIK_RSHIFT))) ||
+		(input && allowGamepad &&
+			input->PushGamepad(Input::GamepadButton::LeftShoulder));
 	const float speedMultiplier = dash ? dashMultiplier_ : 1.0f;
 
 	const float inputLength = Math::Length(inputMove);
@@ -152,8 +178,8 @@ void Player::Update(
 	}
 
 	if (acceptGameplayInput && inWater_) {
-		const bool swimUp = input && input->PushKey(DIK_SPACE);
-		const bool swimDown = input && input->PushKey(DIK_LCONTROL);
+		const bool swimUp = input && allowKeyboardMouse && input->PushKey(DIK_SPACE);
+		const bool swimDown = input && allowKeyboardMouse && input->PushKey(DIK_LCONTROL);
 		if (swimUp) {
 			desiredVelocity.y = waterSwimUpSpeed_ * speedMultiplier;
 			physicsBody_.isGrounded = false;
@@ -167,7 +193,8 @@ void Player::Update(
 				waterSwimUpSpeed_ * 0.35f * speedMultiplier
 			);
 		}
-	} else if (input && allowJump_ && physicsBody_.isGrounded && input->TriggerKey(DIK_SPACE)) {
+	} else if (input && allowKeyboardMouse && allowJump_ &&
+		physicsBody_.isGrounded && input->TriggerKey(DIK_SPACE)) {
 		desiredVelocity.y = jumpVelocity_;
 		physicsBody_.isGrounded = false;
 	}
@@ -239,6 +266,28 @@ bool Player::RestorePlanarPose(const Vector3& position, float yaw) {
 	position_.z = position.z;
 	physicsBody_.velocity.x = 0.0f;
 	physicsBody_.velocity.z = 0.0f;
+	object_->SetRotate({ 0.0f, yaw, 0.0f });
+	targetYaw_ = yaw;
+	ApplyPosition();
+	object_->Update();
+	return true;
+}
+
+bool Player::ApplyPlanarMotionConstraint(
+	const Vector3& position,
+	float yaw,
+	const Vector3& velocity
+) {
+	if (!object_ ||
+		!std::isfinite(position.x) || !std::isfinite(position.z) ||
+		!std::isfinite(yaw) ||
+		!std::isfinite(velocity.x) || !std::isfinite(velocity.z)) {
+		return false;
+	}
+	position_.x = position.x;
+	position_.z = position.z;
+	physicsBody_.velocity.x = velocity.x;
+	physicsBody_.velocity.z = velocity.z;
 	object_->SetRotate({ 0.0f, yaw, 0.0f });
 	targetYaw_ = yaw;
 	ApplyPosition();
@@ -325,6 +374,24 @@ void Player::SetBehaviorSettings(
 		targetYaw_ = GetYaw();
 	}
 	autoForward_ = autoForward;
+}
+
+void Player::SetInputDeviceSettings(
+	const std::string& inputMode,
+	float gamepadDeadzone
+) {
+	if (
+		inputMode == "KeyboardMouse" ||
+		inputMode == "Gamepad" ||
+		inputMode == "Both"
+	) {
+		inputMode_ = inputMode;
+	} else {
+		inputMode_ = "KeyboardMouse";
+	}
+	gamepadDeadzone_ = std::isfinite(gamepadDeadzone)
+		? std::clamp(gamepadDeadzone, 0.0f, 0.95f)
+		: 0.20f;
 }
 
 void Player::SetWaterState(

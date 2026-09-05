@@ -557,7 +557,9 @@ void RuntimeScene::Update(float deltaTime)
 			*activeDocument,
 			runtimeObjectBindings_,
 			agentSystem_,
-			true
+			true,
+			gameplayDeltaTime,
+			player_ ? player_->GetPhysicsBody().velocity : Vector3{}
 		);
 		SceneFishingScoreAttackPlayerConstraintRequest constraintRequest{};
 		if (
@@ -569,9 +571,10 @@ void RuntimeScene::Update(float deltaTime)
 			);
 			if (
 				playerEntity &&
-				player_->RestorePlanarPose(
+				player_->ApplyPlanarMotionConstraint(
 					constraintRequest.planarPosition,
-					constraintRequest.yaw
+					constraintRequest.yaw,
+					constraintRequest.planarVelocity
 				)
 			) {
 				SynchronizeSceneTransform(
@@ -653,6 +656,19 @@ void RuntimeScene::Update(float deltaTime)
 			hitReactionSystem_.ConsumeDeathEffectRequests()
 		);
 	}
+	objectSystem_.ClearSpriteOverrides();
+	if (activeDocument) {
+		for (const SceneFishingScoreAttackIconRequest& request :
+			fishingScoreAttackSystem_.GetIconRequests()) {
+			objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
+				request.entityId,
+				request.texturePath,
+				request.size,
+				{ 1.0f, 1.0f, 1.0f, 1.0f },
+				request.visible
+			});
+		}
+	}
 	objectSystem_.SyncSprites(activeDocument);
 	if (activeDocument) {
 		cameraSystem_.UpdateAfterSimulation(
@@ -698,7 +714,8 @@ void RuntimeScene::Update(float deltaTime)
 		const SceneEventRuntimeSignals eventSignals{
 			cameraSystem_.ConsumeCompletedCameraPathEntityId(),
 			audioSystem_.ConsumeFinishedEntityIds(*activeDocument),
-			textMotionSystem_.ConsumeCompletions()
+			textMotionSystem_.ConsumeCompletions(),
+			fishingScoreAttackSystem_.GetResultInputReadyDirectorEntityId()
 		};
 		const SceneEventResult eventResult = eventSystem_.Update(
 			*activeDocument,
@@ -713,6 +730,13 @@ void RuntimeScene::Update(float deltaTime)
 				eventResult.sceneTransitionId
 			);
 			return;
+		}
+		for (const SceneFishingFishCountRequest& request :
+			eventResult.fishingFishCountRequests) {
+			fishingScoreAttackSystem_.QueueFishCountAdjustment(
+				request.directorEntityId,
+				request.delta
+			);
 		}
 		for (const SceneTextMotionRequest& request : eventResult.textMotionRequests) {
 			if (request.type == SceneTextMotionRequestType::Play) {
@@ -887,6 +911,7 @@ bool RuntimeScene::HasScreenOverlay() const
 		document &&
 		(
 			miniMapSystem_.HasScreenOverlay(document) ||
+			objectSystem_.HasScreenOverlaySprites(*document) ||
 			textRenderSystem_.HasScreenOverlay(*document)
 		);
 }
@@ -896,6 +921,7 @@ void RuntimeScene::DrawScreenOverlay(uint32_t width, uint32_t height)
 	SceneDocument* document = GetSceneDocument();
 	if (document) {
 		miniMapSystem_.DrawScreenOverlay(document, width, height);
+		objectSystem_.DrawScreenOverlaySprites(*document, width, height);
 		textRenderSystem_.DrawScreenOverlay(*document, width, height);
 	}
 }

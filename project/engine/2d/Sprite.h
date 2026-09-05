@@ -35,6 +35,7 @@ public://公開メンバ関数
 	void Initialize(SpriteCommon* spriteCommon,std::string textureFilePath);
 	//更新処理
 	void Update();
+	void Update(uint32_t viewportWidth, uint32_t viewportHeight);
 	//描画処理
 	void Draw();
 

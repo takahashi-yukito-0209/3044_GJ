@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -114,9 +115,25 @@ struct SceneEventAction {
 	std::string textMotionClipId;
 };
 
+struct SceneInputTerm {
+	std::string input;
+	std::string phase = "Pressed";
+};
+
+struct SceneInputGroup {
+	std::string mode = "Any";
+	std::vector<SceneInputTerm> terms;
+};
+
+struct SceneInputExpression {
+	std::string mode = "Any";
+	std::vector<SceneInputGroup> groups;
+};
+
 struct SceneEventBinding {
 	std::string triggerType = "OnStart";
 	std::string triggerKey;
+	std::optional<SceneInputExpression> inputExpression;
 	uint64_t targetEntityId = 0;
 	std::string targetEntityName;
 	std::string statId = "hp";
@@ -323,6 +340,16 @@ struct SceneFishingHookPoolEntry {
 	std::vector<float> weightsByDistanceBand;
 };
 
+// 釣り針の抽選ランクに紐づく、外部参照可能な安定IDと表示／表示モデル設定。
+struct SceneFishingHookRankDefinition {
+	std::string id;
+	std::string displayName;
+	std::string modelPath;
+	std::string iconTexturePath;
+	float scoreMultiplier = 1.0f;
+	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+};
+
 struct SceneFishingHookBandSettings {
 	float distanceMultiplier = 1.0f;
 	int hookCount = 0;
@@ -352,11 +379,15 @@ struct SceneComponent {
 	float environmentReflectionIntensity = 0.3f;
 	Vector2 spriteSize = { 100.0f, 100.0f };
 	Vector2 spriteAnchor = { 0.5f, 0.5f };
+	std::string spriteRenderSpace = "Scene2D";
+	Vector2 spriteViewportAnchor = { 0.0f, 0.0f };
 	Vector4 spriteColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 	bool spriteFlipX = false;
 	bool spriteFlipY = false;
 	std::string textValue = "Text";
 	std::string textRenderSpace = "ScreenOverlay";
+	std::string textFontSource = "System";
+	std::string textFontResourcePath;
 	std::string textFontFamily = "Yu Gothic UI";
 	float textFontSize = 32.0f;
 	std::string textFontWeight = "Regular";
@@ -412,6 +443,8 @@ struct SceneComponent {
 	uint64_t fishingWaterVolumeEntityId = 0;
 	float fishingDurationSeconds = 60.0f;
 	int fishingMaxSelectableFishCount = 5;
+	std::string fishingConfirmInput = "ENTER";
+	std::optional<SceneInputExpression> fishingConfirmInputExpression;
 	int fishingDistanceBandCount = 5;
 	int fishingHooksPerDistanceBand = 2;
 	float fishingDistanceMultiplierBase = 1.0f;
@@ -421,6 +454,7 @@ struct SceneComponent {
 	float fishingHookScoreUnit = 100.0f;
 	float fishingFishMultiplierBase = 1.0f;
 	float fishingFishMultiplierPerAdditionalFish = 1.0f;
+	std::vector<SceneFishingHookRankDefinition> fishingHookRanks;
 	std::vector<float> fishingHookTierScoreMultipliers = {
 		1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
 		6.0f, 7.0f, 8.0f, 9.0f, 10.0f
@@ -432,6 +466,8 @@ struct SceneComponent {
 	std::vector<uint64_t> fishingHookLegendTextEntityIds;
 	std::string fishingHookLegendTitle = "HOOK BONUS";
 	std::string fishingHookLegendPrefix = "x";
+	std::vector<uint64_t> fishingHookLegendIconEntityIds;
+	Vector2 fishingHookLegendIconSize = { 32.0f, 32.0f };
 	bool fishingRandomizeSeedOnPlay = true;
 	int fishingRandomSeed = 1;
 	uint64_t fishingFishCountTextEntityId = 0;
@@ -447,6 +483,7 @@ struct SceneComponent {
 	bool fishingUseFormationCapsuleCollision = false;
 	bool fishingFormationOutlineVisible = false;
 	Vector4 fishingFormationOutlineColor = { 0.1f, 0.9f, 1.0f, 1.0f };
+	float fishingFormationOutlineBloomIntensity = 1.0f;
 	float fishingFormationOutlineYOffset = 0.25f;
 	int fishingFormationOutlineSegments = 48;
 	float fishingSpawnHalfSizeX = 10.0f;
@@ -572,6 +609,8 @@ struct SceneComponent {
 	bool playerCameraRelativeMove = true;
 	bool playerAllowJump = true;
 	bool playerAutoForward = false;
+	std::string playerInputMode = "KeyboardMouse";
+	float playerGamepadDeadzone = 0.20f;
 	std::string agentBehaviorName = "Fish";
 	// Free3Dは既存の遊泳群制御、GroundXZはEnemyBehaviorの速度へ離隔だけを加える。
 	std::string agentMovementMode = "Free3D";

@@ -338,6 +338,7 @@ private:
 	void DrawHierarchyWindow(const char* sceneName);
 	void DrawInspectorWindow();
 	void DrawFishingScoreAttackConsoleWindow();
+	void DrawInputSettingsWindow();
 	void StopAudioPreview();
 	void DrawSceneComponentPicker();
 	void DrawPrefabComponentPicker();
@@ -513,6 +514,7 @@ private:
 	bool showProject_ = true;
 	bool showConsole_ = true;
 	bool showFishingScoreAttackConsole_ = true;
+	bool showInputSettings_ = true;
 	bool showLoadedScenes_ = true;
 	bool showPrefab_ = false;
 	bool showPrefabInspector_ = true;

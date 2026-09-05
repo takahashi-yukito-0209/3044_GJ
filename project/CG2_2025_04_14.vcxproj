@@ -199,6 +199,7 @@
     <ClCompile Include="application\Game.cpp" />
     <ClCompile Include="application\PrefabPreviewRenderer.cpp" />
     <ClCompile Include="application\scene\RuntimeScene.cpp" />
+    <ClCompile Include="application\scene\SceneRuntimeInput.cpp" />
     <ClCompile Include="application\scene\system\SceneAgentSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneAttachmentSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneCameraSystem.cpp" />
@@ -210,6 +211,7 @@
 	<ClCompile Include="application\scene\system\SceneTextMotionSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneGameFlowSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneFishingScoreAttackSystem.cpp" />
+	<ClCompile Include="application\scene\system\FishingFormationMotion.cpp" />
 	<ClCompile Include="application\scene\system\SceneAudioSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneDebugSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneEnemySystem.cpp" />
@@ -250,6 +252,7 @@
     <ClCompile Include="engine\2d\SpriteCommon.cpp" />
 	<ClCompile Include="engine\2d\TextSprite.cpp" />
 	<ClCompile Include="engine\text\TextRasterizer.cpp" />
+	<ClCompile Include="engine\text\TextFontRegistry.cpp" />
     <ClCompile Include="engine\3d\SrvManager.cpp" />
     <ClCompile Include="engine\utility\StringUtility.cpp" />
     <ClCompile Include="engine\2d\TextureManager.cpp" />
@@ -434,6 +437,7 @@
     <ClInclude Include="engine\2d\SpriteCommon.h" />
 	<ClInclude Include="engine\2d\TextSprite.h" />
 	<ClInclude Include="engine\text\TextRasterizer.h" />
+	<ClInclude Include="engine\text\TextFontRegistry.h" />
     <ClInclude Include="engine\3d\SrvManager.h" />
     <ClInclude Include="engine\utility\StringUtility.h" />
     <ClInclude Include="engine\2d\TextureManager.h" />
@@ -462,6 +466,7 @@
     <ClInclude Include="application\Game.h" />
     <ClInclude Include="application\PrefabPreviewRenderer.h" />
     <ClInclude Include="application\scene\RuntimeScene.h" />
+    <ClInclude Include="application\scene\SceneRuntimeInput.h" />
     <ClInclude Include="application\scene\SceneRuntimeObjectBinding.h" />
     <ClInclude Include="application\scene\system\SceneAgentSystem.h" />
     <ClInclude Include="application\scene\system\SceneAttachmentSystem.h" />
@@ -474,6 +479,7 @@
 	<ClInclude Include="application\scene\system\SceneTextMotionSystem.h" />
 	<ClInclude Include="application\scene\system\SceneGameFlowSystem.h" />
 	<ClInclude Include="application\scene\system\SceneFishingScoreAttackSystem.h" />
+	<ClInclude Include="application\scene\system\FishingFormationMotion.h" />
 	<ClInclude Include="application\scene\system\SceneAudioSystem.h" />
     <ClInclude Include="application\scene\system\SceneDebugSystem.h" />
     <ClInclude Include="application\scene\system\SceneEnemySystem.h" />

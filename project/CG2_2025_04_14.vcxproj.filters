@@ -53,6 +53,7 @@
     <ClCompile Include="engine\2d\SpriteCommon.cpp" />
 	<ClCompile Include="engine\2d\TextSprite.cpp" />
 	<ClCompile Include="engine\text\TextRasterizer.cpp" />
+	<ClCompile Include="engine\text\TextFontRegistry.cpp" />
     <ClCompile Include="engine\utility\StringUtility.cpp" />
     <ClCompile Include="engine\2d\TextureManager.cpp" />
     <ClCompile Include="engine\base\WinApp.cpp" />
@@ -126,6 +127,9 @@
     <ClCompile Include="application\scene\RuntimeScene.cpp">
       <Filter>Application\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="application\scene\SceneRuntimeInput.cpp">
+      <Filter>Application\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="application\scene\system\SceneAgentSystem.cpp">
       <Filter>Application\Scene\System</Filter>
     </ClCompile>
@@ -157,6 +161,9 @@
 		<Filter>Application\Scene\System</Filter>
 	</ClCompile>
 	<ClCompile Include="application\scene\system\SceneFishingScoreAttackSystem.cpp">
+		<Filter>Application\Scene\System</Filter>
+	</ClCompile>
+	<ClCompile Include="application\scene\system\FishingFormationMotion.cpp">
 		<Filter>Application\Scene\System</Filter>
 	</ClCompile>
 	<ClCompile Include="application\scene\system\SceneAudioSystem.cpp">
@@ -328,6 +335,7 @@
     <ClInclude Include="engine\2d\SpriteCommon.h" />
 	<ClInclude Include="engine\2d\TextSprite.h" />
 	<ClInclude Include="engine\text\TextRasterizer.h" />
+	<ClInclude Include="engine\text\TextFontRegistry.h" />
     <ClInclude Include="engine\utility\StringUtility.h" />
     <ClInclude Include="engine\2d\TextureManager.h" />
 	<ClInclude Include="engine\2d\TextureFormat.h" />
@@ -410,6 +418,9 @@
     <ClInclude Include="application\scene\RuntimeScene.h">
       <Filter>Application\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="application\scene\SceneRuntimeInput.h">
+      <Filter>Application\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="application\scene\SceneRuntimeObjectBinding.h">
       <Filter>Application\Scene</Filter>
     </ClInclude>
@@ -444,6 +455,9 @@
 		<Filter>Application\Scene\System</Filter>
 	</ClInclude>
 	<ClInclude Include="application\scene\system\SceneFishingScoreAttackSystem.h">
+		<Filter>Application\Scene\System</Filter>
+	</ClInclude>
+	<ClInclude Include="application\scene\system\FishingFormationMotion.h">
 		<Filter>Application\Scene\System</Filter>
 	</ClInclude>
 	<ClInclude Include="application\scene\system\SceneAudioSystem.h">

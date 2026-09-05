@@ -6,6 +6,8 @@
 #include "../../engine/math/Vector3.h"
 #include "../../engine/math/Transform.h"
 
+#include <string>
+
 class Object3d;
 class Object3dCommon;
 class Camera;
@@ -33,6 +35,11 @@ public:
 	void SetTransform(const Transform& transform);
 	bool RestorePlanarPosition(const Vector3& position);
 	bool RestorePlanarPose(const Vector3& position, float yaw);
+	bool ApplyPlanarMotionConstraint(
+		const Vector3& position,
+		float yaw,
+		const Vector3& velocity
+	);
 	bool ClampToWaterBounds(
 		const Vector3& center,
 		float yaw,
@@ -47,6 +54,10 @@ public:
 		bool cameraRelativeMove,
 		bool allowJump,
 		bool autoForward
+	);
+	void SetInputDeviceSettings(
+		const std::string& inputMode,
+		float gamepadDeadzone
 	);
 	void SetWaterState(
 		bool inWater,
@@ -75,4 +86,6 @@ private:
 	float waterSwimUpSpeed_ = 12.0f;
 	float targetYaw_ = 0.0f;
 	bool autoForward_ = false;
+	std::string inputMode_ = "KeyboardMouse";
+	float gamepadDeadzone_ = 0.20f;
 };
