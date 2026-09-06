@@ -208,7 +208,9 @@ float4 main(VertexShaderOutput input) : SV_TARGET0
 
     const float time = gParameters.cameraUpTime.w;
     const float refractionStrength = max(gParameters.waterRefractionParams.x, 0.0f);
-    const float tintStrength = saturate(gParameters.waterRefractionParams.y);
+    // 水の中を通る距離に応じて色を吸収する。これにより浅瀬は
+    // 見通せるまま、深い場所だけが自然な青緑へ沈む。
+    const float tintDensity = max(gParameters.waterRefractionParams.y, 0.0f);
     const float2 requestedOffset =
         WaveOffset(input.texcoord, time) * refractionStrength;
 
@@ -270,10 +272,11 @@ float4 main(VertexShaderOutput input) : SV_TARGET0
     }
 
     const float4 refractedColor = gTexture.Sample(gSampler, refractedUv);
+    const float tintAmount = 1.0f - exp(-thickness * tintDensity * 0.035f);
     const float3 tintedColor = lerp(
         refractedColor.rgb,
         gParameters.waterRefractionTintColor.rgb,
-        tintStrength * coverage
+        saturate(tintAmount) * coverage
     );
 
     return float4(
