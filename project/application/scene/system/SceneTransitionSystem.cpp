@@ -46,7 +46,7 @@ namespace {
 	}
 }
 
-std::string SceneTransitionSystem::Update(
+SceneTransitionRequest SceneTransitionSystem::Update(
 	const SceneDocument& document
 ) const {
 	Input* input = Input::GetInstance();
@@ -72,7 +72,10 @@ std::string SceneTransitionSystem::Update(
 			transition->sceneTransitionTriggerKey,
 			keyCode
 		) && input->TriggerKey(keyCode)) {
-			return transition->sceneTransitionTargetSceneId;
+			return {
+				transition->sceneTransitionTargetSceneId,
+				transition->sceneTransitionUseEffect
+			};
 		}
 	}
 	return {};

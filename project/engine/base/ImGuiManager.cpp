@@ -910,6 +910,7 @@ namespace {
 			, { "Reference Name", "参照名" }, { "Target Scene Id", "対象Scene ID" }
 			, { "Target Instance Key", "対象Instance Key" }, { "Target Scene", "対象Scene" }
 			, { "Trigger Key", "Triggerキー" }, { "Play On Start", "開始時に再生" }
+			, { "Use Transition Effect", "切り替え演出を使用" }
 			, { "Loop", "繰り返す" }, { "Default Clip Index", "既定Clip番号" }
 			, { "Transition Duration", "切替時間" }, { "Blend Curve", "Blend Curve" }
 			, { "Clip Name", "Clip名" }, { "Duration", "時間" }
@@ -10948,6 +10949,10 @@ void ImGuiManager::DrawInspectorWindow() {
 					}
 					ImGui::EndCombo();
 				}
+				transitionChanged |= ImGui::Checkbox(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Use Transition Effect"),
+					&component.sceneTransitionUseEffect
+				);
 				if (transitionChanged) {
 					document.MarkDirty();
 				}
@@ -12307,6 +12312,10 @@ void ImGuiManager::DrawInspectorWindow() {
 								} else if (action.type == "SceneTransition") {
 									eventsChanged |= InputTextString(
 										LocalizedComponentWidgetLabel(editorLanguage_, "Scene Id"), action.sceneId
+									);
+									eventsChanged |= ImGui::Checkbox(
+										LocalizedComponentWidgetLabel(editorLanguage_, "Use Transition Effect"),
+										&action.sceneTransitionUseEffect
 									);
 								} else if (
 									action.type == "PlayCameraPath" ||

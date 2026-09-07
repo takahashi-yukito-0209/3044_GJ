@@ -105,6 +105,7 @@ struct SceneEventAction {
 	float value = 0.0f;
 	bool active = true;
 	std::string sceneId;
+	bool sceneTransitionUseEffect = true;
 	std::string prefabPath;
 	bool prefabParentToTarget = false;
 	bool prefabUseTargetTransform = true;
@@ -764,6 +765,7 @@ struct SceneComponent {
 	std::string sceneTransitionTargetSceneId = "gameplay";
 	std::string sceneTransitionTriggerType = "Key";
 	std::string sceneTransitionTriggerKey = "ENTER";
+	bool sceneTransitionUseEffect = true;
 	std::string cameraPathTargetCameraName;
 	std::string cameraPathTriggerType = "Key";
 	std::string cameraPathTriggerKey = "C";

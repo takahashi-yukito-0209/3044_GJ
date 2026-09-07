@@ -17,13 +17,17 @@ void SceneManager::ChangeScene(const std::string& sceneId) {
 	LoadScene(sceneId, SceneLoadMode::Single);
 }
 
-void SceneManager::RequestSceneTransition(const std::string& sceneId)
+void SceneManager::RequestSceneTransition(const std::string& sceneId, bool useEffect)
 {
 	if (
 		sceneId.empty() ||
 		sceneTransitionPhase_ != SceneTransitionPhase::None ||
 		pendingSceneInstance_
 	) {
+		return;
+	}
+	if (!useEffect) {
+		LoadScene(sceneId, SceneLoadMode::Single);
 		return;
 	}
 	sceneTransitionTargetId_ = sceneId;
