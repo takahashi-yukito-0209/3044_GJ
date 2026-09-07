@@ -48,6 +48,12 @@ public:
 	bool IsPlaying() const override { return state_ == EditorPlayState::Playing; }
 	bool IsPaused() const override { return state_ == EditorPlayState::Paused; }
 	bool IsEditing() const override { return state_ == EditorPlayState::Edit; }
+	SceneRuntimeSessionState& GetRuntimeSessionState() override {
+		return runtimeSessionState_;
+	}
+	const SceneRuntimeSessionState& GetRuntimeSessionState() const override {
+		return runtimeSessionState_;
+	}
 
 	SceneDocument& GetEditDocument() { return editDocument_; }
 	const SceneDocument& GetEditDocument() const { return editDocument_; }
@@ -78,6 +84,7 @@ private:
 	bool reloadRequested_ = false;
 	bool editFrameActive_ = false;
 	uint64_t frameStartRevision_ = 0;
+	SceneRuntimeSessionState runtimeSessionState_;
 	std::vector<SceneDocument> undoStack_;
 	std::vector<SceneDocument> redoStack_;
 };

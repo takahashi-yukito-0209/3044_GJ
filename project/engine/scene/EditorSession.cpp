@@ -13,6 +13,7 @@ bool EditorSession::Initialize(
 	const std::string& sceneName,
 	const std::string& sceneFilePath
 ) {
+	runtimeSessionState_.Clear();
 	editSceneId_ = sceneId;
 	editSceneFilePath_ = sceneFilePath;
 	runtimeSceneId_.clear();
@@ -97,6 +98,7 @@ void EditorSession::Play() {
 	if (state_ != EditorPlayState::Edit) {
 		return;
 	}
+	runtimeSessionState_.Clear();
 	runtimeDocument_ = editDocument_;
 	runtimeDocument_.MarkClean();
 	runtimeSceneId_ = editSceneId_;
@@ -122,6 +124,7 @@ void EditorSession::Stop() {
 		return;
 	}
 	state_ = EditorPlayState::Edit;
+	runtimeSessionState_.Clear();
 	runtimeDocument_.Clear();
 	runtimeSceneId_.clear();
 	runtimeSceneFilePath_.clear();

@@ -260,6 +260,9 @@
     <ClCompile Include="engine\scene\RuntimeSession.cpp">
       <Filter>Engine\Scene</Filter>
     </ClCompile>
+	<ClCompile Include="engine\scene\SceneRuntimeSessionState.cpp">
+	  <Filter>Engine\Scene</Filter>
+	</ClCompile>
     <ClCompile Include="engine\scene\SceneDocumentMigrator.cpp">
       <Filter>Engine\Scene</Filter>
     </ClCompile>
@@ -567,6 +570,9 @@
     <ClInclude Include="engine\scene\RuntimeSession.h">
       <Filter>Engine\Scene</Filter>
     </ClInclude>
+	<ClInclude Include="engine\scene\SceneRuntimeSessionState.h">
+	  <Filter>Engine\Scene</Filter>
+	</ClInclude>
     <ClInclude Include="engine\scene\SceneDocumentMigrator.h">
       <Filter>Engine\Scene</Filter>
     </ClInclude>

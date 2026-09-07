@@ -25,10 +25,17 @@ public:
 	bool IsEditing() const override { return false; }
 	bool IsPlaying() const override { return true; }
 	bool IsPaused() const override { return false; }
+	SceneRuntimeSessionState& GetRuntimeSessionState() override {
+		return runtimeSessionState_;
+	}
+	const SceneRuntimeSessionState& GetRuntimeSessionState() const override {
+		return runtimeSessionState_;
+	}
 
 private:
 	SceneDocument document_;
 	std::string sceneId_;
 	std::string sceneFilePath_;
 	std::string lastLoadError_;
+	SceneRuntimeSessionState runtimeSessionState_;
 };

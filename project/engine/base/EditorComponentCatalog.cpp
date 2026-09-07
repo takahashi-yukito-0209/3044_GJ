@@ -394,6 +394,15 @@ namespace {
 			EditorComponentTagBit(EditorComponentTag::UI)
 		},
 		{
+			"FishingResultTracker", "釣り結果トラッカー", "Fishing Result Tracker",
+			"釣り針ランク別の結果集計先と同率時の選択規則を保持します。",
+			"Stores the fishing result channel and tie-break policy for rank outcomes.",
+			EditorComponentCategory::Gameplay,
+			SceneContext, 34, -1, "FishingScoreAttackDirector",
+			EditorComponentTagBit(EditorComponentTag::UI) |
+			EditorComponentTagBit(EditorComponentTag::Reference)
+		},
+		{
 			"FishingHookSpawnArea", "釣り針生成範囲", "Fishing Hook Spawn Area",
 			"釣り針をランダム生成するXZ範囲を設定します。",
 			"Configures the XZ area used to randomly place fishing hooks.",

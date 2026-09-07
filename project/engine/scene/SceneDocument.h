@@ -150,6 +150,8 @@ struct SceneEventConditionTerm {
 	std::string stateName;
 	std::string pauseProfileId;
 	std::string pauseRequestId;
+	std::string fishingResultChannelId;
+	std::string fishingResultRankId;
 	bool active = true;
 	Vector3 position{};
 	float radius = 1.0f;
@@ -173,6 +175,7 @@ struct SceneEventBinding {
 	uint64_t targetEntityId = 0;
 	std::string targetEntityName;
 	std::string stateName;
+	std::string fishingResultChannelId;
 	std::string statId = "hp";
 	std::string statComparison = "LessOrEqual";
 	float statValue = 0.0f;
@@ -496,6 +499,7 @@ struct SceneComponent {
 	float fishingFishMultiplierBase = 1.0f;
 	float fishingFishMultiplierPerAdditionalFish = 1.0f;
 	std::vector<SceneFishingHookRankDefinition> fishingHookRanks;
+	int fishingHookRankCount = 10;
 	std::vector<float> fishingHookTierScoreMultipliers = {
 		1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
 		6.0f, 7.0f, 8.0f, 9.0f, 10.0f
@@ -509,6 +513,11 @@ struct SceneComponent {
 	std::string fishingHookLegendPrefix = "x";
 	std::vector<uint64_t> fishingHookLegendIconEntityIds;
 	Vector2 fishingHookLegendIconSize = { 32.0f, 32.0f };
+	bool fishingHookLegendAutoLayout = false;
+	Vector2 fishingHookLegendLayoutCenter = { -68.0f, -96.0f };
+	float fishingHookLegendColumnSpacing = 88.0f;
+	float fishingHookLegendRowSpacing = 32.0f;
+	Vector2 fishingHookLegendIconOffset = { -33.0f, -11.0f };
 	bool fishingRandomizeSeedOnPlay = true;
 	int fishingRandomSeed = 1;
 	uint64_t fishingFishCountTextEntityId = 0;
@@ -521,6 +530,8 @@ struct SceneComponent {
 	std::string fishingScorePrefix = "SCORE ";
 	std::string fishingMultiplierPrefix = "MULTIPLIER ";
 	std::string fishingResultPrefix = "RESULT ";
+	std::string fishingResultChannelId = "fishing.score_attack";
+	std::string fishingResultTieBreakMode = "HigherRank";
 	bool fishingUseFormationCapsuleCollision = false;
 	bool fishingFormationOutlineVisible = false;
 	Vector4 fishingFormationOutlineColor = { 0.1f, 0.9f, 1.0f, 1.0f };

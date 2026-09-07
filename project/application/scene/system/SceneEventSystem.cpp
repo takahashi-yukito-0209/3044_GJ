@@ -65,12 +65,17 @@ namespace {
 		SceneDocument& document,
 		SceneStatSystem& statSystem,
 		SceneStateMachineSystem& stateMachineSystem,
-		const ScenePauseSystem& pauseSystem
+		const ScenePauseSystem& pauseSystem,
+		const SceneRuntimeSessionState* runtimeSessionState
 	) {
 		bool resolved = true;
 		bool value = false;
 		SceneEntity* target = nullptr;
-		if (term.type != "InputExpression") {
+		const bool isFishingResultCondition =
+			term.type == "FishingResultAvailable" ||
+			term.type == "FishingResultHasWinner" ||
+			term.type == "FishingResultWinnerEquals";
+		if (term.type != "InputExpression" && !isFishingResultCondition) {
 			target = ResolveEntity(
 				document, term.targetEntityId, term.targetEntityName, 0
 			);
@@ -112,6 +117,21 @@ namespace {
 			value = resolved && SceneRuntimeInput::EvaluateExpression(
 				term.inputExpression, ""
 			);
+		} else if (isFishingResultCondition) {
+			const SceneFishingResultRecord* record = runtimeSessionState
+				? runtimeSessionState->FindFishingResult(
+					term.fishingResultChannelId
+				)
+				: nullptr;
+			resolved = runtimeSessionState != nullptr;
+			if (term.type == "FishingResultAvailable") {
+				value = record != nullptr;
+			} else if (term.type == "FishingResultHasWinner") {
+				value = record != nullptr && record->hasWinner;
+			} else {
+				value = record != nullptr && record->hasWinner &&
+					record->winningRankId == term.fishingResultRankId;
+			}
 		} else {
 			resolved = false;
 		}
@@ -123,7 +143,8 @@ namespace {
 		SceneDocument& document,
 		SceneStatSystem& statSystem,
 		SceneStateMachineSystem& stateMachineSystem,
-		const ScenePauseSystem& pauseSystem
+		const ScenePauseSystem& pauseSystem,
+		const SceneRuntimeSessionState* runtimeSessionState
 	) {
 		if (!expression) {
 			return true;
@@ -138,11 +159,17 @@ namespace {
 			const bool allTermsTrue = std::all_of(
 				group.terms.begin(),
 				group.terms.end(),
-				[&document, &statSystem, &stateMachineSystem, &pauseSystem](
+				[&document, &statSystem, &stateMachineSystem, &pauseSystem,
+					runtimeSessionState](
 					const SceneEventConditionTerm& term
 				) {
 					return EvaluateConditionTerm(
-						term, document, statSystem, stateMachineSystem, pauseSystem
+						term,
+						document,
+						statSystem,
+						stateMachineSystem,
+						pauseSystem,
+						runtimeSessionState
 					);
 				}
 			);
@@ -283,6 +310,7 @@ SceneEventResult SceneEventSystem::Update(
 	SceneStatSystem& statSystem,
 	SceneStateMachineSystem& stateMachineSystem,
 	const ScenePauseSystem& pauseSystem,
+	const SceneRuntimeSessionState* runtimeSessionState,
 	float deltaTime,
 	const SceneEventRuntimeSignals& signals,
 	const std::function<bool(uint64_t)>& shouldProcess
@@ -410,6 +438,18 @@ SceneEventResult SceneEventSystem::Update(
 						}
 				);
 				shouldFire = condition;
+			} else if (binding.triggerType == "OnFishingResultPublished") {
+				const SceneFishingResultRecord* record = runtimeSessionState
+					? runtimeSessionState->FindFishingResult(
+						binding.fishingResultChannelId
+					)
+					: nullptr;
+				condition = record != nullptr && record->generation != 0;
+				shouldFire = condition &&
+					record->generation > state.lastObservedFishingResultGeneration;
+				if (shouldFire) {
+					state.lastObservedFishingResultGeneration = record->generation;
+				}
 			} else if (binding.triggerType == "OnStateEntered") {
 				SceneEntity* stateTarget = ResolveEntity(
 					document,
@@ -432,7 +472,8 @@ SceneEventResult SceneEventSystem::Update(
 					document,
 					statSystem,
 					stateMachineSystem,
-					pauseSystem
+					pauseSystem,
+					runtimeSessionState
 				) &&
 				state.cooldown <= 0.0f &&
 				(!binding.triggerOnce || !state.fired)

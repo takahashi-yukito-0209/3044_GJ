@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../../../engine/scene/SceneRuntimeSessionState.h"
 #include "SceneTextMotionSystem.h"
 #include "ScenePauseSystem.h"
 
@@ -93,6 +94,7 @@ public:
 		SceneStatSystem& statSystem,
 		SceneStateMachineSystem& stateMachineSystem,
 		const ScenePauseSystem& pauseSystem,
+		const SceneRuntimeSessionState* runtimeSessionState,
 		float deltaTime,
 		const SceneEventRuntimeSignals& signals,
 		const std::function<bool(uint64_t)>& shouldProcess
@@ -105,6 +107,7 @@ private:
 		bool initialized = false;
 		bool wasConditionTrue = false;
 		bool fired = false;
+		uint64_t lastObservedFishingResultGeneration = 0;
 	};
 
 	std::unordered_map<uint64_t, std::vector<BindingRuntime>> runtimes_;

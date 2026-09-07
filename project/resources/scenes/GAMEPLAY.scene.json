@@ -4847,6 +4847,8 @@
             }
           ],
           "hookColorEmissiveIntensity": 0.3499999940395355,
+          "hookLegendAutoLayout": true,
+          "hookLegendColumnSpacing": 88.0,
           "hookLegendIconEntityIds": [
             90,
             91,
@@ -4859,11 +4861,20 @@
             98,
             99
           ],
+          "hookLegendIconOffset": [
+            -33.0,
+            -11.0
+          ],
           "hookLegendIconSize": [
             24.0,
             24.0
           ],
+          "hookLegendLayoutCenter": [
+            -68.0,
+            -96.0
+          ],
           "hookLegendPrefix": "x",
+          "hookLegendRowSpacing": 32.0,
           "hookLegendTextEntityIds": [
             72,
             73,
@@ -4942,6 +4953,7 @@
             ]
           ],
           "hookPoolEntityId": 13,
+          "hookRankCount": 10,
           "hookRanks": [
             {
               "color": [
@@ -5108,11 +5120,21 @@
           "waterVolumeEntityId": 3
         },
         {
+          "channelId": "fishing.score_attack",
+          "enabled": true,
+          "localId": 3,
+          "tieBreakMode": "HigherRank",
+          "type": "FishingResultTracker"
+        },
+        {
           "bindings": [
             {
               "actions": [
                 {
                   "active": true,
+                  "pauseOperation": "Pause",
+                  "pauseProfileId": "",
+                  "pauseRequestId": "",
                   "postProcessManagerEntityId": 0,
                   "postProcessManagerEntityName": "",
                   "postProcessProfileId": "",
@@ -5145,10 +5167,12 @@
                 ],
                 "mode": "Any"
               },
+              "priority": 0,
               "radius": 1.0,
               "statComparison": "LessOrEqual",
               "statId": "hp",
               "statValue": 0.0,
+              "stateName": "",
               "targetEntityId": 11,
               "targetEntityName": "",
               "targetPosition": [
@@ -5165,6 +5189,9 @@
               "actions": [
                 {
                   "active": true,
+                  "pauseOperation": "Pause",
+                  "pauseProfileId": "",
+                  "pauseRequestId": "",
                   "postProcessManagerEntityId": 0,
                   "postProcessManagerEntityName": "",
                   "postProcessProfileId": "",
@@ -5197,10 +5224,12 @@
                 ],
                 "mode": "Any"
               },
+              "priority": 0,
               "radius": 1.0,
               "statComparison": "LessOrEqual",
               "statId": "hp",
               "statValue": 0.0,
+              "stateName": "",
               "targetEntityId": 11,
               "targetEntityName": "",
               "targetPosition": [
@@ -11342,6 +11371,9 @@
               "actions": [
                 {
                   "active": true,
+                  "pauseOperation": "Pause",
+                  "pauseProfileId": "",
+                  "pauseRequestId": "",
                   "postProcessManagerEntityId": 0,
                   "postProcessManagerEntityName": "",
                   "postProcessProfileId": "",
@@ -11378,10 +11410,12 @@
                 ],
                 "mode": "Any"
               },
+              "priority": 0,
               "radius": 1.0,
               "statComparison": "LessOrEqual",
               "statId": "hp",
               "statValue": 0.0,
+              "stateName": "",
               "targetEntityId": 11,
               "targetEntityName": "",
               "targetPosition": [
@@ -12270,7 +12304,7 @@
           1.0
         ],
         "scale": [
-          159.08279418945312,
+          159.08279418945313,
           0.9300000071525574,
           230.28135681152344
         ],

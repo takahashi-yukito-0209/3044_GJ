@@ -268,6 +268,7 @@
     <ClCompile Include="engine\scene\SceneManager.cpp" />
 	<ClCompile Include="engine\scene\SceneInstance.cpp" />
     <ClCompile Include="engine\scene\RuntimeSession.cpp" />
+	<ClCompile Include="engine\scene\SceneRuntimeSessionState.cpp" />
     <ClCompile Include="engine\scene\SceneDocumentMigrator.cpp" />
     <ClCompile Include="engine\scene\SceneValidator.cpp" />
     <ClCompile Include="engine\scene\SceneAssetService.cpp" />
@@ -511,6 +512,7 @@
 	<ClInclude Include="engine\scene\SceneEntityReference.h" />
     <ClInclude Include="engine\scene\SceneExecutionContext.h" />
     <ClInclude Include="engine\scene\RuntimeSession.h" />
+	<ClInclude Include="engine\scene\SceneRuntimeSessionState.h" />
     <ClInclude Include="engine\scene\SceneDocumentMigrator.h" />
     <ClInclude Include="engine\scene\SceneValidator.h" />
     <ClInclude Include="engine\scene\SceneAssetService.h" />

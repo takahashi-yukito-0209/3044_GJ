@@ -504,6 +504,16 @@ void RuntimeScene::Update(float deltaTime)
 	} else {
 		fishingScoreAttackSystem_.Clear();
 	}
+	if (activeDocument && playing && executionContext) {
+		SceneFishingScoreAttackSessionBeginRequest beginRequest{};
+		while (fishingScoreAttackSystem_.ConsumeResultSessionBeginRequest(
+			beginRequest
+		)) {
+			executionContext->GetRuntimeSessionState().BeginFishingRun(
+				beginRequest.channelId
+			);
+		}
+	}
 	const std::string runtimeSceneId = GetSceneAssetId().empty()
 		? "runtime"
 		: GetSceneAssetId();
@@ -814,6 +824,20 @@ void RuntimeScene::Update(float deltaTime)
 			gameplayDeltaTime,
 			player_ ? player_->GetPhysicsBody().velocity : Vector3{}
 		);
+		if (executionContext) {
+			SceneFishingScoreAttackSessionPublishRequest publishRequest{};
+			while (fishingScoreAttackSystem_.ConsumeResultSessionPublishRequest(
+				publishRequest
+			)) {
+				publishRequest.record.sourceSceneId = GetSceneAssetId().empty()
+					? "runtime"
+					: GetSceneAssetId();
+				publishRequest.record.sourceSceneInstanceId = GetSceneInstanceId();
+				executionContext->GetRuntimeSessionState().PublishFishingResult(
+					std::move(publishRequest.record)
+				);
+			}
+		}
 		SceneFishingScoreAttackPlayerConstraintRequest constraintRequest{};
 		if (
 			player_ &&
@@ -995,6 +1019,9 @@ void RuntimeScene::Update(float deltaTime)
 			statSystem_,
 			stateMachineSystem_,
 			pauseSystem_,
+			executionContext
+				? &executionContext->GetRuntimeSessionState()
+				: nullptr,
 			realDeltaTime,
 			eventSignals,
 			[this, activeDocument](uint64_t entityId) {

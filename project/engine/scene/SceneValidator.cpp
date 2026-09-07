@@ -1426,6 +1426,10 @@ bool SceneValidator::ValidateDocument(
 							term.type == "StateEquals" ||
 							term.type == "PauseActive" ||
 							term.type == "PositionWithin";
+						const bool isFishingResultCondition =
+							term.type == "FishingResultAvailable" ||
+							term.type == "FishingResultHasWinner" ||
+							term.type == "FishingResultWinnerEquals";
 						const SceneEntity* target = resolveEventTarget(
 							term.targetEntityId, term.targetEntityName
 						);
@@ -1482,6 +1486,22 @@ bool SceneValidator::ValidateDocument(
 								ValidateSceneInputExpression(
 									*term.inputExpression, entity.id,
 									"Event condition input expression", addIssue
+								);
+							}
+						} else if (isFishingResultCondition) {
+							if (term.fishingResultChannelId.empty()) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"Fishing result condition requires a channelId"
+								);
+							}
+							if (term.type == "FishingResultWinnerEquals" &&
+								term.fishingResultRankId.empty()) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"FishingResultWinnerEquals requires a rankId"
 								);
 							}
 						} else {
@@ -1552,6 +1572,14 @@ bool SceneValidator::ValidateDocument(
 									binding.triggerKey
 							);
 						}
+					}
+					if (binding.triggerType == "OnFishingResultPublished" &&
+						binding.fishingResultChannelId.empty()) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"OnFishingResultPublished requires a channelId"
+						);
 					}
 					if (binding.triggerType == "OnKeyPressed" &&
 						binding.inputExpression) {
@@ -2396,8 +2424,10 @@ bool SceneValidator::ValidateDocument(
 								"FishingScoreAttackDirector hook band has an invalid hook density"
 							);
 						}
-						float totalWeight = 0.0f;
-						for (const float weight : band.hookMultiplierWeights) {
+						float activeWeight = 0.0f;
+						for (size_t tierIndex = 0;
+							tierIndex < band.hookMultiplierWeights.size(); ++tierIndex) {
+							const float weight = band.hookMultiplierWeights[tierIndex];
 							if (!std::isfinite(weight) || weight < 0.0f) {
 								addIssue(
 									SceneValidationSeverity::Error,
@@ -2406,9 +2436,11 @@ bool SceneValidator::ValidateDocument(
 								);
 								break;
 							}
-							totalWeight += weight;
+							if (tierIndex < static_cast<size_t>(component.fishingHookRankCount)) {
+								activeWeight += weight;
+							}
 						}
-						if (band.hookCount > 0 && totalWeight <= 0.0f) {
+						if (band.hookCount > 0 && activeWeight <= 0.0f) {
 							addIssue(
 								SceneValidationSeverity::Error,
 								entity.id,
@@ -2418,6 +2450,8 @@ bool SceneValidator::ValidateDocument(
 					}
 					if (!std::isfinite(component.fishingHookScoreUnit) ||
 						component.fishingHookScoreUnit <= 0.0f ||
+						component.fishingHookRankCount < 1 ||
+						component.fishingHookRankCount > 10 ||
 						!std::isfinite(component.fishingFishMultiplierBase) ||
 						component.fishingFishMultiplierBase < 0.0f ||
 						!std::isfinite(component.fishingFishMultiplierPerAdditionalFish) ||
@@ -2427,6 +2461,14 @@ bool SceneValidator::ValidateDocument(
 						!std::isfinite(component.fishingHookLegendIconSize.y) ||
 						component.fishingHookLegendIconSize.x <= 0.0f ||
 						component.fishingHookLegendIconSize.y <= 0.0f ||
+						!std::isfinite(component.fishingHookLegendLayoutCenter.x) ||
+						!std::isfinite(component.fishingHookLegendLayoutCenter.y) ||
+						!std::isfinite(component.fishingHookLegendColumnSpacing) ||
+						component.fishingHookLegendColumnSpacing <= 0.0f ||
+						!std::isfinite(component.fishingHookLegendRowSpacing) ||
+						component.fishingHookLegendRowSpacing <= 0.0f ||
+						!std::isfinite(component.fishingHookLegendIconOffset.x) ||
+						!std::isfinite(component.fishingHookLegendIconOffset.y) ||
 						!std::isfinite(component.fishingHookColorEmissiveIntensity) ||
 						component.fishingHookColorEmissiveIntensity < 0.0f) {
 						addIssue(
@@ -2487,7 +2529,12 @@ bool SceneValidator::ValidateDocument(
 						if (component.fishingHookLegendTitleTextEntityId != 0) {
 							legendTextIds.insert(component.fishingHookLegendTitleTextEntityId);
 						}
-						for (const uint64_t textId : component.fishingHookLegendTextEntityIds) {
+						for (size_t tierIndex = 0;
+							tierIndex < component.fishingHookLegendTextEntityIds.size(); ++tierIndex) {
+							if (tierIndex >= static_cast<size_t>(component.fishingHookRankCount)) {
+								continue;
+							}
+							const uint64_t textId = component.fishingHookLegendTextEntityIds[tierIndex];
 							validateFishingComponentReference(textId, "TextRenderer", "Hook legend");
 							if (textId != 0 && !legendTextIds.insert(textId).second) {
 								addIssue(
@@ -2501,6 +2548,9 @@ bool SceneValidator::ValidateDocument(
 						for (size_t tierIndex = 0;
 							tierIndex < component.fishingHookLegendIconEntityIds.size();
 							++tierIndex) {
+							if (tierIndex >= static_cast<size_t>(component.fishingHookRankCount)) {
+								continue;
+							}
 							const uint64_t iconId =
 								component.fishingHookLegendIconEntityIds[tierIndex];
 							if (iconId == 0) {
@@ -2535,6 +2585,44 @@ bool SceneValidator::ValidateDocument(
 									"FishingScoreAttackDirector contains a duplicate hook legend Icon Entity"
 								);
 							}
+						}
+					}
+					if (component.fishingHookLegendAutoLayout &&
+						!component.fishingHookLegendVisible) {
+						std::unordered_set<uint64_t> layoutEntityIds;
+						const size_t activeRankCount = static_cast<size_t>(
+							std::clamp(component.fishingHookRankCount, 1, 10)
+						);
+						for (size_t tierIndex = 0; tierIndex < activeRankCount; ++tierIndex) {
+							const uint64_t textId = tierIndex < component.fishingHookLegendTextEntityIds.size()
+								? component.fishingHookLegendTextEntityIds[tierIndex] : 0;
+							const uint64_t iconId = tierIndex < component.fishingHookLegendIconEntityIds.size()
+								? component.fishingHookLegendIconEntityIds[tierIndex] : 0;
+							const auto validateLayoutLink = [
+								&addIssue, &document, &layoutEntityIds, entityId = entity.id
+							](uint64_t linkedId, const char* label, const char* requiredType) {
+								const SceneEntity* linkedEntity = linkedId != 0
+									? document.FindEntity(linkedId) : nullptr;
+								if (!linkedEntity || !SceneEntityQuery::FindEnabledComponent(
+									*linkedEntity, requiredType
+								)) {
+									addIssue(
+										SceneValidationSeverity::Warning,
+										entityId,
+										std::string("FishingScoreAttackDirector auto layout link is missing: ") + label
+									);
+									return;
+								}
+								if (!layoutEntityIds.insert(linkedId).second) {
+									addIssue(
+										SceneValidationSeverity::Warning,
+										entityId,
+										"FishingScoreAttackDirector auto layout link is duplicated"
+									);
+								}
+							};
+							validateLayoutLink(textId, "Hook legend text", "TextRenderer");
+							validateLayoutLink(iconId, "Hook legend icon", "SpriteRenderer");
 						}
 					}
 					if (component.fishingUseHookBandSettings) {
@@ -2618,6 +2706,53 @@ bool SceneValidator::ValidateDocument(
 					if (firstFishingDirectorEntityId == 0) {
 						firstFishingDirectorEntityId = entity.id;
 					}
+				}
+			} else if (component.type == "FishingResultTracker") {
+				if (component.fishingResultChannelId.empty()) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultTracker requires a channelId"
+					);
+				}
+				if (component.fishingResultTieBreakMode != "HigherRank" &&
+					component.fishingResultTieBreakMode != "LowerRank") {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultTracker has an invalid tie-break mode"
+					);
+				}
+				const SceneComponent* fishingDirector =
+					SceneEntityQuery::FindEnabledComponent(
+						entity, "FishingScoreAttackDirector"
+					);
+				if (!fishingDirector) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultTracker requires a FishingScoreAttackDirector on the same Entity"
+					);
+				} else if (!fishingDirector->fishingUseHookBandSettings) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultTracker requires hook band settings on FishingScoreAttackDirector"
+					);
+				}
+				const size_t trackerCount = static_cast<size_t>(std::count_if(
+					entity.components.begin(), entity.components.end(),
+					[](const SceneComponent& candidate) {
+						return candidate.enabled &&
+							candidate.type == "FishingResultTracker";
+					}
+				));
+				if (trackerCount > 1) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"Entity contains multiple active FishingResultTracker components"
+					);
 				}
 			} else if (component.type == "FishingHookSpawnArea") {
 				if (!std::isfinite(component.fishingSpawnHalfSizeX) ||

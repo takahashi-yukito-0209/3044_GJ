@@ -77,6 +77,16 @@ namespace {
 		return found;
 	}
 
+	const SceneComponent* FindResultTracker(
+		const SceneDocument& document,
+		uint64_t directorEntityId
+	) {
+		const SceneEntity* entity = document.FindEntity(directorEntityId);
+		return entity
+			? FindEnabledComponent(*entity, "FishingResultTracker")
+			: nullptr;
+	}
+
 	const SceneComponent* FindComponent(
 		const SceneDocument& document,
 		uint64_t entityId,
@@ -90,9 +100,12 @@ namespace {
 		const SceneComponent& director,
 		int tier
 	) {
-		const size_t index = tier > 0
-			? static_cast<size_t>(tier - 1)
-			: static_cast<size_t>(10);
+		const int activeRankCount = std::clamp(
+			director.fishingHookRankCount, 1, 10
+		);
+		const size_t index = static_cast<size_t>(std::clamp(
+			tier, 1, activeRankCount
+		) - 1);
 		if (index < director.fishingHookRanks.size()) {
 			return director.fishingHookRanks[index];
 		}
@@ -1224,6 +1237,30 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		*director,
 		hitHook->hookMultiplierTier
 	);
+	if (resultTrackingEnabled_) {
+		const size_t rankIndex = static_cast<size_t>(std::clamp(
+			hitHook->hookMultiplierTier,
+			1,
+			director->fishingHookRankCount
+		) - 1);
+		if (rankIndex < resultRankRecords_.size()) {
+			SceneFishingResultRankRecord& resultRank =
+				resultRankRecords_[rankIndex];
+			const uint64_t maximumCount =
+				(std::numeric_limits<uint64_t>::max)();
+			if (resultRank.catchCount < maximumCount) {
+				++resultRank.catchCount;
+			}
+			const uint64_t fishCount = static_cast<uint64_t>(
+				(std::max)(roundFishCount_, 0)
+			);
+			if (resultRank.fishWeightedCount > maximumCount - fishCount) {
+				resultRank.fishWeightedCount = maximumCount;
+			} else {
+				resultRank.fishWeightedCount += fishCount;
+			}
+		}
+	}
 	double score = 0.0;
 	if (director->fishingUseHookBandSettings) {
 		const double fishMultiplier = (std::max)(
@@ -1840,6 +1877,28 @@ bool SceneFishingScoreAttackSystem::ConsumeFormationParticleSaveRequest(
 	return true;
 }
 
+bool SceneFishingScoreAttackSystem::ConsumeResultSessionBeginRequest(
+	SceneFishingScoreAttackSessionBeginRequest& request
+) {
+	if (!resultSessionBeginRequested_) {
+		return false;
+	}
+	request = resultSessionBeginRequest_;
+	resultSessionBeginRequested_ = false;
+	return true;
+}
+
+bool SceneFishingScoreAttackSystem::ConsumeResultSessionPublishRequest(
+	SceneFishingScoreAttackSessionPublishRequest& request
+) {
+	if (!resultSessionPublishRequested_) {
+		return false;
+	}
+	request = std::move(resultSessionPublishRequest_);
+	resultSessionPublishRequested_ = false;
+	return true;
+}
+
 void SceneFishingScoreAttackSystem::SetFormationParticleSaveResult(
 	bool success,
 	std::string message
@@ -2009,6 +2068,8 @@ bool SceneFishingScoreAttackSystem::Preflight(
 			director.fishingFishEntityIds.size() ||
 		!std::isfinite(director.fishingDurationSeconds) ||
 		director.fishingDurationSeconds <= 0.0f ||
+		director.fishingHookRankCount < 1 ||
+		director.fishingHookRankCount > 10 ||
 		(!useHookBandSettings && (
 			director.fishingDistanceBandCount < 1 ||
 			director.fishingHooksPerDistanceBand < 1 ||
@@ -2033,15 +2094,19 @@ bool SceneFishingScoreAttackSystem::Preflight(
 				diagnostic = "FishingScoreAttackDirector hook band settings are invalid";
 				return false;
 			}
-			float totalWeight = 0.0f;
-			for (const float weight : band.hookMultiplierWeights) {
+			float activeWeight = 0.0f;
+			for (size_t tierIndex = 0;
+				tierIndex < band.hookMultiplierWeights.size(); ++tierIndex) {
+				const float weight = band.hookMultiplierWeights[tierIndex];
 				if (!IsFiniteNonNegative(weight)) {
 					diagnostic = "FishingScoreAttackDirector hook tier weights are invalid";
 					return false;
 				}
-				totalWeight += weight;
+				if (tierIndex < static_cast<size_t>(director.fishingHookRankCount)) {
+					activeWeight += weight;
+				}
 			}
-			if (band.hookCount > 0 && (!std::isfinite(totalWeight) || totalWeight <= 0.0f)) {
+			if (band.hookCount > 0 && (!std::isfinite(activeWeight) || activeWeight <= 0.0f)) {
 				diagnostic = "FishingScoreAttackDirector hook band has no selectable tier";
 				return false;
 			}
@@ -2069,6 +2134,16 @@ bool SceneFishingScoreAttackSystem::Preflight(
 				diagnostic = "FishingScoreAttackDirector hook rank definitions are invalid";
 				return false;
 			}
+		}
+	}
+	if (const SceneComponent* tracker = FindResultTracker(
+		document, directorEntityId
+	)) {
+		if (!useHookBandSettings || tracker->fishingResultChannelId.empty() ||
+			(tracker->fishingResultTieBreakMode != "HigherRank" &&
+			 tracker->fishingResultTieBreakMode != "LowerRank")) {
+			diagnostic = "FishingResultTracker settings are invalid";
+			return false;
 		}
 	}
 	bool hasFreeWanderShark = false;
@@ -2390,6 +2465,49 @@ bool SceneFishingScoreAttackSystem::Preflight(
 	return true;
 }
 
+void SceneFishingScoreAttackSystem::InitializeResultTracking(
+	const SceneDocument& document,
+	const SceneComponent& director
+) {
+	resultTrackingEnabled_ = false;
+	resultChannelId_.clear();
+	resultTieBreakMode_ = "HigherRank";
+	resultRankRecords_.clear();
+	resultSessionBeginRequested_ = false;
+	resultSessionBeginRequest_ = {};
+	resultSessionPublishRequested_ = false;
+	resultSessionPublishRequest_ = {};
+
+	const SceneComponent* tracker = FindResultTracker(
+		document, directorEntityId_
+	);
+	if (!tracker) {
+		return;
+	}
+	resultTrackingEnabled_ = true;
+	resultChannelId_ = tracker->fishingResultChannelId;
+	resultTieBreakMode_ = tracker->fishingResultTieBreakMode;
+	const int rankCapacity = 10;
+	resultRankRecords_.reserve(rankCapacity);
+	for (int rankIndex = 0; rankIndex < rankCapacity; ++rankIndex) {
+		SceneFishingHookRankDefinition rank{};
+		if (static_cast<size_t>(rankIndex) < director.fishingHookRanks.size()) {
+			rank = director.fishingHookRanks[static_cast<size_t>(rankIndex)];
+		}
+		SceneFishingResultRankRecord record{};
+		record.rankId = rank.id.empty()
+			? "rank_" + std::to_string(rankIndex + 1)
+			: rank.id;
+		record.displayName = rank.displayName;
+		record.scoreMultiplier = rank.scoreMultiplier;
+		record.color = rank.color;
+		record.iconTexturePath = rank.iconTexturePath;
+		resultRankRecords_.push_back(std::move(record));
+	}
+	resultSessionBeginRequested_ = true;
+	resultSessionBeginRequest_.channelId = resultChannelId_;
+}
+
 void SceneFishingScoreAttackSystem::InitializeRun(
 	SceneDocument& document,
 	const SceneComponent& director
@@ -2414,6 +2532,7 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 	timerRunning_ = false;
 	resultInputArmed_ = false;
 	diagnostic_.clear();
+	InitializeResultTracking(document, director);
 	initialFishEntityIds_ = director.fishingFishEntityIds;
 	initialFishTransforms_.clear();
 	initialFishTransforms_.reserve(initialFishEntityIds_.size());
@@ -2663,14 +2782,17 @@ void SceneFishingScoreAttackSystem::StartRound(
 				];
 				const std::vector<float>& tierWeights =
 					director.fishingHookBands[static_cast<size_t>(bandIndex)].hookMultiplierWeights;
+				const size_t activeRankCount = static_cast<size_t>(std::clamp(
+					director.fishingHookRankCount, 1, 10
+				));
 				float totalWeight = 0.0f;
-				for (const float weight : tierWeights) {
-					totalWeight += weight;
+				for (size_t tierIndex = 0; tierIndex < activeRankCount; ++tierIndex) {
+					totalWeight += tierWeights[tierIndex];
 				}
 				std::uniform_real_distribution<float> weightDistribution(0.0f, totalWeight);
 				float remainingWeight = weightDistribution(random_);
 				int selectedTierIndex = -1;
-				for (size_t tierIndex = 0; tierIndex < tierWeights.size(); ++tierIndex) {
+				for (size_t tierIndex = 0; tierIndex < activeRankCount; ++tierIndex) {
 					if (tierWeights[tierIndex] <= 0.0f) {
 						continue;
 					}
@@ -2681,7 +2803,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 					}
 				}
 				if (selectedTierIndex < 0) {
-					for (int tierIndex = static_cast<int>(tierWeights.size()) - 1;
+					for (int tierIndex = static_cast<int>(activeRankCount) - 1;
 						tierIndex >= 0; --tierIndex) {
 						if (tierWeights[static_cast<size_t>(tierIndex)] > 0.0f) {
 							selectedTierIndex = tierIndex;
@@ -3436,6 +3558,51 @@ void SceneFishingScoreAttackSystem::Finish(
 			fish->active = false;
 		}
 	}
+	if (resultTrackingEnabled_) {
+		SceneFishingResultRecord record{};
+		record.channelId = resultChannelId_;
+		record.sourceDirectorEntityId = directorEntityId_;
+		record.activeRankCount = std::clamp(
+			director.fishingHookRankCount, 1, 10
+		);
+		record.totalScore = totalScore_;
+		record.elapsedSeconds = elapsedSeconds_;
+		record.ranks.assign(
+			resultRankRecords_.begin(),
+			resultRankRecords_.begin() + record.activeRankCount
+		);
+		uint64_t winningFishWeightedCount = 0;
+		int winningRankIndex = -1;
+		for (int rankIndex = 0; rankIndex < record.activeRankCount; ++rankIndex) {
+			const SceneFishingResultRankRecord& rank =
+				record.ranks[static_cast<size_t>(rankIndex)];
+			if (rank.fishWeightedCount == 0 ||
+				rank.fishWeightedCount < winningFishWeightedCount) {
+				continue;
+			}
+			const bool tieBreakWins =
+				rank.fishWeightedCount == winningFishWeightedCount &&
+				winningRankIndex >= 0 &&
+				(resultTieBreakMode_ == "HigherRank"
+					? rankIndex > winningRankIndex
+					: rankIndex < winningRankIndex);
+			if (rank.fishWeightedCount > winningFishWeightedCount ||
+				winningRankIndex < 0 || tieBreakWins) {
+				winningFishWeightedCount = rank.fishWeightedCount;
+				winningRankIndex = rankIndex;
+			}
+		}
+		if (winningRankIndex >= 0) {
+			record.hasWinner = true;
+			record.winningRankIndex = winningRankIndex;
+			record.winningRankId = record.ranks[
+				static_cast<size_t>(winningRankIndex)
+			].rankId;
+			record.winningFishWeightedCount = winningFishWeightedCount;
+		}
+		resultSessionPublishRequested_ = true;
+		resultSessionPublishRequest_.record = std::move(record);
+	}
 	state_ = SceneFishingScoreAttackState::Result;
 	BuildTextRequests(director);
 }
@@ -3548,6 +3715,9 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 			state_ == SceneFishingScoreAttackState::Navigating ||
 			state_ == SceneFishingScoreAttackState::SelectingNext) &&
 		director.fishingHookRanks.size() == 10;
+	const size_t activeRankCount = static_cast<size_t>(std::clamp(
+		director.fishingHookRankCount, 1, 10
+	));
 	if (director.fishingUseHookBandSettings) {
 		if (director.fishingHookLegendTitleTextEntityId != 0) {
 			textRequests_.push_back({
@@ -3566,13 +3736,13 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 			}
 			textRequests_.push_back({
 				entityId,
-				showLegend
+				showLegend && tierIndex < activeRankCount
 					? director.fishingHookLegendPrefix + FormatHookScoreMultiplier(
 						director.fishingHookRanks[tierIndex].scoreMultiplier
 					)
 					: std::string{},
-				showLegend,
-				showLegend
+				showLegend && tierIndex < activeRankCount,
+				showLegend && tierIndex < activeRankCount
 					? director.fishingHookRanks[tierIndex].color
 					: Vector4{}
 			});
@@ -3593,7 +3763,7 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 			iconEntityId,
 			texturePath,
 			director.fishingHookLegendIconSize,
-			showLegend && !texturePath.empty()
+			showLegend && tierIndex < activeRankCount && !texturePath.empty()
 		});
 	}
 }
@@ -3628,6 +3798,14 @@ void SceneFishingScoreAttackSystem::Clear() {
 	totalScore_ = 0;
 	timerRunning_ = false;
 	hasDirector_ = false;
+	resultTrackingEnabled_ = false;
+	resultChannelId_.clear();
+	resultTieBreakMode_ = "HigherRank";
+	resultRankRecords_.clear();
+	resultSessionBeginRequested_ = false;
+	resultSessionBeginRequest_ = {};
+	resultSessionPublishRequested_ = false;
+	resultSessionPublishRequest_ = {};
 	diagnostic_.clear();
 	textRequests_.clear();
 	iconRequests_.clear();

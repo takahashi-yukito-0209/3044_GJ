@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "SceneRuntimeSessionState.h"
+
 class SceneDocument;
 
 class SceneExecutionContext {
@@ -16,6 +18,8 @@ public:
 	virtual bool IsEditing() const = 0;
 	virtual bool IsPlaying() const = 0;
 	virtual bool IsPaused() const = 0;
+	virtual SceneRuntimeSessionState& GetRuntimeSessionState() = 0;
+	virtual const SceneRuntimeSessionState& GetRuntimeSessionState() const = 0;
 	virtual bool LoadRuntimeScene(
 		const std::string& sceneId,
 		const std::string& sceneFilePath

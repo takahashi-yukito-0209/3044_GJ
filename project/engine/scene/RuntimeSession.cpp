@@ -7,7 +7,11 @@ bool RuntimeSession::Initialize(
 	const std::string& sceneId,
 	const std::string& sceneFilePath
 ) {
-	return LoadRuntimeScene(sceneId, sceneFilePath);
+	if (!LoadRuntimeScene(sceneId, sceneFilePath)) {
+		return false;
+	}
+	runtimeSessionState_.Clear();
+	return true;
 }
 
 bool RuntimeSession::LoadRuntimeScene(

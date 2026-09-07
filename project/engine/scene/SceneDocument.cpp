@@ -1314,6 +1314,8 @@ namespace {
 				{ "stateName", term.stateName },
 				{ "pauseProfileId", term.pauseProfileId },
 				{ "pauseRequestId", term.pauseRequestId },
+				{ "fishingResultChannelId", term.fishingResultChannelId },
+				{ "fishingResultRankId", term.fishingResultRankId },
 				{ "active", term.active },
 				{ "position", VectorToJson(term.position) },
 				{ "radius", term.radius }
@@ -1342,6 +1344,7 @@ namespace {
 				{ "triggerOnce", binding.triggerOnce },
 				{ "cooldown", binding.cooldown },
 				{ "stateName", binding.stateName },
+				{ "fishingResultChannelId", binding.fishingResultChannelId },
 				{ "priority", binding.priority },
 				{ "textMotionClipId", binding.textMotionClipId },
 				{ "actions", EventActionsToJson(binding.actions) }
@@ -1789,6 +1792,7 @@ namespace {
 				legacyColors.push_back(VectorToJson(rank.color));
 			}
 			result["hookRanks"] = std::move(hookRanks);
+			result["hookRankCount"] = component.fishingHookRankCount;
 			result["hookTierScoreMultipliers"] = std::move(legacyScoreMultipliers);
 			result["hookMultiplierColors"] = std::move(legacyColors);
 			result["hookColorEmissiveIntensity"] =
@@ -1801,6 +1805,11 @@ namespace {
 			result["hookLegendPrefix"] = component.fishingHookLegendPrefix;
 			result["hookLegendIconEntityIds"] = component.fishingHookLegendIconEntityIds;
 			result["hookLegendIconSize"] = VectorToJson(component.fishingHookLegendIconSize);
+			result["hookLegendAutoLayout"] = component.fishingHookLegendAutoLayout;
+			result["hookLegendLayoutCenter"] = VectorToJson(component.fishingHookLegendLayoutCenter);
+			result["hookLegendColumnSpacing"] = component.fishingHookLegendColumnSpacing;
+			result["hookLegendRowSpacing"] = component.fishingHookLegendRowSpacing;
+			result["hookLegendIconOffset"] = VectorToJson(component.fishingHookLegendIconOffset);
 			result["randomizeSeedOnPlay"] = component.fishingRandomizeSeedOnPlay;
 			result["randomSeed"] = component.fishingRandomSeed;
 			result["fishCountTextEntityId"] = component.fishingFishCountTextEntityId;
@@ -1843,6 +1852,9 @@ namespace {
 				VectorToJson(component.fishingFormationParticleEndColor);
 			result["formationParticleEmissiveIntensity"] =
 				component.fishingFormationParticleEmissiveIntensity;
+		} else if (component.type == "FishingResultTracker") {
+			result["channelId"] = component.fishingResultChannelId;
+			result["tieBreakMode"] = component.fishingResultTieBreakMode;
 		} else if (component.type == "FishingHookSpawnArea") {
 			result["halfSizeX"] = component.fishingSpawnHalfSizeX;
 			result["halfSizeZ"] = component.fishingSpawnHalfSizeZ;
@@ -2381,6 +2393,12 @@ namespace {
 		term.pauseRequestId = value.value(
 			"pauseRequestId", term.pauseRequestId
 		);
+		term.fishingResultChannelId = value.value(
+			"fishingResultChannelId", term.fishingResultChannelId
+		);
+		term.fishingResultRankId = value.value(
+			"fishingResultRankId", term.fishingResultRankId
+		);
 		term.active = value.value("active", term.active);
 		if (value.contains("position")) {
 			term.position = JsonToVector(value.at("position"), term.position);
@@ -2455,6 +2473,9 @@ namespace {
 			);
 			binding.targetEntityName = value.value(
 				"targetEntityName", binding.targetEntityName
+			);
+			binding.fishingResultChannelId = value.value(
+				"fishingResultChannelId", binding.fishingResultChannelId
 			);
 			binding.stateName = value.value("stateName", binding.stateName);
 			binding.statId = value.value("statId", binding.statId);
@@ -3478,6 +3499,9 @@ namespace {
 							component.fishingHookMultiplierColors
 						);
 					}
+					component.fishingHookRankCount = value.value(
+						"hookRankCount", component.fishingHookRankCount
+					);
 					component.fishingHookColorEmissiveIntensity = value.value(
 						"hookColorEmissiveIntensity",
 						component.fishingHookColorEmissiveIntensity
@@ -3505,6 +3529,27 @@ namespace {
 						component.fishingHookLegendIconSize = JsonToVector(
 							value.at("hookLegendIconSize"),
 							component.fishingHookLegendIconSize
+						);
+					}
+					component.fishingHookLegendAutoLayout = value.value(
+						"hookLegendAutoLayout", component.fishingHookLegendAutoLayout
+					);
+					if (value.contains("hookLegendLayoutCenter")) {
+						component.fishingHookLegendLayoutCenter = JsonToVector(
+							value.at("hookLegendLayoutCenter"),
+							component.fishingHookLegendLayoutCenter
+						);
+					}
+					component.fishingHookLegendColumnSpacing = value.value(
+						"hookLegendColumnSpacing", component.fishingHookLegendColumnSpacing
+					);
+					component.fishingHookLegendRowSpacing = value.value(
+						"hookLegendRowSpacing", component.fishingHookLegendRowSpacing
+					);
+					if (value.contains("hookLegendIconOffset")) {
+						component.fishingHookLegendIconOffset = JsonToVector(
+							value.at("hookLegendIconOffset"),
+							component.fishingHookLegendIconOffset
 						);
 					}
 					component.fishingRandomizeSeedOnPlay = value.value(
@@ -3645,6 +3690,13 @@ namespace {
 						std::isfinite(particleEmissiveIntensity)
 							? std::clamp(particleEmissiveIntensity, 0.0f, 8.0f)
 							: 1.0f;
+				} else if (component.type == "FishingResultTracker") {
+					component.fishingResultChannelId = value.value(
+						"channelId", component.fishingResultChannelId
+					);
+					component.fishingResultTieBreakMode = value.value(
+						"tieBreakMode", component.fishingResultTieBreakMode
+					);
 				} else if (component.type == "FishingHookSpawnArea") {
 					component.fishingSpawnHalfSizeX = (std::max)(
 						value.value("halfSizeX", component.fishingSpawnHalfSizeX),
@@ -9443,6 +9495,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 			component.fishingHookTierScoreMultipliers,
 			component.fishingHookMultiplierColors
 		);
+		component.fishingHookRankCount = 10;
 		component.fishingHookColorEmissiveIntensity = 0.35f;
 		component.fishingHookLegendVisible = false;
 		component.fishingHookLegendTitleTextEntityId = 0;
@@ -9451,6 +9504,11 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingHookLegendPrefix = "x";
 		component.fishingHookLegendIconEntityIds.assign(10, 0);
 		component.fishingHookLegendIconSize = { 32.0f, 32.0f };
+		component.fishingHookLegendAutoLayout = false;
+		component.fishingHookLegendLayoutCenter = { -68.0f, -96.0f };
+		component.fishingHookLegendColumnSpacing = 88.0f;
+		component.fishingHookLegendRowSpacing = 32.0f;
+		component.fishingHookLegendIconOffset = { -33.0f, -11.0f };
 		component.fishingRandomizeSeedOnPlay = true;
 		component.fishingRandomSeed = 1;
 		component.fishingFishCountTextEntityId = 0;
@@ -9478,6 +9536,9 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingFormationParticleStartColor = { 0.1f, 0.9f, 1.0f, 0.65f };
 		component.fishingFormationParticleEndColor = { 0.1f, 0.9f, 1.0f, 0.65f };
 		component.fishingFormationParticleEmissiveIntensity = 1.0f;
+	} else if (type == "FishingResultTracker") {
+		component.fishingResultChannelId = "fishing.score_attack";
+		component.fishingResultTieBreakMode = "HigherRank";
 	} else if (type == "FishingHookSpawnArea") {
 		component.fishingSpawnHalfSizeX = 10.0f;
 		component.fishingSpawnHalfSizeZ = 10.0f;

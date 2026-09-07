@@ -6,6 +6,7 @@
 #include "../../../engine/math/Vector2.h"
 #include "../../../engine/math/Vector3.h"
 #include "../../../engine/math/Vector4.h"
+#include "../../../engine/scene/SceneRuntimeSessionState.h"
 
 #include <cstdint>
 #include <functional>
@@ -80,6 +81,14 @@ struct SceneFishingScoreAttackFormationParticleSaveRequest {
 	float emissiveIntensity = 1.0f;
 };
 
+struct SceneFishingScoreAttackSessionBeginRequest {
+	std::string channelId;
+};
+
+struct SceneFishingScoreAttackSessionPublishRequest {
+	SceneFishingResultRecord record;
+};
+
 // SceneやObject、Colliderの所有権は持たず、保存済みComponentからRuntimeの判断だけを行う。
 class SceneFishingScoreAttackSystem {
 public:
@@ -128,6 +137,12 @@ public:
 	bool ConsumeFormationParticleSaveRequest(
 		SceneFishingScoreAttackFormationParticleSaveRequest& request
 	);
+	bool ConsumeResultSessionBeginRequest(
+		SceneFishingScoreAttackSessionBeginRequest& request
+	);
+	bool ConsumeResultSessionPublishRequest(
+		SceneFishingScoreAttackSessionPublishRequest& request
+	);
 	void SetFormationParticleSaveResult(bool success, std::string message);
 	const std::vector<SceneFishingScoreAttackTextRequest>& GetTextRequests() const {
 		return textRequests_;
@@ -163,6 +178,10 @@ private:
 	void DeactivatePoolHooks(SceneDocument& document, const SceneComponent& director);
 	void LoadFormationParticleTuning(const SceneComponent& director);
 	void BuildTextRequests(const SceneComponent& director);
+	void InitializeResultTracking(
+		const SceneDocument& document,
+		const SceneComponent& director
+	);
 
 	SceneFishingScoreAttackState state_ = SceneFishingScoreAttackState::Inactive;
 	uint64_t directorEntityId_ = 0;
@@ -219,6 +238,14 @@ private:
 	long long totalScore_ = 0;
 	bool timerRunning_ = false;
 	bool hasDirector_ = false;
+	bool resultTrackingEnabled_ = false;
+	std::string resultChannelId_;
+	std::string resultTieBreakMode_ = "HigherRank";
+	std::vector<SceneFishingResultRankRecord> resultRankRecords_;
+	bool resultSessionBeginRequested_ = false;
+	SceneFishingScoreAttackSessionBeginRequest resultSessionBeginRequest_{};
+	bool resultSessionPublishRequested_ = false;
+	SceneFishingScoreAttackSessionPublishRequest resultSessionPublishRequest_{};
 	std::mt19937 random_{};
 	std::string diagnostic_;
 	std::vector<SceneFishingScoreAttackTextRequest> textRequests_;
