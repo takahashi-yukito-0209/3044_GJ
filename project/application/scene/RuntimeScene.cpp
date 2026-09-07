@@ -3,6 +3,7 @@
 
 #include "../../engine/scene/SceneManager.h"
 #include "../../engine/scene/SceneExecutionContext.h"
+#include "../../engine/scene/EditorSession.h"
 #include "../../engine/scene/SceneDocument.h"
 #include "../../engine/scene/SceneTransformResolver.h"
 #include "../../engine/3d/SrvManager.h"
@@ -14,6 +15,10 @@
 #include "../../engine/math/Math.h"
 #include "../../engine/particle/ParticleManager.h"
 #include "../player/Player.h"
+
+#include <algorithm>
+#include <cmath>
+#include <utility>
 
 namespace {
 	Transform MakeRuntimeTransform(const QuaternionTransform& source) {
@@ -57,6 +62,165 @@ namespace {
 			? document->FindEntityByName(name)
 			: nullptr;
 		return entity ? MakeRuntimeTransform(entity->transform) : fallback;
+	}
+
+	void ProcessFormationParticleSaveRequest(
+		SceneFishingScoreAttackSystem& system,
+		SceneExecutionContext* executionContext,
+		const std::string& runtimeSceneId
+	) {
+		SceneFishingScoreAttackFormationParticleSaveRequest request{};
+		if (!system.ConsumeFormationParticleSaveRequest(request)) {
+			return;
+		}
+		auto fail = [&system](std::string message) {
+			system.SetFormationParticleSaveResult(false, std::move(message));
+		};
+		EditorSession* editorSession = dynamic_cast<EditorSession*>(executionContext);
+		if (
+			!editorSession ||
+			(!editorSession->IsPlaying() && !editorSession->IsPaused())
+		) {
+			fail("Save failed: editor runtime session is unavailable.");
+			return;
+		}
+		if (
+			runtimeSceneId.empty() ||
+			runtimeSceneId != editorSession->GetRuntimeSceneId() ||
+			runtimeSceneId != editorSession->GetEditSceneId()
+		) {
+			fail("Save failed: runtime and edit scene IDs do not match.");
+			return;
+		}
+		const SceneDocument& runtimeDocument = editorSession->GetActiveDocument();
+		const SceneEntity* runtimeEntity = runtimeDocument.FindEntity(
+			request.directorEntityId
+		);
+		if (!runtimeEntity) {
+			fail("Save failed: runtime Director entity was not found.");
+			return;
+		}
+		const SceneComponent* runtimeDirector = nullptr;
+		for (const SceneComponent& component : runtimeEntity->components) {
+			if (!component.enabled || component.type != "FishingScoreAttackDirector") {
+				continue;
+			}
+			if (runtimeDirector) {
+				fail("Save failed: runtime Director is not unique.");
+				return;
+			}
+			runtimeDirector = &component;
+		}
+		if (!runtimeDirector) {
+			fail("Save failed: runtime Director is not enabled.");
+			return;
+		}
+
+		SceneDocument& editDocument = editorSession->GetEditDocument();
+		SceneEntity* editEntity = editDocument.FindEntity(request.directorEntityId);
+		if (!editEntity) {
+			fail("Save failed: edit Director entity was not found.");
+			return;
+		}
+		SceneComponent* editDirector = nullptr;
+		for (SceneComponent& component : editEntity->components) {
+			if (!component.enabled || component.type != "FishingScoreAttackDirector") {
+				continue;
+			}
+			if (editDirector) {
+				fail("Save failed: edit Director is not unique.");
+				return;
+			}
+			editDirector = &component;
+		}
+		if (!editDirector) {
+			fail("Save failed: edit Director is not enabled.");
+			return;
+		}
+
+		const auto clampFinite = [](float value, float fallback, float minimum, float maximum) {
+			return std::isfinite(value)
+				? std::clamp(value, minimum, maximum)
+				: fallback;
+		};
+		const auto sanitizeColor = [](const Vector4& color) {
+			return Vector4{
+				std::isfinite(color.x) ? std::clamp(color.x, 0.0f, 1.0f) : 0.1f,
+				std::isfinite(color.y) ? std::clamp(color.y, 0.0f, 1.0f) : 0.9f,
+				std::isfinite(color.z) ? std::clamp(color.z, 0.0f, 1.0f) : 1.0f,
+				std::isfinite(color.w) ? std::clamp(color.w, 0.0f, 1.0f) : 0.65f
+			};
+		};
+		const int pointCount = std::clamp(request.pointCount, 12, 128);
+		const float startSize = clampFinite(request.startSize, 0.26f, 0.01f, 5.0f);
+		const float endSize = clampFinite(request.endSize, 0.43f, 0.01f, 5.0f);
+		const int countPerEmission = static_cast<int>(std::clamp(
+			request.countPerEmission,
+			1u,
+			16u
+		));
+		const float emitterSpread = clampFinite(
+			request.emitterSpread,
+			0.0f,
+			0.0f,
+			0.5f
+		);
+		const float lifetime = clampFinite(request.lifetime, 0.8f, 0.1f, 3.0f);
+		const Vector4 startColor = sanitizeColor(request.startColor);
+		const Vector4 endColor = sanitizeColor(request.endColor);
+		const float emissiveIntensity = clampFinite(
+			request.emissiveIntensity,
+			1.0f,
+			0.0f,
+			8.0f
+		);
+		const auto sameColor = [](const Vector4& left, const Vector4& right) {
+			return left.x == right.x && left.y == right.y &&
+				left.z == right.z && left.w == right.w;
+		};
+		const bool changed =
+			editDirector->fishingFormationParticlePointCount != pointCount ||
+			editDirector->fishingFormationParticleStartSize != startSize ||
+			editDirector->fishingFormationParticleEndSize != endSize ||
+			editDirector->fishingFormationParticleCountPerEmission != countPerEmission ||
+			editDirector->fishingFormationParticleEmitterSpread != emitterSpread ||
+			editDirector->fishingFormationParticleLifetime != lifetime ||
+			!sameColor(editDirector->fishingFormationParticleStartColor, startColor) ||
+			!sameColor(editDirector->fishingFormationParticleEndColor, endColor) ||
+			editDirector->fishingFormationParticleEmissiveIntensity != emissiveIntensity;
+		if (changed) {
+			const SceneDocument beforeSnapshot = editDocument;
+			editDirector->fishingFormationParticlePointCount = pointCount;
+			editDirector->fishingFormationParticleStartSize = startSize;
+			editDirector->fishingFormationParticleEndSize = endSize;
+			editDirector->fishingFormationParticleCountPerEmission = countPerEmission;
+			editDirector->fishingFormationParticleEmitterSpread = emitterSpread;
+			editDirector->fishingFormationParticleLifetime = lifetime;
+			editDirector->fishingFormationParticleStartColor = startColor;
+			editDirector->fishingFormationParticleEndColor = endColor;
+			editDirector->fishingFormationParticleEmissiveIntensity = emissiveIntensity;
+			editDocument.MarkDirty();
+			if (!editorSession->CommitRuntimeEditAndSave(beforeSnapshot)) {
+				const std::string& saveError = editDocument.GetLastSaveError();
+				fail(saveError.empty()
+					? std::string("Save failed.")
+					: std::string("Save failed: ") + saveError);
+				return;
+			}
+		} else if (
+			editDocument.IsDirty() &&
+			!editorSession->CommitRuntimeEditAndSave(editDocument)
+		) {
+			const std::string& saveError = editDocument.GetLastSaveError();
+			fail(saveError.empty()
+				? std::string("Save failed.")
+				: std::string("Save failed: ") + saveError);
+			return;
+		}
+		system.SetFormationParticleSaveResult(
+			true,
+			"Formation particle settings saved to Scene."
+		);
 	}
 
 	Camera* CreateOrbitCamera() {
@@ -339,7 +503,18 @@ void RuntimeScene::Update(float deltaTime)
 
 		particleSystem_.DrawEditor(runtimeSceneId);
 	}
+	if (activeDocument) {
+		fishingScoreAttackSystem_.DrawFormationParticleTuningImGui(
+			*activeDocument,
+			playing
+		);
+	}
 #endif
+	ProcessFormationParticleSaveRequest(
+		fishingScoreAttackSystem_,
+		executionContext,
+		runtimeSceneId
+	);
 	lightingSystem_.Sync(activeDocument);
 	if (activeDocument && playing) {
 		// 前フレームで寿命切れ/HitしたRuntime Entityをbinding再構築前に破棄する。
@@ -686,6 +861,11 @@ void RuntimeScene::Update(float deltaTime)
 	// Transform確定後に環境設定とDebug形状を登録し、描画時の状態を揃える。
 	environmentSystem_.Sync(activeDocument, runtimeObjectBindings_);
 	if (activeDocument) {
+		fishingScoreAttackSystem_.UpdateFormationParticleEffect(
+			*activeDocument,
+			agentSystem_,
+			deltaTime
+		);
 		fishingScoreAttackSystem_.AddFormationOutlineDebugDraw(
 			*activeDocument,
 			agentSystem_
@@ -818,6 +998,9 @@ void RuntimeScene::Update(float deltaTime)
 void RuntimeScene::UpdatePaused()
 {
 	cameraSystem_.UpdatePaused(camera_, debugCamera_);
+	SceneExecutionContext* executionContext = sceneManager_
+		? sceneManager_->GetExecutionContext()
+		: nullptr;
 	SceneDocument* document = GetSceneDocument();
 	lightingSystem_.Sync(document);
 #if defined(_DEBUG) || defined(DEVELOPMENT)
@@ -826,6 +1009,12 @@ void RuntimeScene::UpdatePaused()
 		document,
 		GetSceneViewCamera()
 	);
+	if (document) {
+		fishingScoreAttackSystem_.DrawFormationParticleTuningImGui(
+			*document,
+			true
+		);
+	}
 	debugSystem_.AddDebugDraw(
 		document,
 		objectSystem_,
@@ -836,6 +1025,11 @@ void RuntimeScene::UpdatePaused()
 		true
 	);
 #endif
+	ProcessFormationParticleSaveRequest(
+		fishingScoreAttackSystem_,
+		executionContext,
+		GetSceneAssetId()
+	);
 }
 
 void RuntimeScene::Draw()

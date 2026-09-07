@@ -12,6 +12,7 @@
 #include "../../../engine/math/Math.h"
 #include "../../../engine/3d/Object3d.h"
 #include "../../../engine/3d/ModelManager.h"
+#include "../../../engine/particle/ParticleManager.h"
 #include "../../../engine/scene/SceneDocument.h"
 #include "../../../engine/scene/SceneEntityQuery.h"
 #include "../../../engine/scene/SceneInputKey.h"
@@ -23,6 +24,11 @@
 #include <limits>
 #include <unordered_set>
 #include <utility>
+
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+#include "../../../externals/imgui/imgui.h"
+#include "../../../externals/imgui/imgui_internal.h"
+#endif
 
 namespace {
 	using SceneEntityQuery::FindEnabledComponent;
@@ -451,6 +457,144 @@ namespace {
 		float radius = 0.0f;
 		float halfSegmentLength = 0.0f;
 	};
+
+	std::vector<XZPoint> BuildFormationOutlinePoints(
+		float radius,
+		float halfSegmentLength,
+		int outlineSegments
+	) {
+		const int arcSegments = (std::max)(6, outlineSegments / 2);
+		std::vector<XZPoint> points;
+		points.reserve(static_cast<size_t>(2 + arcSegments * 2));
+		points.push_back({ -radius, -halfSegmentLength });
+		points.push_back({ -radius, halfSegmentLength });
+		for (int index = 1; index <= arcSegments; ++index) {
+			const float angle = 3.14159265358979323846f *
+				(1.0f - static_cast<float>(index) / static_cast<float>(arcSegments));
+			points.push_back({
+				radius * std::cos(angle),
+				halfSegmentLength + radius * std::sin(angle)
+			});
+		}
+		points.push_back({ radius, -halfSegmentLength });
+		for (int index = 1; index < arcSegments; ++index) {
+			const float angle = -3.14159265358979323846f *
+				static_cast<float>(index) / static_cast<float>(arcSegments);
+			points.push_back({
+				radius * std::cos(angle),
+				-halfSegmentLength + radius * std::sin(angle)
+			});
+		}
+		return points;
+	}
+
+	std::vector<XZPoint> BuildFormationParticlePoints(
+		float radius,
+		float halfSegmentLength,
+		int sampleCount
+	) {
+		constexpr float kPi = 3.14159265358979323846f;
+		constexpr float kLengthEpsilon = 0.000001f;
+		if (
+			!std::isfinite(radius) ||
+			!std::isfinite(halfSegmentLength) ||
+			radius <= kLengthEpsilon ||
+			halfSegmentLength < 0.0f
+		) {
+			return {};
+		}
+		const int clampedSampleCount = std::clamp(sampleCount, 12, 128);
+		const float straightLength = 2.0f * halfSegmentLength;
+		const float arcLength = kPi * radius;
+		const float totalLength =
+			2.0f * straightLength + 2.0f * arcLength;
+		if (!std::isfinite(totalLength) || totalLength <= kLengthEpsilon) {
+			return {};
+		}
+		std::vector<XZPoint> points;
+		points.reserve(static_cast<size_t>(clampedSampleCount));
+		for (int index = 0; index < clampedSampleCount; ++index) {
+			const float distance = totalLength *
+				static_cast<float>(index) /
+				static_cast<float>(clampedSampleCount);
+			if (distance < straightLength || arcLength <= kLengthEpsilon) {
+				const float ratio = straightLength > kLengthEpsilon
+					? distance / straightLength
+					: 0.0f;
+				points.push_back({
+					-radius,
+					-halfSegmentLength +
+						ratio * 2.0f * halfSegmentLength
+				});
+				continue;
+			}
+			const float topArcEnd = straightLength + arcLength;
+			if (distance < topArcEnd) {
+				const float angle = kPi -
+					(distance - straightLength) / radius;
+				points.push_back({
+					radius * std::cos(angle),
+					halfSegmentLength + radius * std::sin(angle)
+				});
+				continue;
+			}
+			const float rightLineEnd = topArcEnd + straightLength;
+			if (distance < rightLineEnd) {
+				const float ratio = straightLength > kLengthEpsilon
+					? (distance - topArcEnd) / straightLength
+					: 0.0f;
+				points.push_back({
+					radius,
+					halfSegmentLength -
+					ratio * 2.0f * halfSegmentLength
+				});
+				continue;
+			}
+			const float angle = -
+				(distance - rightLineEnd) / radius;
+			points.push_back({
+				radius * std::cos(angle),
+				-halfSegmentLength + radius * std::sin(angle)
+			});
+		}
+		return points;
+	}
+
+	ParticleManager::ParticleBehavior BuildFormationParticleBehavior(
+		float startSize,
+		float endSize,
+		float lifetime,
+		const Vector4& startColor,
+		const Vector4& endColor,
+		float emissiveIntensity
+	) {
+		ParticleManager::ParticleBehavior behavior{};
+		behavior.life.lifeTimeMin = lifetime;
+		behavior.life.lifeTimeMax = lifetime;
+		behavior.life.enableLifeFade = true;
+		behavior.life.fadeOutStartRatio = 0.45f;
+		behavior.scale.startScaleMin = { startSize, startSize, startSize };
+		behavior.scale.startScaleMax = { startSize, startSize, startSize };
+		behavior.scale.enableScaleOverLife = true;
+		behavior.scale.endScaleMin = { endSize, endSize, endSize };
+		behavior.scale.endScaleMax = { endSize, endSize, endSize };
+		behavior.motion.linear.baseVelocity = { 0.0f, 0.08f, 0.0f };
+		behavior.motion.linear.velocityRandomRange = { 0.05f, 0.04f, 0.05f };
+		behavior.motion.linear.enableAcceleration = false;
+		behavior.motion.sway.amplitude = 0.04f;
+		behavior.motion.sway.frequency = 2.0f;
+		behavior.color.mode = ParticleManager::ColorChangeMode::kOverLife;
+		behavior.color.startColorMin = startColor;
+		behavior.color.startColorMax = startColor;
+		behavior.color.endColorMin = endColor;
+		behavior.color.endColorMax = endColor;
+		behavior.render.billboardMode = ParticleManager::BillboardMode::kBillboard;
+		behavior.render.primitiveType = ParticleManager::PrimitiveType::kPlane;
+		behavior.render.depthTest = true;
+		behavior.render.depthWrite = false;
+		behavior.render.emissiveIntensity = emissiveIntensity;
+		return behavior;
+	}
 
 	float CrossXZ(const XZPoint& a, const XZPoint& b, const XZPoint& c) {
 		return (b.x - a.x) * (c.z - a.z) -
@@ -1281,6 +1425,465 @@ bool SceneFishingScoreAttackSystem::ConsumePlayerResetRequest(
 	return true;
 }
 
+void SceneFishingScoreAttackSystem::UpdateFormationParticleEffect(
+	const SceneDocument& document,
+	const SceneAgentSystem& agentSystem,
+	float deltaTime
+) {
+	constexpr const char* kGroupName = "FishingFormationCloudCpu";
+	constexpr const char* kTexturePath = "resources/circleEntity.png";
+	ParticleManager* particleManager = ParticleManager::GetInstance();
+	auto stop = [&]() {
+		particleManager->ClearParticleGroup(kGroupName);
+		particleManager->ClearParticleGroupParentTransform(kGroupName);
+		formationParticleEmissionAccumulator_ = 0.0f;
+		formationParticlePointCursor_ = 0;
+		formationParticleActive_ = false;
+	};
+	if (formationParticleTuningDirty_) {
+		stop();
+		formationParticleTuningDirty_ = false;
+	}
+
+	if (state_ != SceneFishingScoreAttackState::Navigating || selectedFishCount_ < 1) {
+		if (formationParticleActive_ || particleManager->HasParticleGroup(kGroupName)) {
+			stop();
+		}
+		return;
+	}
+	const SceneEntity* directorEntity = document.FindEntity(directorEntityId_);
+	const SceneComponent* director = directorEntity
+		? FindEnabledComponent(*directorEntity, "FishingScoreAttackDirector")
+		: nullptr;
+	if (!director || !director->fishingFormationOutlineVisible ||
+		!std::isfinite(director->fishingFormationOutlineYOffset)) {
+		stop();
+		return;
+	}
+	LoadFormationParticleTuning(*director);
+	FormationCapsule capsule{};
+	if (!TryGetPlayerFormationCapsule(document, *director, agentSystem, capsule)) {
+		stop();
+		return;
+	}
+	const int outlineSegments = std::clamp(formationParticlePointCount_, 12, 128);
+	const std::vector<XZPoint> points = BuildFormationParticlePoints(
+		capsule.radius,
+		capsule.halfSegmentLength,
+		outlineSegments
+	);
+	if (points.empty()) {
+		stop();
+		return;
+	}
+	particleManager->CreateParticleGroupIfNeeded(kGroupName, kTexturePath);
+	particleManager->SetParticleGroupTexture(kGroupName, kTexturePath);
+	particleManager->SetGroupBlendMode(
+		kGroupName,
+		ParticleCommon::BlendMode::kBlendModeNormal
+	);
+	ParticleManager::ParticleRenderDesc render{};
+	render.billboardMode = ParticleManager::BillboardMode::kBillboard;
+	render.primitiveType = ParticleManager::PrimitiveType::kPlane;
+	render.depthTest = true;
+	render.depthWrite = false;
+	render.emissiveIntensity = std::clamp(
+		formationParticleEmissiveIntensity_,
+		0.0f,
+		8.0f
+	);
+	particleManager->SetGroupRenderDesc(kGroupName, render);
+	const Vector3 parentTranslation = {
+		capsule.center.x,
+		capsule.center.y + director->fishingFormationOutlineYOffset,
+		capsule.center.z
+	};
+	if (!particleManager->SetParticleGroupParentTransform(
+		kGroupName,
+		parentTranslation,
+		capsule.yaw
+	)) {
+		stop();
+		return;
+	}
+	const ParticleManager::ParticleBehavior behavior =
+		BuildFormationParticleBehavior(
+			formationParticleStartSize_,
+			formationParticleEndSize_,
+			formationParticleLifetime_,
+			formationParticleStartColor_,
+			formationParticleEndColor_,
+			formationParticleEmissiveIntensity_
+		);
+	const float emitterSpread = std::clamp(
+		formationParticleEmitterSpread_,
+		0.0f,
+		0.5f
+	);
+	const Vector3 emitterRandomRange = {
+		emitterSpread,
+		emitterSpread,
+		emitterSpread
+	};
+	if (!formationParticleActive_) {
+		for (const XZPoint& point : points) {
+			particleManager->Emit(
+				kGroupName,
+				{ point.x, 0.0f, point.z },
+				emitterRandomRange,
+				formationParticleCountPerEmission_,
+				behavior
+			);
+		}
+		formationParticlePointCursor_ = 0;
+		formationParticleEmissionAccumulator_ = 0.0f;
+		formationParticleActive_ = true;
+	}
+	if (!std::isfinite(deltaTime) || deltaTime <= 0.0f) {
+		return;
+	}
+	const float interval = (std::max)(
+		0.001f,
+		0.80f / static_cast<float>(points.size())
+	);
+	formationParticleEmissionAccumulator_ = (std::min)(
+		formationParticleEmissionAccumulator_ + deltaTime,
+		interval * 8.0f
+	);
+	uint32_t emitCount = static_cast<uint32_t>(
+		formationParticleEmissionAccumulator_ / interval
+	);
+	emitCount = (std::min)(emitCount, 8u);
+	formationParticleEmissionAccumulator_ -=
+		interval * static_cast<float>(emitCount);
+	for (uint32_t index = 0; index < emitCount; ++index) {
+		const XZPoint& point = points[formationParticlePointCursor_ % points.size()];
+		particleManager->Emit(
+			kGroupName,
+			{ point.x, 0.0f, point.z },
+			emitterRandomRange,
+			formationParticleCountPerEmission_,
+			behavior
+		);
+		formationParticlePointCursor_ =
+			(formationParticlePointCursor_ + 1) % points.size();
+	}
+}
+
+void SceneFishingScoreAttackSystem::DrawFormationParticleTuningImGui(
+	const SceneDocument& document,
+	bool runtimeControlsEnabled
+) {
+#if defined(_DEBUG) || defined(DEVELOPMENT)
+	if (ImGuiWindow* inspectorWindow = ImGui::FindWindowByName("Inspector")) {
+		if (ImGuiDockNode* dockNode = inspectorWindow->DockNode) {
+			ImGui::SetNextWindowDockID(dockNode->ID, ImGuiCond_FirstUseEver);
+		}
+	}
+	if (!ImGui::Begin(
+		"Formation Particle Tuning###FormationParticleTuningDocked",
+		nullptr,
+		ImGuiWindowFlags_NoFocusOnAppearing
+	)) {
+		ImGui::End();
+		return;
+	}
+
+	uint64_t directorEntityId = 0;
+	bool duplicateDirector = false;
+	const SceneComponent* director = FindDirector(
+		document,
+		directorEntityId,
+		duplicateDirector
+	);
+	if (!director || duplicateDirector) {
+		ImGui::TextDisabled("FishingScoreAttackDirector is not available.");
+		ImGui::End();
+		return;
+	}
+	if (!runtimeControlsEnabled) {
+		formationParticlePointCount_ = 0;
+	}
+	LoadFormationParticleTuning(*director);
+	bool changed = false;
+	if (!runtimeControlsEnabled) {
+		ImGui::TextDisabled("Available during Play or Pause.");
+	}
+	ImGui::BeginDisabled(!runtimeControlsEnabled);
+	changed |= ImGui::SliderInt(
+		"Outline Points",
+		&formationParticlePointCount_,
+		12,
+		128
+	);
+	changed |= ImGui::DragFloat(
+		"Start Size",
+		&formationParticleStartSize_,
+		0.01f,
+		0.01f,
+		5.0f,
+		"%.2f"
+	);
+	changed |= ImGui::DragFloat(
+		"End Size",
+		&formationParticleEndSize_,
+		0.01f,
+		0.01f,
+		5.0f,
+		"%.2f"
+	);
+	int countPerEmission = static_cast<int>(formationParticleCountPerEmission_);
+	if (ImGui::SliderInt("Particles Per Emission", &countPerEmission, 1, 16)) {
+		formationParticleCountPerEmission_ = static_cast<uint32_t>(countPerEmission);
+		changed = true;
+	}
+	changed |= ImGui::DragFloat(
+		"Emitter Spread",
+		&formationParticleEmitterSpread_,
+		0.005f,
+		0.0f,
+		0.5f,
+		"%.3f"
+	);
+	changed |= ImGui::DragFloat(
+		"Lifetime",
+		&formationParticleLifetime_,
+		0.01f,
+		0.1f,
+		3.0f,
+		"%.2f s"
+	);
+	changed |= ImGui::ColorEdit4(
+		"Start Color",
+		&formationParticleStartColor_.x
+	);
+	changed |= ImGui::ColorEdit4(
+		"End Color",
+		&formationParticleEndColor_.x
+	);
+	changed |= ImGui::DragFloat(
+		"Emissive Intensity",
+		&formationParticleEmissiveIntensity_,
+		0.05f,
+		0.0f,
+		8.0f,
+		"%.2f"
+	);
+	if (ImGui::Button("Reset")) {
+		formationParticlePointCount_ = 48;
+		formationParticleStartSize_ = 0.26f;
+		formationParticleEndSize_ = 0.43f;
+		formationParticleCountPerEmission_ = 1;
+		formationParticleEmitterSpread_ = 0.0f;
+		formationParticleLifetime_ = 0.8f;
+		formationParticleStartColor_ = { 0.1f, 0.9f, 1.0f, 0.65f };
+		formationParticleEndColor_ = { 0.1f, 0.9f, 1.0f, 0.65f };
+		formationParticleEmissiveIntensity_ = 1.0f;
+		changed = true;
+	}
+	if (ImGui::Button("Save to Scene")) {
+		formationParticleSaveRequest_.directorEntityId = directorEntityId;
+		formationParticleSaveRequest_.pointCount = std::clamp(
+			formationParticlePointCount_,
+			12,
+			128
+		);
+		formationParticleSaveRequest_.startSize = std::clamp(
+			formationParticleStartSize_,
+			0.01f,
+			5.0f
+		);
+		formationParticleSaveRequest_.endSize = std::clamp(
+			formationParticleEndSize_,
+			0.01f,
+			5.0f
+		);
+		formationParticleSaveRequest_.countPerEmission = std::clamp(
+			formationParticleCountPerEmission_,
+			1u,
+			16u
+		);
+		formationParticleSaveRequest_.emitterSpread = std::clamp(
+			formationParticleEmitterSpread_,
+			0.0f,
+			0.5f
+		);
+		formationParticleSaveRequest_.lifetime = std::clamp(
+			formationParticleLifetime_,
+			0.1f,
+			3.0f
+		);
+		formationParticleSaveRequest_.startColor = formationParticleStartColor_;
+		formationParticleSaveRequest_.endColor = formationParticleEndColor_;
+		formationParticleSaveRequest_.emissiveIntensity = std::clamp(
+			formationParticleEmissiveIntensity_,
+			0.0f,
+			8.0f
+		);
+		formationParticleSaveRequested_ = true;
+		formationParticleSaveStatus_ = "Save requested.";
+		formationParticleSaveStatusIsError_ = false;
+	}
+	ImGui::EndDisabled();
+	ImGui::TextUnformatted(
+		"Runtime tuning. Save to Scene writes only these particle settings."
+	);
+	if (!formationParticleSaveStatus_.empty()) {
+		if (formationParticleSaveStatusIsError_) {
+			ImGui::TextColored(
+				ImVec4(1.0f, 0.35f, 0.3f, 1.0f),
+				"%s",
+				formationParticleSaveStatus_.c_str()
+			);
+		} else {
+			ImGui::TextDisabled("%s", formationParticleSaveStatus_.c_str());
+		}
+	}
+	ImGui::End();
+	if (changed) {
+		formationParticlePointCount_ = std::clamp(
+			formationParticlePointCount_,
+			12,
+			128
+		);
+		formationParticleStartSize_ = std::clamp(
+			formationParticleStartSize_,
+			0.01f,
+			5.0f
+		);
+		formationParticleEndSize_ = std::clamp(
+			formationParticleEndSize_,
+			0.01f,
+			5.0f
+		);
+		formationParticleCountPerEmission_ = std::clamp(
+			formationParticleCountPerEmission_,
+			1u,
+			16u
+		);
+		formationParticleEmitterSpread_ = std::clamp(
+			formationParticleEmitterSpread_,
+			0.0f,
+			0.5f
+		);
+		formationParticleLifetime_ = std::clamp(
+			formationParticleLifetime_,
+			0.1f,
+			3.0f
+		);
+		formationParticleStartColor_.x = std::clamp(
+			formationParticleStartColor_.x, 0.0f, 1.0f
+		);
+		formationParticleStartColor_.y = std::clamp(
+			formationParticleStartColor_.y, 0.0f, 1.0f
+		);
+		formationParticleStartColor_.z = std::clamp(
+			formationParticleStartColor_.z, 0.0f, 1.0f
+		);
+		formationParticleStartColor_.w = std::clamp(
+			formationParticleStartColor_.w, 0.0f, 1.0f
+		);
+		formationParticleEndColor_.x = std::clamp(
+			formationParticleEndColor_.x, 0.0f, 1.0f
+		);
+		formationParticleEndColor_.y = std::clamp(
+			formationParticleEndColor_.y, 0.0f, 1.0f
+		);
+		formationParticleEndColor_.z = std::clamp(
+			formationParticleEndColor_.z, 0.0f, 1.0f
+		);
+		formationParticleEndColor_.w = std::clamp(
+			formationParticleEndColor_.w, 0.0f, 1.0f
+		);
+		formationParticleEmissiveIntensity_ = std::clamp(
+			formationParticleEmissiveIntensity_,
+			0.0f,
+			8.0f
+		);
+		formationParticleTuningDirty_ = true;
+	}
+#else
+	(void)document;
+	(void)runtimeControlsEnabled;
+#endif
+}
+
+bool SceneFishingScoreAttackSystem::ConsumeFormationParticleSaveRequest(
+	SceneFishingScoreAttackFormationParticleSaveRequest& request
+) {
+	if (!formationParticleSaveRequested_) {
+		return false;
+	}
+	request = formationParticleSaveRequest_;
+	formationParticleSaveRequested_ = false;
+	return true;
+}
+
+void SceneFishingScoreAttackSystem::SetFormationParticleSaveResult(
+	bool success,
+	std::string message
+) {
+	formationParticleSaveStatusIsError_ = !success;
+	formationParticleSaveStatus_ = std::move(message);
+}
+
+void SceneFishingScoreAttackSystem::LoadFormationParticleTuning(
+	const SceneComponent& director
+) {
+	if (formationParticlePointCount_ > 0) {
+		return;
+	}
+	formationParticlePointCount_ = std::clamp(
+		director.fishingFormationParticlePointCount,
+		12,
+		128
+	);
+	formationParticleStartSize_ = std::clamp(
+		director.fishingFormationParticleStartSize,
+		0.01f,
+		5.0f
+	);
+	formationParticleEndSize_ = std::clamp(
+		director.fishingFormationParticleEndSize,
+		0.01f,
+		5.0f
+	);
+	formationParticleCountPerEmission_ = static_cast<uint32_t>(std::clamp(
+		director.fishingFormationParticleCountPerEmission,
+		1,
+		16
+	));
+	formationParticleEmitterSpread_ = std::clamp(
+		director.fishingFormationParticleEmitterSpread,
+		0.0f,
+		0.5f
+	);
+	formationParticleLifetime_ = std::clamp(
+		director.fishingFormationParticleLifetime,
+		0.1f,
+		3.0f
+	);
+	const auto sanitizeColor = [](const Vector4& color) {
+		return Vector4{
+			std::isfinite(color.x) ? std::clamp(color.x, 0.0f, 1.0f) : 0.1f,
+			std::isfinite(color.y) ? std::clamp(color.y, 0.0f, 1.0f) : 0.9f,
+			std::isfinite(color.z) ? std::clamp(color.z, 0.0f, 1.0f) : 1.0f,
+			std::isfinite(color.w) ? std::clamp(color.w, 0.0f, 1.0f) : 0.65f
+		};
+	};
+	formationParticleStartColor_ = sanitizeColor(
+		director.fishingFormationParticleStartColor
+	);
+	formationParticleEndColor_ = sanitizeColor(
+		director.fishingFormationParticleEndColor
+	);
+	formationParticleEmissiveIntensity_ = std::clamp(
+		director.fishingFormationParticleEmissiveIntensity,
+		0.0f,
+		8.0f
+	);
+}
+
 void SceneFishingScoreAttackSystem::AddFormationOutlineDebugDraw(
 	const SceneDocument& document,
 	const SceneAgentSystem& agentSystem
@@ -1353,33 +1956,13 @@ void SceneFishingScoreAttackSystem::AddFormationOutlineDebugDraw(
 		debugRenderer->AddLine(toWorld(start), toWorld(end), sanitizedOutlineColor);
 	};
 
-	const int arcSegments = (std::max)(6, outlineSegments / 2);
-	XZPoint previous = { -capsule.radius, -capsule.halfSegmentLength };
-	XZPoint current = { -capsule.radius, capsule.halfSegmentLength };
-	addLine(previous, current);
-	previous = current;
-	for (int index = 1; index <= arcSegments; ++index) {
-		const float angle = 3.14159265358979323846f *
-			(1.0f - static_cast<float>(index) / static_cast<float>(arcSegments));
-		current = {
-			capsule.radius * std::cos(angle),
-			capsule.halfSegmentLength + capsule.radius * std::sin(angle)
-		};
-		addLine(previous, current);
-		previous = current;
-	}
-	current = { capsule.radius, -capsule.halfSegmentLength };
-	addLine(previous, current);
-	previous = current;
-	for (int index = 1; index <= arcSegments; ++index) {
-		const float angle = -3.14159265358979323846f *
-			static_cast<float>(index) / static_cast<float>(arcSegments);
-		current = {
-			capsule.radius * std::cos(angle),
-			-capsule.halfSegmentLength + capsule.radius * std::sin(angle)
-		};
-		addLine(previous, current);
-		previous = current;
+	const std::vector<XZPoint> points = BuildFormationOutlinePoints(
+		capsule.radius,
+		capsule.halfSegmentLength,
+		outlineSegments
+	);
+	for (size_t index = 0; index < points.size(); ++index) {
+		addLine(points[index], points[(index + 1) % points.size()]);
 	}
 }
 
@@ -3027,4 +3610,26 @@ void SceneFishingScoreAttackSystem::Clear() {
 	diagnostic_.clear();
 	textRequests_.clear();
 	iconRequests_.clear();
+	if (formationParticleActive_) {
+		ParticleManager* particleManager = ParticleManager::GetInstance();
+		particleManager->ClearParticleGroup("FishingFormationCloudCpu");
+		particleManager->ClearParticleGroupParentTransform("FishingFormationCloudCpu");
+	}
+	formationParticleEmissionAccumulator_ = 0.0f;
+	formationParticlePointCursor_ = 0;
+	formationParticleActive_ = false;
+	formationParticlePointCount_ = 0;
+	formationParticleStartSize_ = 0.26f;
+	formationParticleEndSize_ = 0.43f;
+	formationParticleCountPerEmission_ = 1;
+	formationParticleEmitterSpread_ = 0.0f;
+	formationParticleLifetime_ = 0.8f;
+	formationParticleStartColor_ = { 0.1f, 0.9f, 1.0f, 0.65f };
+	formationParticleEndColor_ = { 0.1f, 0.9f, 1.0f, 0.65f };
+	formationParticleEmissiveIntensity_ = 1.0f;
+	formationParticleTuningDirty_ = false;
+	formationParticleSaveRequested_ = false;
+	formationParticleSaveRequest_ = {};
+	formationParticleSaveStatus_.clear();
+	formationParticleSaveStatusIsError_ = false;
 }

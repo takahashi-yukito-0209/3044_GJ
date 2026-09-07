@@ -457,9 +457,9 @@ bool SceneCameraSystem::UpdateThirdPersonCamera(
 	}
 
 	Input* input = Input::GetInstance();
-	const bool altHeld =
-		input && (input->PushKey(DIK_LMENU) || input->PushKey(DIK_RMENU));
-	if (altHeld && acceptMouseInput) {
+	const bool gameplayMouseActive =
+		!input || input->IsCursorCaptured();
+	if (!gameplayMouseActive && acceptMouseInput) {
 		return true;
 	}
 
@@ -568,7 +568,7 @@ bool SceneCameraSystem::UpdateThirdPersonCamera(
 		deltaTime,
 		acceptMouseInput &&
 			thirdPerson->thirdPersonAllowMouseInput &&
-			!altHeld,
+			gameplayMouseActive,
 		acceptWheelZoom
 	);
 	ApplyPlayerDissolve(

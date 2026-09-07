@@ -66,6 +66,19 @@ struct SceneFishingScoreAttackPlayerResetRequest {
 	std::vector<EntityReset> entityResets;
 };
 
+struct SceneFishingScoreAttackFormationParticleSaveRequest {
+	uint64_t directorEntityId = 0;
+	int pointCount = 48;
+	float startSize = 0.26f;
+	float endSize = 0.43f;
+	uint32_t countPerEmission = 1;
+	float emitterSpread = 0.0f;
+	float lifetime = 0.8f;
+	Vector4 startColor = { 0.1f, 0.9f, 1.0f, 0.65f };
+	Vector4 endColor = { 0.1f, 0.9f, 1.0f, 0.65f };
+	float emissiveIntensity = 1.0f;
+};
+
 // SceneやObject、Colliderの所有権は持たず、保存済みComponentからRuntimeの判断だけを行う。
 class SceneFishingScoreAttackSystem {
 public:
@@ -100,6 +113,19 @@ public:
 		const SceneDocument& document,
 		const SceneAgentSystem& agentSystem
 	) const;
+	void UpdateFormationParticleEffect(
+		const SceneDocument& document,
+		const SceneAgentSystem& agentSystem,
+		float deltaTime
+	);
+	void DrawFormationParticleTuningImGui(
+		const SceneDocument& document,
+		bool runtimeControlsEnabled
+	);
+	bool ConsumeFormationParticleSaveRequest(
+		SceneFishingScoreAttackFormationParticleSaveRequest& request
+	);
+	void SetFormationParticleSaveResult(bool success, std::string message);
 	const std::vector<SceneFishingScoreAttackTextRequest>& GetTextRequests() const {
 		return textRequests_;
 	}
@@ -132,6 +158,7 @@ private:
 	void Fault(SceneDocument& document, const SceneComponent& director, std::string diagnostic);
 	void SetFishPreview(SceneDocument& document, const SceneComponent& director);
 	void DeactivatePoolHooks(SceneDocument& document, const SceneComponent& director);
+	void LoadFormationParticleTuning(const SceneComponent& director);
 	void BuildTextRequests(const SceneComponent& director);
 
 	SceneFishingScoreAttackState state_ = SceneFishingScoreAttackState::Inactive;
@@ -193,4 +220,21 @@ private:
 	std::string diagnostic_;
 	std::vector<SceneFishingScoreAttackTextRequest> textRequests_;
 	std::vector<SceneFishingScoreAttackIconRequest> iconRequests_;
+	float formationParticleEmissionAccumulator_ = 0.0f;
+	size_t formationParticlePointCursor_ = 0;
+	bool formationParticleActive_ = false;
+	int formationParticlePointCount_ = 0;
+	float formationParticleStartSize_ = 0.26f;
+	float formationParticleEndSize_ = 0.43f;
+	uint32_t formationParticleCountPerEmission_ = 1;
+	float formationParticleEmitterSpread_ = 0.0f;
+	float formationParticleLifetime_ = 0.8f;
+	Vector4 formationParticleStartColor_ = { 0.1f, 0.9f, 1.0f, 0.65f };
+	Vector4 formationParticleEndColor_ = { 0.1f, 0.9f, 1.0f, 0.65f };
+	float formationParticleEmissiveIntensity_ = 1.0f;
+	bool formationParticleTuningDirty_ = false;
+	bool formationParticleSaveRequested_ = false;
+	SceneFishingScoreAttackFormationParticleSaveRequest formationParticleSaveRequest_{};
+	std::string formationParticleSaveStatus_;
+	bool formationParticleSaveStatusIsError_ = false;
 };

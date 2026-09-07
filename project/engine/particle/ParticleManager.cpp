@@ -105,7 +105,7 @@ namespace {
 	}
 
 	bool ShouldIncludeParticleInWaterPass(
-		const ParticleManager::Particle& particle,
+		const Vector3& particlePosition,
 		const ParticleManager::WaterDrawFilter& filter
 	) {
 		if (filter.mode == ParticleManager::WaterDrawMode::kAll) {
@@ -115,7 +115,7 @@ namespace {
 		const bool refracted =
 			IntersectsSegmentAabb(
 				filter.cameraPosition,
-				particle.transform.translate,
+				particlePosition,
 				filter.waterCenter,
 				filter.waterHalfSize
 			);
@@ -1677,6 +1677,39 @@ bool ParticleManager::SetParticleGroupTexture(
 	return true;
 }
 
+bool ParticleManager::SetParticleGroupParentTransform(
+	const std::string& name,
+	const Vector3& translation,
+	float yaw
+) {
+	if (
+		!std::isfinite(translation.x) ||
+		!std::isfinite(translation.y) ||
+		!std::isfinite(translation.z) ||
+		!std::isfinite(yaw)
+	) {
+		return false;
+	}
+	auto it = particleGroups_.find(name);
+	if (it == particleGroups_.end()) {
+		return false;
+	}
+	it->second.parentTransformEnabled = true;
+	it->second.parentTranslation = translation;
+	it->second.parentYaw = yaw;
+	return true;
+}
+
+void ParticleManager::ClearParticleGroupParentTransform(const std::string& name) {
+	auto it = particleGroups_.find(name);
+	if (it == particleGroups_.end()) {
+		return;
+	}
+	it->second.parentTransformEnabled = false;
+	it->second.parentTranslation = {};
+	it->second.parentYaw = 0.0f;
+}
+
 void ParticleManager::InitializeParticleLife(Particle& particle, const ParticleBehavior& behavior) {
 	particle.currentTime = 0.0f;
 	particle.lifeTime = RandomRange(behavior.life.lifeTimeMin, behavior.life.lifeTimeMax);
@@ -2315,6 +2348,22 @@ void ParticleManager::UpdateParticleRotation(Particle& particle) {
 	}
 }
 
+Vector3 ParticleManager::ResolveParticleWorldPosition(
+	const ParticleGroup& group,
+	const Vector3& localPosition
+) const {
+	if (!group.parentTransformEnabled) {
+		return localPosition;
+	}
+	const float cosine = std::cos(group.parentYaw);
+	const float sine = std::sin(group.parentYaw);
+	return {
+		group.parentTranslation.x + localPosition.x * cosine + localPosition.z * sine,
+		group.parentTranslation.y + localPosition.y,
+		group.parentTranslation.z - localPosition.x * sine + localPosition.z * cosine
+	};
+}
+
 void ParticleManager::Update() {
 	using Clock = std::chrono::steady_clock;
 	const auto updateStart = Clock::now();
@@ -2450,8 +2499,17 @@ uint32_t ParticleManager::RebuildCpuParticleInstances(
 			if (group.instanceCount >= kMaxInstanceCount) {
 				break;
 			}
-			if (!ShouldIncludeParticleInWaterPass(particle, filter)) {
+			const Vector3 worldPosition = ResolveParticleWorldPosition(
+				group,
+				particle.transform.translate
+			);
+			if (!ShouldIncludeParticleInWaterPass(worldPosition, filter)) {
 				continue;
+			}
+			Vector3 worldRotation = particle.transform.rotate;
+			if (group.parentTransformEnabled &&
+				particle.billboardMode != BillboardMode::kBillboard) {
+				worldRotation.y = WrapRadian(worldRotation.y + group.parentYaw);
 			}
 
 			Matrix4x4 worldMatrix{};
@@ -2459,14 +2517,14 @@ uint32_t ParticleManager::RebuildCpuParticleInstances(
 				worldMatrix = MakeBillboardMatrix(
 					camera->GetWorldMatrix(),
 					particle.transform.scale,
-					particle.transform.translate,
+					worldPosition,
 					particle.transform.rotate.z
 				);
 			} else {
 				worldMatrix = MakeAffineMatrix(
 					particle.transform.scale,
-					particle.transform.rotate,
-					particle.transform.translate
+					worldRotation,
+					worldPosition
 				);
 			}
 			Matrix4x4 wvp = Multiply(

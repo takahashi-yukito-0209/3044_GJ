@@ -486,6 +486,15 @@ struct SceneComponent {
 	float fishingFormationOutlineBloomIntensity = 1.0f;
 	float fishingFormationOutlineYOffset = 0.25f;
 	int fishingFormationOutlineSegments = 48;
+	int fishingFormationParticlePointCount = 48;
+	float fishingFormationParticleStartSize = 0.26f;
+	float fishingFormationParticleEndSize = 0.43f;
+	int fishingFormationParticleCountPerEmission = 1;
+	float fishingFormationParticleEmitterSpread = 0.0f;
+	float fishingFormationParticleLifetime = 0.8f;
+	Vector4 fishingFormationParticleStartColor = { 0.1f, 0.9f, 1.0f, 0.65f };
+	Vector4 fishingFormationParticleEndColor = { 0.1f, 0.9f, 1.0f, 0.65f };
+	float fishingFormationParticleEmissiveIntensity = 1.0f;
 	float fishingSpawnHalfSizeX = 10.0f;
 	float fishingSpawnHalfSizeZ = 10.0f;
 	float fishingSpawnMinimumDistance = 0.0f;

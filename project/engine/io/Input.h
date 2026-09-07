@@ -77,7 +77,7 @@ public:
 	float GetMouseWheel() const {
 		return static_cast<float>(mouseState_.lZ) / static_cast<float>(WHEEL_DELTA);
 	}
-	void SetCursorCapture(bool enabled);
+	void SetCursorCapture(bool enabled, bool hideCursor = true);
 	void SetCursorCaptureRect(float minX, float minY, float maxX, float maxY);
 	bool IsCursorCaptured() const { return cursorCaptured_; }
 
@@ -94,6 +94,7 @@ private:
 	Vector2 mousePosition_ = {};
 	bool cursorCaptured_ = false;
 	bool cursorHidden_ = false;
+	bool cursorHideRequested_ = true;
 	RECT cursorCaptureRect_ = {};
 	bool hasCursorCaptureRect_ = false;
 	RECT appliedCursorCaptureRect_ = {};

@@ -1569,13 +1569,19 @@ void ImGuiManager::ConfigureEditorFont(ImGuiIO& io, float dpiScale) {
 	}
 }
 
+bool ImGuiManager::IsGameplayCameraMouseActive(bool altHeld) const {
+	return requireAltForGameplayCameraMouse_ ? altHeld : !altHeld;
+}
+
 void ImGuiManager::BeginFrame(){
 	ImGuiIO& io = ImGui::GetIO();
 	Input* input = Input::GetInstance();
 	const bool altHeld = input &&
 		(input->PushKey(DIK_LMENU) || input->PushKey(DIK_RMENU));
 	const bool blockEditorMouse =
-		editorSession_ && editorSession_->IsPlaying() && !altHeld;
+		editorSession_ &&
+		editorSession_->IsPlaying() &&
+		IsGameplayCameraMouseActive(altHeld);
 	if (blockEditorMouse) {
 		io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
 		io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
@@ -1636,6 +1642,20 @@ void ImGuiManager::LoadEditorSettings() {
 			settings["startFullscreen"].is_boolean()
 		) {
 			startFullscreen_ = settings["startFullscreen"].get<bool>();
+		}
+		if (
+			settings.contains("requireAltForGameplayCameraMouse") &&
+			settings["requireAltForGameplayCameraMouse"].is_boolean()
+		) {
+			requireAltForGameplayCameraMouse_ =
+				settings["requireAltForGameplayCameraMouse"].get<bool>();
+		}
+		if (
+			settings.contains("hideCursorWhileGameplayCameraMouseActive") &&
+			settings["hideCursorWhileGameplayCameraMouseActive"].is_boolean()
+		) {
+			hideCursorWhileGameplayCameraMouseActive_ =
+				settings["hideCursorWhileGameplayCameraMouseActive"].get<bool>();
 		}
 		if (
 			settings.contains("sceneGridVisible") &&
@@ -1808,6 +1828,8 @@ void ImGuiManager::SaveEditorSettings() const {
 		{ "fontPreset", preset },
 		{ "fontSize", editorFontSize_ },
 		{ "startFullscreen", startFullscreen_ },
+		{ "requireAltForGameplayCameraMouse", requireAltForGameplayCameraMouse_ },
+		{ "hideCursorWhileGameplayCameraMouseActive", hideCursorWhileGameplayCameraMouseActive_ },
 		{ "sceneGridVisible", sceneGridVisible_ },
 		{ "prefabGridVisible", prefabGridVisible_ },
 		{ "sceneAxisVisible", sceneAxisVisible_ },
@@ -4219,6 +4241,38 @@ void ImGuiManager::DrawSettingsMenu() {
 			"次回起動時に適用します。現在はF11で切り替えられます。",
 			"Applied on next launch. F11 toggles now."
 		));
+		ImGui::Separator();
+		if (ImGui::MenuItem(
+			SelectEditorText(
+				editorLanguage_,
+				"ゲームカメラ操作にAltを要求###RequireAltForGameplayCameraMouse",
+				"Require Alt for gameplay camera mouse###RequireAltForGameplayCameraMouse"
+			),
+			nullptr,
+			requireAltForGameplayCameraMouse_
+		)) {
+			requireAltForGameplayCameraMouse_ =
+				!requireAltForGameplayCameraMouse_;
+			SaveEditorSettings();
+		}
+		if (ImGui::MenuItem(
+			SelectEditorText(
+				editorLanguage_,
+				"ゲームカメラ操作中にカーソルを隠す###HideCursorWhileGameplayCameraMouseActive",
+				"Hide cursor while gameplay camera mouse is active###HideCursorWhileGameplayCameraMouseActive"
+			),
+			nullptr,
+			hideCursorWhileGameplayCameraMouseActive_
+		)) {
+			hideCursorWhileGameplayCameraMouseActive_ =
+				!hideCursorWhileGameplayCameraMouseActive_;
+			SaveEditorSettings();
+		}
+		ImGui::TextDisabled("%s", SelectEditorText(
+			editorLanguage_,
+			"ゲームカメラ操作中はImGui入力が無効です。Alt設定で切り替えます。",
+			"ImGui input is disabled while the gameplay camera is active; use the Alt setting to switch."
+		));
 		ImGui::EndMenu();
 	}
 
@@ -4606,6 +4660,10 @@ void ImGuiManager::BuildDefaultLayout() {
 	ImGui::DockBuilderDockWindow("Environment", rightId);
 	ImGui::DockBuilderDockWindow("Post Process Stack", rightId);
 	ImGui::DockBuilderDockWindow("Scene Particles", rightId);
+	ImGui::DockBuilderDockWindow(
+		"Formation Particle Tuning###FormationParticleTuningDocked",
+		rightId
+	);
 	ImGui::DockBuilderDockWindow("Monitor Debug", bottomId);
 	ImGui::DockBuilderDockWindow("Project", bottomId);
 	ImGui::DockBuilderDockWindow("Console", bottomId);
@@ -13262,6 +13320,87 @@ void ImGuiManager::DrawInspectorWindow() {
 					&component.fishingFormationOutlineSegments,
 					12,
 					128
+				);
+				ImGui::SeparatorText(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Formation Particle")
+				);
+				fishingChanged |= ImGui::SliderInt(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle Point Count"
+					),
+					&component.fishingFormationParticlePointCount,
+					12,
+					128
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle Start Size"
+					),
+					&component.fishingFormationParticleStartSize,
+					0.01f,
+					0.01f,
+					5.0f,
+					"%.2f"
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle End Size"
+					),
+					&component.fishingFormationParticleEndSize,
+					0.01f,
+					0.01f,
+					5.0f,
+					"%.2f"
+				);
+				fishingChanged |= ImGui::SliderInt(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle Count Per Emission"
+					),
+					&component.fishingFormationParticleCountPerEmission,
+					1,
+					16
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle Emitter Spread"
+					),
+					&component.fishingFormationParticleEmitterSpread,
+					0.005f,
+					0.0f,
+					0.5f,
+					"%.3f"
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle Lifetime"
+					),
+					&component.fishingFormationParticleLifetime,
+					0.01f,
+					0.1f,
+					3.0f,
+					"%.2f s"
+				);
+				fishingChanged |= ImGui::ColorEdit4(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle Start Color"
+					),
+					&component.fishingFormationParticleStartColor.x
+				);
+				fishingChanged |= ImGui::ColorEdit4(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle End Color"
+					),
+					&component.fishingFormationParticleEndColor.x
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Particle Emissive Intensity"
+					),
+					&component.fishingFormationParticleEmissiveIntensity,
+					0.05f,
+					0.0f,
+					8.0f,
+					"%.2f"
 				);
 				if (ImGui::TreeNodeEx(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Fish Entities"),

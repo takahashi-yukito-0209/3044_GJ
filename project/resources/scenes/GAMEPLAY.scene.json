@@ -1237,7 +1237,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 24.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -1344,7 +1346,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -1451,7 +1455,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -1558,7 +1564,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -1665,7 +1673,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -1772,7 +1782,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -1879,7 +1891,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -1986,7 +2000,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -2093,7 +2109,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -2200,7 +2218,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -2307,7 +2327,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 22.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Right",
@@ -3573,12 +3595,12 @@
           "dashMultiplier": 1.649999976158142,
           "enabled": true,
           "gamepadDeadzone": 0.20000000298023224,
+          "inputMode": "Both",
           "jumpVelocity": 37.20000076293945,
           "localId": 2,
           "moveSpeed": 19.799999237060547,
           "turnResponsiveness": 0.05000000074505806,
-          "type": "PlayerBehavior",
-          "inputMode": "Both"
+          "type": "PlayerBehavior"
         },
         {
           "active": true,
@@ -4713,16 +4735,35 @@
           ],
           "fishMultiplierBase": 1.0,
           "fishMultiplierPerAdditionalFish": 1.0,
+          "formationOutlineBloomIntensity": 3.0,
           "formationOutlineColor": [
             1.0,
             1.0,
             1.0,
             1.0
           ],
-          "formationOutlineBloomIntensity": 3.0,
           "formationOutlineSegments": 48,
           "formationOutlineVisible": true,
           "formationOutlineYOffset": 0.25,
+          "formationParticleCountPerEmission": 1,
+          "formationParticleEmissiveIntensity": 1.0,
+          "formationParticleEmitterSpread": 0.0,
+          "formationParticleEndColor": [
+            0.10000000149011612,
+            0.8999999761581421,
+            1.0,
+            0.6499999761581421
+          ],
+          "formationParticleEndSize": 2.0,
+          "formationParticleLifetime": 0.23999999463558197,
+          "formationParticlePointCount": 128,
+          "formationParticleStartColor": [
+            0.10000000149011612,
+            0.8999999761581421,
+            1.0,
+            0.6499999761581421
+          ],
+          "formationParticleStartSize": 2.0,
           "hookBands": [
             {
               "distanceMultiplier": 0.0,
@@ -5071,11 +5112,25 @@
             {
               "actions": [
                 {
+                  "active": true,
+                  "postProcessManagerEntityId": 0,
+                  "postProcessManagerEntityName": "",
+                  "postProcessProfileId": "",
+                  "prefabParentToTarget": false,
+                  "prefabPath": "",
+                  "prefabUseTargetTransform": true,
+                  "sceneId": "",
+                  "statId": "",
+                  "statOperation": "Add",
+                  "stateName": "",
                   "targetEntityId": 11,
+                  "targetEntityName": "",
+                  "textMotionClipId": "",
                   "type": "AdjustFishingFishCount",
                   "value": 1.0
                 }
               ],
+              "cooldown": 0.0,
               "inputExpression": {
                 "groups": [
                   {
@@ -5090,19 +5145,44 @@
                 ],
                 "mode": "Any"
               },
+              "radius": 1.0,
+              "statComparison": "LessOrEqual",
+              "statId": "hp",
+              "statValue": 0.0,
               "targetEntityId": 11,
+              "targetEntityName": "",
+              "targetPosition": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "textMotionClipId": "",
               "triggerKey": "Gamepad DPad Up",
-              "triggerType": "OnKeyPressed",
-              "triggerOnce": false
+              "triggerOnce": false,
+              "triggerType": "OnKeyPressed"
             },
             {
               "actions": [
                 {
+                  "active": true,
+                  "postProcessManagerEntityId": 0,
+                  "postProcessManagerEntityName": "",
+                  "postProcessProfileId": "",
+                  "prefabParentToTarget": false,
+                  "prefabPath": "",
+                  "prefabUseTargetTransform": true,
+                  "sceneId": "",
+                  "statId": "",
+                  "statOperation": "Add",
+                  "stateName": "",
                   "targetEntityId": 11,
+                  "targetEntityName": "",
+                  "textMotionClipId": "",
                   "type": "AdjustFishingFishCount",
                   "value": -1.0
                 }
               ],
+              "cooldown": 0.0,
               "inputExpression": {
                 "groups": [
                   {
@@ -5117,10 +5197,21 @@
                 ],
                 "mode": "Any"
               },
+              "radius": 1.0,
+              "statComparison": "LessOrEqual",
+              "statId": "hp",
+              "statValue": 0.0,
               "targetEntityId": 11,
+              "targetEntityName": "",
+              "targetPosition": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "textMotionClipId": "",
               "triggerKey": "Gamepad DPad Down",
-              "triggerType": "OnKeyPressed",
-              "triggerOnce": false
+              "triggerOnce": false,
+              "triggerType": "OnKeyPressed"
             }
           ],
           "enabled": true,
@@ -5757,7 +5848,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 30.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Left",
@@ -5906,7 +5999,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 30.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Left",
@@ -6013,7 +6108,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 30.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Left",
@@ -6120,7 +6217,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 30.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Left",
@@ -6227,7 +6326,9 @@
           ],
           "enabled": true,
           "fontFamily": "Yu Gothic UI",
+          "fontResourcePath": "",
           "fontSize": 48.0,
+          "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Center",
@@ -11240,10 +11341,25 @@
             {
               "actions": [
                 {
+                  "active": true,
+                  "postProcessManagerEntityId": 0,
+                  "postProcessManagerEntityName": "",
+                  "postProcessProfileId": "",
+                  "prefabParentToTarget": false,
+                  "prefabPath": "",
+                  "prefabUseTargetTransform": true,
                   "sceneId": "result",
-                  "type": "SceneTransition"
+                  "statId": "",
+                  "statOperation": "Add",
+                  "stateName": "",
+                  "targetEntityId": 0,
+                  "targetEntityName": "",
+                  "textMotionClipId": "",
+                  "type": "SceneTransition",
+                  "value": 0.0
                 }
               ],
+              "cooldown": 0.0,
               "inputExpression": {
                 "groups": [
                   {
@@ -11262,10 +11378,21 @@
                 ],
                 "mode": "Any"
               },
+              "radius": 1.0,
+              "statComparison": "LessOrEqual",
+              "statId": "hp",
+              "statValue": 0.0,
               "targetEntityId": 11,
+              "targetEntityName": "",
+              "targetPosition": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "textMotionClipId": "",
               "triggerKey": "ENTER",
-              "triggerType": "OnFishingScoreAttackResultInput",
-              "triggerOnce": false
+              "triggerOnce": false,
+              "triggerType": "OnFishingScoreAttackResultInput"
             }
           ],
           "enabled": true,
@@ -12138,7 +12265,7 @@
     "motionBlurMaxRadius": 24.0,
     "motionBlurSamples": 8,
     "motionBlurStrength": 0.5,
-    "noiseAmount": 0.10000000149011612,
+    "noiseAmount": 0.25,
     "noiseAnimate": true,
     "noiseEnabled": false,
     "noiseScale": 1.0,
@@ -12170,8 +12297,8 @@
     "toneMapMode": 0,
     "underwaterDistortion": 0.012000000104308128,
     "underwaterEnabled": true,
-    "underwaterFogDensity": 0.054999999701976776,
-    "underwaterIntensity": 0.699999988079071,
+    "underwaterFogDensity": 0.03500000014901161,
+    "underwaterIntensity": 0.6499999761581421,
     "underwaterTintColor": [
       0.019999999552965164,
       0.44999998807907104,
@@ -12179,7 +12306,7 @@
       1.0
     ],
     "vignetteEnabled": false,
-    "vignetteIntensity": 0.9190000295639038,
+    "vignetteIntensity": 1.0,
     "vignettePower": 0.800000011920929,
     "vignetteScale": 16.0,
     "waterRefractionEdgeSoftness": 0.07999999821186066,
