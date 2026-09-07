@@ -1236,7 +1236,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 24.0,
           "fontSource": "System",
@@ -1257,23 +1257,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -200.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 120,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -200.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 120,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 120,
           "text": "",
@@ -1345,7 +1387,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1366,23 +1408,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -160.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -160.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1454,7 +1538,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1475,23 +1559,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -128.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -128.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1563,7 +1689,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1584,23 +1710,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -96.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -96.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1672,7 +1840,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1693,23 +1861,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -64.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -64.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1781,7 +1991,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1802,23 +2012,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -32.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -112.0,
+              -32.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1890,7 +2142,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1911,23 +2163,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -160.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -160.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1999,7 +2293,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2020,23 +2314,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -128.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -128.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -2108,7 +2444,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2129,23 +2465,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -96.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -96.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -2217,7 +2595,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2238,23 +2616,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -64.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -64.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -2326,7 +2746,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2347,23 +2767,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -32.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "pivot": [
             1.0,
             1.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              1.0,
+              1.0
+            ],
+            "position": [
+              -24.0,
+              -32.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 121,
+            "viewportAnchor": [
+              1.0,
+              1.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -5113,6 +5575,9 @@
               "actions": [
                 {
                   "active": true,
+                  "pauseOperation": "Pause",
+                  "pauseProfileId": "",
+                  "pauseRequestId": "",
                   "postProcessManagerEntityId": 0,
                   "postProcessManagerEntityName": "",
                   "postProcessProfileId": "",
@@ -5145,10 +5610,12 @@
                 ],
                 "mode": "Any"
               },
+              "priority": 0,
               "radius": 1.0,
               "statComparison": "LessOrEqual",
               "statId": "hp",
               "statValue": 0.0,
+              "stateName": "",
               "targetEntityId": 11,
               "targetEntityName": "",
               "targetPosition": [
@@ -5165,6 +5632,9 @@
               "actions": [
                 {
                   "active": true,
+                  "pauseOperation": "Pause",
+                  "pauseProfileId": "",
+                  "pauseRequestId": "",
                   "postProcessManagerEntityId": 0,
                   "postProcessManagerEntityName": "",
                   "postProcessProfileId": "",
@@ -5197,10 +5667,12 @@
                 ],
                 "mode": "Any"
               },
+              "priority": 0,
               "radius": 1.0,
               "statComparison": "LessOrEqual",
               "statId": "hp",
               "statValue": 0.0,
+              "stateName": "",
               "targetEntityId": 11,
               "targetEntityName": "",
               "targetPosition": [
@@ -5847,7 +6319,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -5868,7 +6340,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "overlayPlacement": {
             "clipEnabled": false,
@@ -5921,12 +6393,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "FISH 0",
@@ -5998,7 +6470,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -6019,23 +6491,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              24.0,
+              64.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
           "pivot": [
             0.0,
             0.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              24.0,
+              64.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "TIME 60.0",
@@ -6107,7 +6621,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -6128,23 +6642,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              24.0,
+              104.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
           "pivot": [
             0.0,
             0.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              24.0,
+              104.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "SCORE 0",
@@ -6216,7 +6772,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -6237,23 +6793,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              24.0,
+              144.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
           "pivot": [
             0.0,
             0.0
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              24.0,
+              144.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "MULTIPLIER 1.0",
@@ -6325,7 +6923,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 48.0,
           "fontSource": "System",
@@ -6346,23 +6944,65 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 3.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.5,
+              0.5
+            ],
+            "position": [
+              0.0,
+              0.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 101,
+            "viewportAnchor": [
+              0.5,
+              0.5
+            ]
+          },
           "pivot": [
             0.5,
             0.5
           ],
           "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.5,
+              0.5
+            ],
+            "position": [
+              0.0,
+              0.0
+            ],
+            "rotation": -0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 101,
+            "viewportAnchor": [
+              0.5,
+              0.5
+            ]
+          },
           "shadowColor": [
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 101,
           "text": "",
@@ -11342,6 +11982,9 @@
               "actions": [
                 {
                   "active": true,
+                  "pauseOperation": "Pause",
+                  "pauseProfileId": "",
+                  "pauseRequestId": "",
                   "postProcessManagerEntityId": 0,
                   "postProcessManagerEntityName": "",
                   "postProcessProfileId": "",
@@ -11378,10 +12021,12 @@
                 ],
                 "mode": "Any"
               },
+              "priority": 0,
               "radius": 1.0,
               "statComparison": "LessOrEqual",
               "statId": "hp",
               "statValue": 0.0,
+              "stateName": "",
               "targetEntityId": 11,
               "targetEntityName": "",
               "targetPosition": [
@@ -12270,7 +12915,7 @@
           1.0
         ],
         "scale": [
-          159.08279418945312,
+          159.08279418945313,
           0.9300000071525574,
           230.28135681152344
         ],

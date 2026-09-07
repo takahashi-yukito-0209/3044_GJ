@@ -24,7 +24,7 @@ namespace {
 	using SceneTransformResolver::ResolveScene2DTransform;
 
 	TextRasterizer::Settings ToRasterizerSettings(
-	const SceneComponent& component,
+		const SceneComponent& component,
 		const std::string& text,
 		const Vector4& color,
 		const std::string& fontFamily,
@@ -65,7 +65,7 @@ namespace {
 	}
 
 	std::string BuildContentSignature(
-	const SceneComponent& component,
+		const SceneComponent& component,
 		const std::string& text,
 		const Vector4& color,
 		const std::string& resolutionKey,
@@ -151,6 +151,19 @@ void SceneTextRenderSystem::SetTextColorOverride(
 
 void SceneTextRenderSystem::ClearTextColorOverrides() {
 	textColorOverrides_.clear();
+}
+
+void SceneTextRenderSystem::SetViewportPositionOverride(
+	uint64_t entityId,
+	const Vector2& position
+) {
+	if (entityId != 0) {
+		viewportPositionOverrides_[entityId] = position;
+	}
+}
+
+void SceneTextRenderSystem::ClearViewportPositionOverrides() {
+	viewportPositionOverrides_.clear();
 }
 
 void SceneTextRenderSystem::SetPresentationOverride(
@@ -349,10 +362,16 @@ void SceneTextRenderSystem::DrawScreenOverlay(
 		const float baseRotation = placement ? placement->rotation : transform.rotate.z;
 		const Vector2 baseScale = placement
 			? placement->scale : Vector2{ transform.scale.x, transform.scale.y };
-		const Vector2 position{
-			anchor.x * static_cast<float>(width) + basePosition.x + positionOffset.x,
-			anchor.y * static_cast<float>(height) + basePosition.y + positionOffset.y
-		};
+		const auto viewportOverride = viewportPositionOverrides_.find(entity->id);
+		const Vector2 position = viewportOverride != viewportPositionOverrides_.end()
+			? Vector2{
+				viewportOverride->second.x * static_cast<float>(width) + positionOffset.x,
+				viewportOverride->second.y * static_cast<float>(height) + positionOffset.y
+			}
+			: Vector2{
+				anchor.x * static_cast<float>(width) + basePosition.x + positionOffset.x,
+				anchor.y * static_cast<float>(height) + basePosition.y + positionOffset.y
+			};
 		found->second.sprite->Update(
 			position,
 			baseRotation + rotationOffset,
@@ -380,5 +399,6 @@ void SceneTextRenderSystem::Finalize() {
 	texts_.clear();
 	textOverrides_.clear();
 	textColorOverrides_.clear();
+	viewportPositionOverrides_.clear();
 	presentationOverrides_.clear();
 }
