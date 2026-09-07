@@ -504,10 +504,13 @@ void RuntimeScene::Update(float deltaTime)
 
 	// 遷移が成立したフレームは旧Sceneの状態をこれ以上変更しない。
 	if (playing && !gameplayPaused && gameplayDeltaTime > 0.0f && activeDocument) {
-		const std::string targetSceneId =
+		const SceneTransitionRequest transitionRequest =
 			transitionSystem_.Update(*activeDocument);
-		if (!targetSceneId.empty()) {
-			sceneManager_->RequestSceneTransition(targetSceneId);
+		if (!transitionRequest.targetSceneId.empty()) {
+			sceneManager_->RequestSceneTransition(
+				transitionRequest.targetSceneId,
+				transitionRequest.useEffect
+			);
 			return;
 		}
 	}
@@ -1055,7 +1058,8 @@ void RuntimeScene::Update(float deltaTime)
 		if (!eventResult.sceneTransitionId.empty()) {
 			postProcessProfileSystem_.Reset(activeDocument);
 			sceneManager_->RequestSceneTransition(
-				eventResult.sceneTransitionId
+				eventResult.sceneTransitionId,
+				eventResult.sceneTransitionUseEffect
 			);
 			return;
 		}

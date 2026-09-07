@@ -5,8 +5,13 @@
 
 class SceneDocument;
 
-// 状態を保持せず、入力条件を満たした遷移先Scene IDだけを返す。
+struct SceneTransitionRequest {
+	std::string targetSceneId;
+	bool useEffect = true;
+};
+
+// 状態を保持せず、入力条件を満たした遷移要求だけを返す。
 class SceneTransitionSystem {
 public:
-	std::string Update(const SceneDocument& document) const;
+	SceneTransitionRequest Update(const SceneDocument& document) const;
 };

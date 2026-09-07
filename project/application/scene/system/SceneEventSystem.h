@@ -78,6 +78,7 @@ struct SceneEventRuntimeSignals {
 
 struct SceneEventResult {
 	std::string sceneTransitionId;
+	bool sceneTransitionUseEffect = true;
 	ScenePostProcessRequest postProcessRequest;
 	std::vector<SceneCameraRequest> cameraRequests;
 	std::vector<SceneAudioRequest> audioRequests;
