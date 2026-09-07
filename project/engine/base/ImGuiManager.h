@@ -218,6 +218,10 @@ public:
 	float GetSceneViewMinY() const { return sceneViewMinY_; }
 	float GetSceneViewMaxX() const { return sceneViewMaxX_; }
 	float GetSceneViewMaxY() const { return sceneViewMaxY_; }
+	bool IsGameplayCameraMouseActive(bool altHeld) const;
+	bool ShouldHideCursorForGameplayCameraMouse() const {
+		return hideCursorWhileGameplayCameraMouseActive_;
+	}
 	bool IsSceneGridVisible() const { return sceneGridVisible_; }
 	static bool IsSceneViewInputActive();
 	void SetEditorSession(EditorSession* editorSession) {
@@ -528,6 +532,8 @@ private:
 	float editorFontSize_ = 13.0f;
 	bool editorFontRebuildRequested_ = false;
 	bool startFullscreen_ = false;
+	bool requireAltForGameplayCameraMouse_ = false;
+	bool hideCursorWhileGameplayCameraMouseActive_ = true;
 	// シーン/Entity/コンポーネント単位のInspector折りたたみ状態。
 	std::unordered_map<std::string, bool> componentFoldoutStates_;
 	// Transformなど、Component以外のInspector区画もEditorローカルで保持する。

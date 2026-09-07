@@ -287,8 +287,11 @@ Vector2 Input::GetGamepadLeftStick(float deadzone) const {
 	};
 }
 
-void Input::SetCursorCapture(bool enabled) {
-	if (cursorCaptured_ == enabled) {
+
+void Input::SetCursorCapture(bool enabled, bool hideCursor) {
+	const bool hideSettingChanged = cursorHideRequested_ != hideCursor;
+	cursorHideRequested_ = hideCursor;
+	if (cursorCaptured_ == enabled && !hideSettingChanged) {
 		return;
 	}
 
@@ -305,10 +308,16 @@ void Input::SetCursorCapture(bool enabled) {
 		return;
 	}
 
-	if (!cursorHidden_) {
-		while (ShowCursor(FALSE) >= 0) {
+	if (cursorHideRequested_) {
+		if (!cursorHidden_) {
+			while (ShowCursor(FALSE) >= 0) {
+			}
+			cursorHidden_ = true;
 		}
-		cursorHidden_ = true;
+	} else if (cursorHidden_) {
+		while (ShowCursor(TRUE) < 0) {
+		}
+		cursorHidden_ = false;
 	}
 	ApplyCursorCapture();
 }

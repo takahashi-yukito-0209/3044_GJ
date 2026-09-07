@@ -36,6 +36,7 @@ public:
 	void Resume();
 	void Stop();
 	bool Save();
+	bool CommitRuntimeEditAndSave(const SceneDocument& beforeSnapshot);
 	void BeginEditFrame();
 	void EndEditFrame(bool commit);
 	bool Undo();

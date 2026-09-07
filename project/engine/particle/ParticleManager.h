@@ -418,6 +418,9 @@ private:
 
 		ParticleCommon::BlendMode blendMode = ParticleCommon::BlendMode::kBlendModeAdd;
 		ParticleRenderDesc render;
+		bool parentTransformEnabled = false;
+		Vector3 parentTranslation{};
+		float parentYaw = 0.0f;
 		Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource;
 		D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 		uint32_t vertexCount = 0;
@@ -464,6 +467,12 @@ public:
 		const std::string& name,
 		const std::string& textureFilePath
 	);
+	bool SetParticleGroupParentTransform(
+		const std::string& name,
+		const Vector3& translation,
+		float yaw
+	);
+	void ClearParticleGroupParentTransform(const std::string& name);
 
 	void Emit(
 		const std::string& name,
@@ -612,6 +621,10 @@ private:
 
 	Vector3 LerpVector3(const Vector3& start, const Vector3& end, float t);
 	void UpdateParticleScale(Particle& particle);
+	Vector3 ResolveParticleWorldPosition(
+		const ParticleGroup& group,
+		const Vector3& localPosition
+	) const;
 	uint32_t RebuildCpuParticleInstances(
 		Camera* camera,
 		const WaterDrawFilter& filter

@@ -638,11 +638,16 @@ void Game::Update() {
 			input->PushKey(DIK_LMENU) || input->PushKey(DIK_RMENU);
 		const bool playing =
 			executionContext_ && executionContext_->IsPlaying();
+		const bool gameplayMouseActive = playing && (
+			imguiManager_
+				? imguiManager_->IsGameplayCameraMouseActive(altHeld)
+				: !altHeld
+		);
 		if (
 			editorSession_ &&
 			imguiManager_ &&
 			playing &&
-			!altHeld
+			gameplayMouseActive
 		) {
 			input->SetCursorCaptureRect(
 				imguiManager_->GetSceneViewMinX(),
@@ -651,7 +656,12 @@ void Game::Update() {
 				imguiManager_->GetSceneViewMaxY()
 			);
 		}
-		input->SetCursorCapture(playing && !altHeld);
+		input->SetCursorCapture(
+			gameplayMouseActive,
+			imguiManager_
+				? imguiManager_->ShouldHideCursorForGameplayCameraMouse()
+				: true
+		);
 	}
 	const bool paused =
 		executionContext_ && executionContext_->IsPaused();

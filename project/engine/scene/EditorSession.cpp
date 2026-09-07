@@ -141,6 +141,28 @@ bool EditorSession::Save() {
 	return saved;
 }
 
+bool EditorSession::CommitRuntimeEditAndSave(
+	const SceneDocument& beforeSnapshot
+) {
+	if (
+		(!IsPlaying() && !IsPaused()) ||
+		editSceneFilePath_.empty()
+	) {
+		return false;
+	}
+	if (editDocument_.GetRevision() != beforeSnapshot.GetRevision()) {
+		PushUndoSnapshot(beforeSnapshot);
+		redoStack_.clear();
+	}
+	const bool saved = editDocument_.Save(editSceneFilePath_);
+	if (saved) {
+		frameStartDocument_ = editDocument_;
+		frameStartRevision_ = editDocument_.GetRevision();
+		editFrameActive_ = false;
+	}
+	return saved;
+}
+
 void EditorSession::BeginEditFrame() {
 	if (!IsEditing() || editFrameActive_) {
 		return;

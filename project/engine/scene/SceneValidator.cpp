@@ -1959,6 +1959,57 @@ bool SceneValidator::ValidateDocument(
 						"FishingScoreAttackDirector has invalid formation outline settings"
 					);
 				}
+				if (
+					component.fishingFormationParticlePointCount < 12 ||
+					component.fishingFormationParticlePointCount > 128 ||
+					!std::isfinite(component.fishingFormationParticleStartSize) ||
+					component.fishingFormationParticleStartSize < 0.01f ||
+					component.fishingFormationParticleStartSize > 5.0f ||
+					!std::isfinite(component.fishingFormationParticleEndSize) ||
+					component.fishingFormationParticleEndSize < 0.01f ||
+					component.fishingFormationParticleEndSize > 5.0f ||
+					component.fishingFormationParticleCountPerEmission < 1 ||
+					component.fishingFormationParticleCountPerEmission > 16 ||
+					!std::isfinite(component.fishingFormationParticleEmitterSpread) ||
+					component.fishingFormationParticleEmitterSpread < 0.0f ||
+					component.fishingFormationParticleEmitterSpread > 0.5f ||
+					!std::isfinite(component.fishingFormationParticleLifetime) ||
+					component.fishingFormationParticleLifetime < 0.1f ||
+					component.fishingFormationParticleLifetime > 3.0f ||
+					!std::isfinite(component.fishingFormationParticleStartColor.x) ||
+					!std::isfinite(component.fishingFormationParticleStartColor.y) ||
+					!std::isfinite(component.fishingFormationParticleStartColor.z) ||
+					!std::isfinite(component.fishingFormationParticleStartColor.w) ||
+					component.fishingFormationParticleStartColor.x < 0.0f ||
+					component.fishingFormationParticleStartColor.x > 1.0f ||
+					component.fishingFormationParticleStartColor.y < 0.0f ||
+					component.fishingFormationParticleStartColor.y > 1.0f ||
+					component.fishingFormationParticleStartColor.z < 0.0f ||
+					component.fishingFormationParticleStartColor.z > 1.0f ||
+					component.fishingFormationParticleStartColor.w < 0.0f ||
+					component.fishingFormationParticleStartColor.w > 1.0f ||
+					!std::isfinite(component.fishingFormationParticleEndColor.x) ||
+					!std::isfinite(component.fishingFormationParticleEndColor.y) ||
+					!std::isfinite(component.fishingFormationParticleEndColor.z) ||
+					!std::isfinite(component.fishingFormationParticleEndColor.w) ||
+					component.fishingFormationParticleEndColor.x < 0.0f ||
+					component.fishingFormationParticleEndColor.x > 1.0f ||
+					component.fishingFormationParticleEndColor.y < 0.0f ||
+					component.fishingFormationParticleEndColor.y > 1.0f ||
+					component.fishingFormationParticleEndColor.z < 0.0f ||
+					component.fishingFormationParticleEndColor.z > 1.0f ||
+					component.fishingFormationParticleEndColor.w < 0.0f ||
+					component.fishingFormationParticleEndColor.w > 1.0f ||
+					!std::isfinite(component.fishingFormationParticleEmissiveIntensity) ||
+					component.fishingFormationParticleEmissiveIntensity < 0.0f ||
+					component.fishingFormationParticleEmissiveIntensity > 8.0f
+				) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingScoreAttackDirector has invalid formation particle settings"
+					);
+				}
 				auto validateFishingComponentReference = [
 					&addIssue,
 					&document,

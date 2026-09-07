@@ -1765,6 +1765,24 @@ namespace {
 				component.fishingFormationOutlineYOffset;
 			result["formationOutlineSegments"] =
 				component.fishingFormationOutlineSegments;
+			result["formationParticlePointCount"] =
+				component.fishingFormationParticlePointCount;
+			result["formationParticleStartSize"] =
+				component.fishingFormationParticleStartSize;
+			result["formationParticleEndSize"] =
+				component.fishingFormationParticleEndSize;
+			result["formationParticleCountPerEmission"] =
+				component.fishingFormationParticleCountPerEmission;
+			result["formationParticleEmitterSpread"] =
+				component.fishingFormationParticleEmitterSpread;
+			result["formationParticleLifetime"] =
+				component.fishingFormationParticleLifetime;
+			result["formationParticleStartColor"] =
+				VectorToJson(component.fishingFormationParticleStartColor);
+			result["formationParticleEndColor"] =
+				VectorToJson(component.fishingFormationParticleEndColor);
+			result["formationParticleEmissiveIntensity"] =
+				component.fishingFormationParticleEmissiveIntensity;
 		} else if (component.type == "FishingHookSpawnArea") {
 			result["halfSizeX"] = component.fishingSpawnHalfSizeX;
 			result["halfSizeZ"] = component.fishingSpawnHalfSizeZ;
@@ -3378,6 +3396,74 @@ namespace {
 						12,
 						128
 					);
+					component.fishingFormationParticlePointCount = std::clamp(
+						value.value(
+							"formationParticlePointCount",
+							component.fishingFormationParticlePointCount
+						),
+						12,
+						128
+					);
+					const float particleStartSize = value.value(
+						"formationParticleStartSize",
+						component.fishingFormationParticleStartSize
+					);
+					component.fishingFormationParticleStartSize =
+						std::isfinite(particleStartSize)
+							? std::clamp(particleStartSize, 0.01f, 5.0f)
+							: 0.26f;
+					const float particleEndSize = value.value(
+						"formationParticleEndSize",
+						component.fishingFormationParticleEndSize
+					);
+					component.fishingFormationParticleEndSize =
+						std::isfinite(particleEndSize)
+							? std::clamp(particleEndSize, 0.01f, 5.0f)
+							: 0.43f;
+					component.fishingFormationParticleCountPerEmission = std::clamp(
+						value.value(
+							"formationParticleCountPerEmission",
+							component.fishingFormationParticleCountPerEmission
+						),
+						1,
+						16
+					);
+					const float particleEmitterSpread = value.value(
+						"formationParticleEmitterSpread",
+						component.fishingFormationParticleEmitterSpread
+					);
+					component.fishingFormationParticleEmitterSpread =
+						std::isfinite(particleEmitterSpread)
+							? std::clamp(particleEmitterSpread, 0.0f, 0.5f)
+							: 0.0f;
+					const float particleLifetime = value.value(
+						"formationParticleLifetime",
+						component.fishingFormationParticleLifetime
+					);
+					component.fishingFormationParticleLifetime =
+						std::isfinite(particleLifetime)
+							? std::clamp(particleLifetime, 0.1f, 3.0f)
+							: 0.8f;
+					if (value.contains("formationParticleStartColor")) {
+						component.fishingFormationParticleStartColor = JsonToVector(
+							value.at("formationParticleStartColor"),
+							component.fishingFormationParticleStartColor
+						);
+					}
+					if (value.contains("formationParticleEndColor")) {
+						component.fishingFormationParticleEndColor = JsonToVector(
+							value.at("formationParticleEndColor"),
+							component.fishingFormationParticleEndColor
+						);
+					}
+					const float particleEmissiveIntensity = value.value(
+						"formationParticleEmissiveIntensity",
+						component.fishingFormationParticleEmissiveIntensity
+					);
+					component.fishingFormationParticleEmissiveIntensity =
+						std::isfinite(particleEmissiveIntensity)
+							? std::clamp(particleEmissiveIntensity, 0.0f, 8.0f)
+							: 1.0f;
 				} else if (component.type == "FishingHookSpawnArea") {
 					component.fishingSpawnHalfSizeX = (std::max)(
 						value.value("halfSizeX", component.fishingSpawnHalfSizeX),
@@ -9177,6 +9263,15 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingFormationOutlineBloomIntensity = 1.0f;
 		component.fishingFormationOutlineYOffset = 0.25f;
 		component.fishingFormationOutlineSegments = 48;
+		component.fishingFormationParticlePointCount = 48;
+		component.fishingFormationParticleStartSize = 0.26f;
+		component.fishingFormationParticleEndSize = 0.43f;
+		component.fishingFormationParticleCountPerEmission = 1;
+		component.fishingFormationParticleEmitterSpread = 0.0f;
+		component.fishingFormationParticleLifetime = 0.8f;
+		component.fishingFormationParticleStartColor = { 0.1f, 0.9f, 1.0f, 0.65f };
+		component.fishingFormationParticleEndColor = { 0.1f, 0.9f, 1.0f, 0.65f };
+		component.fishingFormationParticleEmissiveIntensity = 1.0f;
 	} else if (type == "FishingHookSpawnArea") {
 		component.fishingSpawnHalfSizeX = 10.0f;
 		component.fishingSpawnHalfSizeZ = 10.0f;
