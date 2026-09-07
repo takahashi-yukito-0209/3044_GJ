@@ -613,6 +613,7 @@ SceneEventResult SceneEventSystem::Update(
 			!action.sceneId.empty()
 		) {
 			result.sceneTransitionId = action.sceneId;
+			result.sceneTransitionUseEffect = action.sceneTransitionUseEffect;
 		} else if (
 			action.type == "SetPostProcessProfile" &&
 			IsValidPostProcessProfileAction(document, action)

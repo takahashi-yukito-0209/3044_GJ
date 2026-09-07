@@ -22,6 +22,9 @@ public:
 	void ClearTextOverrides();
 	void SetTextColorOverride(uint64_t entityId, const Vector4& color);
 	void ClearTextColorOverrides();
+	// 画面座標をビューポート比率で上書きする。World座標に追従するHUDに使う。
+	void SetViewportPositionOverride(uint64_t entityId, const Vector2& position);
+	void ClearViewportPositionOverrides();
 	void SetPresentationOverride(
 		uint64_t entityId,
 		const Vector2& positionOffset,
@@ -63,5 +66,6 @@ private:
 	std::unordered_map<uint64_t, RuntimeText> texts_;
 	std::unordered_map<uint64_t, std::string> textOverrides_;
 	std::unordered_map<uint64_t, Vector4> textColorOverrides_;
+	std::unordered_map<uint64_t, Vector2> viewportPositionOverrides_;
 	std::unordered_map<uint64_t, PresentationOverride> presentationOverrides_;
 };

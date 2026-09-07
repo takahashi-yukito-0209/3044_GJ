@@ -1285,6 +1285,7 @@ namespace {
 				{ "value", action.value },
 				{ "active", action.active },
 				{ "sceneId", action.sceneId },
+				{ "sceneTransitionUseEffect", action.sceneTransitionUseEffect },
 				{ "prefabPath", action.prefabPath },
 				{ "prefabParentToTarget", action.prefabParentToTarget },
 				{ "prefabUseTargetTransform", action.prefabUseTargetTransform },
@@ -2160,6 +2161,7 @@ namespace {
 				component.sceneTransitionTargetSceneId;
 			result["triggerType"] = component.sceneTransitionTriggerType;
 			result["triggerKey"] = component.sceneTransitionTriggerKey;
+			result["useEffect"] = component.sceneTransitionUseEffect;
 		} else if (component.type == "CameraPath") {
 			result["targetCameraName"] = component.cameraPathTargetCameraName;
 			result["triggerType"] = component.cameraPathTriggerType;
@@ -2341,6 +2343,9 @@ namespace {
 		action.value = value.value("value", action.value);
 		action.active = value.value("active", action.active);
 		action.sceneId = value.value("sceneId", action.sceneId);
+		action.sceneTransitionUseEffect = value.value(
+			"sceneTransitionUseEffect", action.sceneTransitionUseEffect
+		);
 		action.prefabPath = value.value("prefabPath", action.prefabPath);
 		action.prefabParentToTarget = value.value(
 			"prefabParentToTarget", action.prefabParentToTarget
@@ -4727,6 +4732,10 @@ namespace {
 				component.sceneTransitionTriggerKey = value.value(
 					"triggerKey",
 					component.sceneTransitionTriggerKey
+				);
+				component.sceneTransitionUseEffect = value.value(
+					"useEffect",
+					component.sceneTransitionUseEffect
 				);
 				component.cameraPathTargetCameraName = value.value(
 					"targetCameraName",
@@ -9737,6 +9746,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.sceneTransitionTargetSceneId = "gameplay";
 		component.sceneTransitionTriggerType = "Key";
 		component.sceneTransitionTriggerKey = "ENTER";
+		component.sceneTransitionUseEffect = true;
 	} else if (type == "CameraPath") {
 		component.cameraPathTargetCameraName = "";
 		component.cameraPathTriggerType = "Key";

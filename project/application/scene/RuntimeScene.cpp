@@ -232,6 +232,53 @@ namespace {
 		camera->Update();
 		return camera;
 	}
+
+	bool TryProjectWorldPositionToViewport(
+		const Camera& camera,
+		const Vector3& worldPosition,
+		Vector2& viewportPosition
+	) {
+		const Matrix4x4& viewProjection = camera.GetViewProjectionMatrix();
+		const float x =
+			worldPosition.x * viewProjection.m[0][0] +
+			worldPosition.y * viewProjection.m[1][0] +
+			worldPosition.z * viewProjection.m[2][0] +
+			viewProjection.m[3][0];
+		const float y =
+			worldPosition.x * viewProjection.m[0][1] +
+			worldPosition.y * viewProjection.m[1][1] +
+			worldPosition.z * viewProjection.m[2][1] +
+			viewProjection.m[3][1];
+		const float z =
+			worldPosition.x * viewProjection.m[0][2] +
+			worldPosition.y * viewProjection.m[1][2] +
+			worldPosition.z * viewProjection.m[2][2] +
+			viewProjection.m[3][2];
+		const float w =
+			worldPosition.x * viewProjection.m[0][3] +
+			worldPosition.y * viewProjection.m[1][3] +
+			worldPosition.z * viewProjection.m[2][3] +
+			viewProjection.m[3][3];
+		if (!std::isfinite(w) || w <= 0.000001f) {
+			return false;
+		}
+		const float inverseW = 1.0f / w;
+		const float normalizedDepth = z * inverseW;
+		if (!std::isfinite(normalizedDepth) ||
+			normalizedDepth < 0.0f || normalizedDepth > 1.0f) {
+			return false;
+		}
+		const float normalizedX = x * inverseW;
+		const float normalizedY = y * inverseW;
+		if (!std::isfinite(normalizedX) || !std::isfinite(normalizedY)) {
+			return false;
+		}
+		viewportPosition = {
+			normalizedX * 0.5f + 0.5f,
+			0.5f - normalizedY * 0.5f
+		};
+		return true;
+	}
 }
 
 void RuntimeScene::ApplyRenderCamera(Camera* viewCamera) {
@@ -457,10 +504,13 @@ void RuntimeScene::Update(float deltaTime)
 
 	// 遷移が成立したフレームは旧Sceneの状態をこれ以上変更しない。
 	if (playing && !gameplayPaused && gameplayDeltaTime > 0.0f && activeDocument) {
-		const std::string targetSceneId =
+		const SceneTransitionRequest transitionRequest =
 			transitionSystem_.Update(*activeDocument);
-		if (!targetSceneId.empty()) {
-			sceneManager_->RequestSceneTransition(targetSceneId);
+		if (!transitionRequest.targetSceneId.empty()) {
+			sceneManager_->RequestSceneTransition(
+				transitionRequest.targetSceneId,
+				transitionRequest.useEffect
+			);
 			return;
 		}
 	}
@@ -1035,7 +1085,8 @@ void RuntimeScene::Update(float deltaTime)
 		if (!eventResult.sceneTransitionId.empty()) {
 			postProcessProfileSystem_.Reset(activeDocument);
 			sceneManager_->RequestSceneTransition(
-				eventResult.sceneTransitionId
+				eventResult.sceneTransitionId,
+				eventResult.sceneTransitionUseEffect
 			);
 			return;
 		}
@@ -1096,6 +1147,7 @@ void RuntimeScene::Update(float deltaTime)
 	postProcessProfileSystem_.Update(advancePostProcess ? realDeltaTime : 0.0f);
 	textRenderSystem_.ClearTextOverrides();
 	textRenderSystem_.ClearTextColorOverrides();
+	textRenderSystem_.ClearViewportPositionOverrides();
 	textRenderSystem_.ClearPresentationOverrides();
 	if (activeDocument) {
 		for (const SceneGameFlowTextRequest& request : gameFlowResult.textRequests) {
@@ -1135,6 +1187,40 @@ void RuntimeScene::Update(float deltaTime)
 			presentation.rotationOffset,
 			presentation.scaleMultiplier,
 			presentation.opacityMultiplier
+		);
+	}
+	const SceneFishingScoreAttackScorePopup& scorePopup =
+		fishingScoreAttackSystem_.GetScorePopup();
+	Camera* popupCamera = GetSceneViewCamera();
+	Vector2 popupViewportPosition{};
+	if (
+		activeDocument && popupCamera && scorePopup.active &&
+		scorePopup.entityId != 0 &&
+		TryProjectWorldPositionToViewport(
+			*popupCamera,
+			{
+				scorePopup.worldPosition.x,
+				scorePopup.worldPosition.y + scorePopup.elapsedSeconds * 1.5f,
+				scorePopup.worldPosition.z
+			},
+			popupViewportPosition
+		)
+	) {
+		const float progress = std::clamp(
+			scorePopup.elapsedSeconds / scorePopup.durationSeconds,
+			0.0f,
+			1.0f
+		);
+		textRenderSystem_.SetViewportPositionOverride(
+			scorePopup.entityId,
+			popupViewportPosition
+		);
+		textRenderSystem_.SetPresentationOverride(
+			scorePopup.entityId,
+			{},
+			0.0f,
+			{ 1.0f, 1.0f },
+			1.0f - progress
 		);
 	}
 	textRenderSystem_.Sync(activeDocument);

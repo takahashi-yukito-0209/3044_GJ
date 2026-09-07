@@ -42,6 +42,17 @@ struct SceneFishingScoreAttackIconRequest {
 	bool visible = false;
 };
 
+// 得点した釣り針の位置に重ねる、一時的な加点表示。
+struct SceneFishingScoreAttackScorePopup {
+	uint64_t entityId = 0;
+	std::string text;
+	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Vector3 worldPosition{};
+	float elapsedSeconds = 0.0f;
+	float durationSeconds = 0.9f;
+	bool active = false;
+};
+
 struct SceneFishingScoreAttackPlayerWaterBounds {
 	uint64_t playerEntityId = 0;
 	Vector3 center{};
@@ -150,6 +161,9 @@ public:
 	const std::vector<SceneFishingScoreAttackIconRequest>& GetIconRequests() const {
 		return iconRequests_;
 	}
+	const SceneFishingScoreAttackScorePopup& GetScorePopup() const {
+		return scorePopup_;
+	}
 	const std::string& GetDiagnostic() const { return diagnostic_; }
 	void Clear();
 
@@ -250,6 +264,7 @@ private:
 	std::string diagnostic_;
 	std::vector<SceneFishingScoreAttackTextRequest> textRequests_;
 	std::vector<SceneFishingScoreAttackIconRequest> iconRequests_;
+	SceneFishingScoreAttackScorePopup scorePopup_{};
 	float formationParticleEmissionAccumulator_ = 0.0f;
 	size_t formationParticlePointCursor_ = 0;
 	bool formationParticleActive_ = false;

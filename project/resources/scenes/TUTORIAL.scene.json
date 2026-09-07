@@ -1236,7 +1236,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 24.0,
           "fontSource": "System",
@@ -1257,7 +1257,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -1268,12 +1268,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 120,
           "text": "",
@@ -1345,7 +1345,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1366,7 +1366,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -1377,12 +1377,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1454,7 +1454,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1475,7 +1475,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -1486,12 +1486,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1563,7 +1563,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1584,7 +1584,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -1595,12 +1595,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1672,7 +1672,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1693,7 +1693,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -1704,12 +1704,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1781,7 +1781,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1802,7 +1802,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -1813,12 +1813,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1890,7 +1890,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1911,7 +1911,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -1922,12 +1922,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -1999,7 +1999,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2020,7 +2020,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -2031,12 +2031,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -2108,7 +2108,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2129,7 +2129,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -2140,12 +2140,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -2217,7 +2217,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2238,7 +2238,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -2249,12 +2249,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -2326,7 +2326,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2347,7 +2347,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             1.0,
@@ -2358,12 +2358,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 121,
           "text": "",
@@ -5857,7 +5857,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -5878,7 +5878,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "overlayPlacement": {
             "clipEnabled": false,
@@ -5931,12 +5931,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "FISH 0",
@@ -6008,7 +6008,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -6029,7 +6029,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             0.0,
@@ -6040,12 +6040,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "TIME 60.0",
@@ -6117,7 +6117,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -6138,7 +6138,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             0.0,
@@ -6149,12 +6149,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "SCORE 0",
@@ -6226,7 +6226,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -6247,7 +6247,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 2.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             0.0,
@@ -6258,12 +6258,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 100,
           "text": "MULTIPLIER 1.0",
@@ -6335,7 +6335,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Yu Gothic UI",
+          "fontFamily": "Arial Black",
           "fontResourcePath": "",
           "fontSize": 48.0,
           "fontSource": "System",
@@ -6356,7 +6356,7 @@
             1.0
           ],
           "outlineEnabled": true,
-          "outlineWidth": 3.0,
+          "outlineWidth": 1.0,
           "overflowMode": "Overflow",
           "pivot": [
             0.5,
@@ -6367,12 +6367,12 @@
             0.0,
             0.0,
             0.0,
-            0.5
+            1.0
           ],
-          "shadowEnabled": false,
+          "shadowEnabled": true,
           "shadowOffset": [
-            2.0,
-            2.0
+            3.0,
+            3.0
           ],
           "sortingOrder": 101,
           "text": "",
