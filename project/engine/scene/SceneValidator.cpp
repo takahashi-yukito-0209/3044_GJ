@@ -34,6 +34,12 @@ namespace {
 			mode == "ThreeDPointDownmix" || mode == "ThreeDStereoArea";
 	}
 
+	bool IsValidPauseDomain(const std::string& domain) {
+		return domain == "Gameplay" || domain == "Physics" ||
+			domain == "GameplayInput" || domain == "WorldAnimation" ||
+			domain == "WorldEffects" || domain == "Audio";
+	}
+
 	std::string DescribeAudioChannelMismatch(
 		const std::string& spatialMode,
 		uint32_t channelCount
@@ -248,6 +254,7 @@ bool SceneValidator::ValidateDocument(
 	uint64_t firstPersistentBgmEntityId = 0;
 	uint32_t fishingDirectorCount = 0;
 	uint64_t firstFishingDirectorEntityId = 0;
+	uint32_t pauseControllerCount = 0;
 	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> prefabLocalIds;
 	std::unordered_map<std::string, uint64_t> activeLeaderControllers;
 	for (const SceneTeamSettings& team : document.GetTeams()) {
@@ -519,7 +526,72 @@ bool SceneValidator::ValidateDocument(
 					);
 				}
 			};
-			if (component.type == "MeshRenderer") {
+			if (component.type == "PauseController") {
+				if (component.enabled && activeInHierarchy &&
+					++pauseControllerCount > 1) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"Scene can contain only one active PauseController"
+					);
+				}
+				std::unordered_set<std::string> profileIds;
+				for (const ScenePauseProfile& profile : component.pauseProfiles) {
+					if (profile.id.empty()) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"PauseController contains an empty Profile Id"
+						);
+					} else if (!profileIds.insert(profile.id).second) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"PauseController contains a duplicate Profile Id: " +
+								profile.id
+						);
+					}
+					if (profile.label.empty()) {
+						addIssue(
+							SceneValidationSeverity::Warning,
+							entity.id,
+							"PauseController Profile has an empty label: " +
+								profile.id
+						);
+					}
+					std::unordered_set<std::string> domains;
+					for (const std::string& domain : profile.pausedDomains) {
+						if (!IsValidPauseDomain(domain)) {
+							addIssue(
+								SceneValidationSeverity::Error,
+								entity.id,
+								"PauseController Profile has an unsupported domain: " + domain
+							);
+						} else if (!domains.insert(domain).second) {
+							addIssue(
+								SceneValidationSeverity::Warning,
+								entity.id,
+								"PauseController Profile contains a duplicate domain: " + domain
+							);
+						}
+					}
+				}
+			} else if (component.type == "ProcessPolicy") {
+				if (
+					component.processMode != "Inherit" &&
+					component.processMode != "Pausable" &&
+					component.processMode != "WhenPaused" &&
+					component.processMode != "Always" &&
+					component.processMode != "Disabled"
+				) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"ProcessPolicy has an unsupported processMode: " +
+							component.processMode
+					);
+				}
+			} else if (component.type == "MeshRenderer") {
 				if (
 					!std::isfinite(component.meshVisualRotation.x) ||
 					!std::isfinite(component.meshVisualRotation.y) ||
@@ -1312,7 +1384,131 @@ bool SceneValidator::ValidateDocument(
 					const SceneEntity* target = resolveEventTarget(targetId, targetName);
 					return target && onStartActivatedEntityIds.contains(target->id);
 				};
+				auto validateConditionExpression = [
+				&addIssue,
+				&entity,
+				&document,
+				&resolveEventTarget
+			](const SceneEventConditionExpression& expression) {
+				if (expression.mode != "Any") {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"Event condition expression mode must be Any"
+					);
+				}
+				if (expression.groups.empty()) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"Event condition expression requires at least one group"
+					);
+				}
+				for (const SceneEventConditionGroup& group : expression.groups) {
+					if (group.mode != "All") {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"Event condition group mode must be All"
+						);
+					}
+					if (group.terms.empty()) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"Event condition group requires at least one term"
+						);
+					}
+					for (const SceneEventConditionTerm& term : group.terms) {
+						const bool needsTarget =
+							term.type == "StatCompare" ||
+							term.type == "EntityActive" ||
+							term.type == "StateEquals" ||
+							term.type == "PauseActive" ||
+							term.type == "PositionWithin";
+						const SceneEntity* target = resolveEventTarget(
+							term.targetEntityId, term.targetEntityName
+						);
+						if (needsTarget && !target) {
+							addIssue(
+								SceneValidationSeverity::Error,
+								entity.id,
+								"Event condition target is unresolved"
+							);
+							continue;
+						}
+						if (term.type == "StatCompare") {
+							if (term.statId.empty() || !target ||
+								!SceneEntityQuery::FindEnabledComponent(*target, "StatSet")) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"StatCompare condition requires a StatSet target and statId"
+								);
+							}
+							if (
+								term.statComparison != "LessOrEqual" &&
+								term.statComparison != "Less" &&
+								term.statComparison != "Equal" &&
+								term.statComparison != "Greater" &&
+								term.statComparison != "GreaterOrEqual"
+							) {
+								addIssue(SceneValidationSeverity::Error, entity.id,
+									"StatCompare condition has an invalid comparison");
+							}
+						} else if (term.type == "EntityActive") {
+							if (!target) continue;
+						} else if (term.type == "StateEquals") {
+							if (term.stateName.empty() || !target ||
+								!SceneEntityQuery::FindEnabledComponent(*target, "StateMachine")) {
+								addIssue(SceneValidationSeverity::Error, entity.id,
+									"StateEquals condition requires a StateMachine target and stateName");
+							}
+						} else if (term.type == "PauseActive") {
+							if (!target || !SceneEntityQuery::FindEnabledComponent(*target, "PauseController")) {
+								addIssue(SceneValidationSeverity::Error, entity.id,
+									"PauseActive condition requires a PauseController target");
+							}
+						} else if (term.type == "PositionWithin") {
+							if (term.radius < 0.0f) {
+								addIssue(SceneValidationSeverity::Error, entity.id,
+									"PositionWithin condition radius must be non-negative");
+							}
+						} else if (term.type == "InputExpression") {
+							if (!term.inputExpression) {
+								addIssue(SceneValidationSeverity::Error, entity.id,
+									"InputExpression condition requires inputExpression");
+							} else {
+								ValidateSceneInputExpression(
+									*term.inputExpression, entity.id,
+									"Event condition input expression", addIssue
+								);
+							}
+						} else {
+							addIssue(SceneValidationSeverity::Error, entity.id,
+								"Event condition has unknown type: " + term.type);
+						}
+					}
+				}
+			};
 				for (const SceneEventBinding& binding : component.eventBindings) {
+					if (binding.priority < -1000 || binding.priority > 1000) {
+						addIssue(SceneValidationSeverity::Error, entity.id,
+							"Event binding priority must be between -1000 and 1000");
+					}
+					if (binding.conditionExpression) {
+						validateConditionExpression(*binding.conditionExpression);
+					}
+					if (binding.triggerType == "OnStateEntered") {
+						const SceneEntity* target = resolveEventTarget(
+							binding.targetEntityId, binding.targetEntityName
+						);
+						if (binding.stateName.empty() || !target ||
+							!SceneEntityQuery::FindEnabledComponent(*target, "StateMachine")) {
+							addIssue(SceneValidationSeverity::Error, entity.id,
+								"OnStateEntered requires a StateMachine target and stateName");
+						}
+					}
 					const bool triggerUsesTarget =
 						binding.triggerType == "OnStatReachedMin" ||
 						binding.triggerType == "OnStatCompare" ||
@@ -1442,7 +1638,8 @@ bool SceneValidator::ValidateDocument(
 							action.type == "ResumeAudio" ||
 								action.type == "PlayTextMotion" ||
 								action.type == "StopTextMotion" ||
-								action.type == "ResetTextMotion";
+								action.type == "ResetTextMotion" ||
+								action.type == "SetPauseState";
 						if (action.type == "AdjustFishingFishCount") {
 							const SceneEntity* target = resolveEventTarget(
 								action.targetEntityId,
@@ -1481,6 +1678,60 @@ bool SceneValidator::ValidateDocument(
 								action.targetEntityId,
 								"Event action target"
 							);
+						}
+						if (action.type == "SetPauseState") {
+							const SceneEntity* target = resolveEventTarget(
+								action.targetEntityId,
+								action.targetEntityName
+							);
+							const SceneComponent* controller = target
+								? SceneEntityQuery::FindEnabledComponent(
+									*target, "PauseController"
+								)
+								: nullptr;
+							if (
+								!target || !controller ||
+								!SceneEntityQuery::IsEntityActiveInHierarchy(document, *target)
+							) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"SetPauseState target is unresolved, inactive, or disabled"
+								);
+							} else if (action.pauseProfileId.empty() ||
+								!std::any_of(
+									controller->pauseProfiles.begin(),
+									controller->pauseProfiles.end(),
+									[&action](const ScenePauseProfile& profile) {
+										return profile.id == action.pauseProfileId;
+									}
+								)) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"SetPauseState profile cannot be resolved: " +
+										action.pauseProfileId
+								);
+							}
+							if (
+								action.pauseOperation != "Pause" &&
+								action.pauseOperation != "Resume" &&
+								action.pauseOperation != "Toggle"
+							) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"SetPauseState has an unsupported operation: " +
+										action.pauseOperation
+								);
+							}
+							if (action.pauseRequestId.empty()) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"SetPauseState requires a non-empty request Id"
+								);
+							}
 						}
 						if (
 							(action.type == "PlayAudio" || action.type == "StopAudio" ||

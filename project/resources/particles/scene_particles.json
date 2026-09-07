@@ -38,6 +38,26 @@
         ]
       }
     ],
+    "PausePolicyVerificationEffects": [
+      {
+        "count": 6,
+        "effectFilePath": "resources/particles/BeamParticle.json",
+        "emitterActive": true,
+        "enabled": true,
+        "frequency": 0.05000000074505806,
+        "label": "Pause Policy Verification Beam",
+        "spawnSize": [
+          2.0,
+          1.0,
+          0.5
+        ],
+        "translate": [
+          0.0,
+          1.0,
+          2.0
+        ]
+      }
+    ],
     "HitAsset": [
       {
         "count": 8,
@@ -201,6 +221,18 @@
         "assetName": "Legacy_TITLE",
         "enabled": true,
         "label": "Legacy_TITLE",
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    ],
+    "pause_policy_verification": [
+      {
+        "assetName": "PausePolicyVerificationEffects",
+        "enabled": true,
+        "label": "Pause Policy Verification Effects",
         "translate": [
           0.0,
           0.0,

@@ -15,7 +15,7 @@ public:
 	~SceneParticleSystem();
 
 	void Initialize(Camera* camera);
-	void Update(const std::string& sceneId, bool editing);
+	void Update(const std::string& sceneId, bool editing, bool advanceWorldEffects);
 	void DrawEditor(const std::string& sceneId);
 	void Finalize();
 
@@ -27,4 +27,5 @@ private:
 	ParticleEmitter* primaryEmitter_ = nullptr;
 	ParticleEffectDesc secondaryEffect_{};
 	ParticleEmitter* secondaryEmitter_ = nullptr;
+	std::string activeSceneId_;
 };

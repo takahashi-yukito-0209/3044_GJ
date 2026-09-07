@@ -23,6 +23,7 @@
 #include "system/SceneMonitorSystem.h"
 #include "system/SceneObjectSystem.h"
 #include "system/SceneParticleSystem.h"
+#include "system/ScenePauseSystem.h"
 #include "system/ScenePostProcessProfileSystem.h"
 #include "system/ScenePhysicsSystem.h"
 #include "system/ScenePrefabAnimationSystem.h"
@@ -114,6 +115,7 @@ private:
 	SceneObjectSystem objectSystem_;
 	SceneTransitionSystem transitionSystem_;
 	SceneParticleSystem particleSystem_;
+	ScenePauseSystem pauseSystem_;
 	ScenePostProcessProfileSystem postProcessProfileSystem_;
 	ScenePhysicsSystem physicsSystem_;
 	ScenePrefabAnimationSystem prefabAnimationSystem_;

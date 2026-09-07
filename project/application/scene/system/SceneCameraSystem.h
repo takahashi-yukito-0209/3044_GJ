@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 #include "../SceneRuntimeObjectBinding.h"
@@ -28,7 +29,9 @@ public:
 		float deltaTime,
 		bool runtimeActive,
 		bool playing,
-		bool acceptWheelZoom
+		bool acceptGameplayInput,
+		bool acceptWheelZoom,
+		const std::function<bool(uint64_t)>& shouldProcessCameraPath = {}
 	);
 	// 移動後のPlayer座標へ追従Cameraを合わせ、最終行列を更新する。
 	void UpdateAfterSimulation(

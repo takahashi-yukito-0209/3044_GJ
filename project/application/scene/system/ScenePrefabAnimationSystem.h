@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -13,7 +14,8 @@ class SceneDocument;
 
 class ScenePrefabAnimationSystem {
 public:
-	void Update(SceneDocument& document, float deltaTime);
+	void Update(SceneDocument& document, float deltaTime,
+		const std::function<bool(uint64_t)>& shouldProcess = {});
 	bool Play(
 		const SceneDocument& document,
 		uint64_t entityId,

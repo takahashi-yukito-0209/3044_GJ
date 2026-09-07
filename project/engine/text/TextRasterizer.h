@@ -2,11 +2,14 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "../math/Vector2.h"
 #include "../math/Vector4.h"
+
+class TextFontResource;
 
 class TextRasterizer {
 public:
@@ -31,6 +34,7 @@ public:
 		bool shadowEnabled = false;
 		Vector4 shadowColor = { 0.0f, 0.0f, 0.0f, 0.5f };
 		Vector2 shadowOffset = { 2.0f, 2.0f };
+		std::shared_ptr<const TextFontResource> resourceFont;
 	};
 
 	struct Bitmap {

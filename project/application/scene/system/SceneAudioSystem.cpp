@@ -224,6 +224,8 @@ void SceneAudioSystem::Sync(
 				} else {
 					Audio::GetInstance()->SoundStop(binding.handle);
 				}
+				binding.eventPaused = false;
+				binding.policyPaused = false;
 			}
 			if (active && !playSessionStarted_ && component.audioPlayOnStart) {
 				if (binding.persistent) {
@@ -234,6 +236,7 @@ void SceneAudioSystem::Sync(
 				} else {
 					binding.handle = Play(component, binding);
 				}
+				binding.eventPaused = false;
 			}
 			binding.wasActive = active;
 		}
@@ -414,15 +417,45 @@ void SceneAudioSystem::ApplyRequests(const SceneDocument& document, const std::v
 				Audio::GetInstance()->SoundStop(binding.handle);
 				binding.handle = Play(*component, binding);
 			}
+			binding.eventPaused = false;
 		} else if (request.type == SceneAudioRequestType::Stop) {
 			if (binding.persistent) Audio::GetInstance()->StopPersistentBgm(sceneOwnerId_, bindingKey);
 			else Audio::GetInstance()->SoundStop(binding.handle);
+			binding.eventPaused = false;
+			binding.policyPaused = false;
 		} else if (request.type == SceneAudioRequestType::Pause) {
 			if (binding.persistent) Audio::GetInstance()->PausePersistentBgm(sceneOwnerId_, bindingKey);
 			else Audio::GetInstance()->Pause(binding.handle);
+			binding.eventPaused = true;
 		} else if (request.type == SceneAudioRequestType::Resume) {
-			if (binding.persistent) Audio::GetInstance()->ResumePersistentBgm(sceneOwnerId_, bindingKey);
-			else Audio::GetInstance()->Resume(binding.handle);
+			binding.eventPaused = false;
+			if (!binding.policyPaused) {
+				if (binding.persistent) Audio::GetInstance()->ResumePersistentBgm(sceneOwnerId_, bindingKey);
+				else Audio::GetInstance()->Resume(binding.handle);
+			}
+		}
+	}
+}
+
+void SceneAudioSystem::ApplyProcessPolicy(
+	const SceneDocument& document,
+	const std::function<bool(uint64_t)>& shouldProcess
+) {
+	(void)document;
+	for (auto& [bindingKey, binding] : bindings_) {
+		const bool allowed = !shouldProcess || shouldProcess(binding.entityId);
+		if (!allowed && !binding.policyPaused) {
+			if (!binding.eventPaused) {
+				if (binding.persistent) Audio::GetInstance()->PausePersistentBgm(sceneOwnerId_, bindingKey);
+				else Audio::GetInstance()->Pause(binding.handle);
+			}
+			binding.policyPaused = true;
+		} else if (allowed && binding.policyPaused) {
+			binding.policyPaused = false;
+			if (!binding.eventPaused) {
+				if (binding.persistent) Audio::GetInstance()->ResumePersistentBgm(sceneOwnerId_, bindingKey);
+				else Audio::GetInstance()->Resume(binding.handle);
+			}
 		}
 	}
 }

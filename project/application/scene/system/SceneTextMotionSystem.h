@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -33,7 +34,8 @@ public:
 	);
 	void Stop(uint64_t entityId);
 	void Reset(uint64_t entityId);
-	void Update(const SceneDocument& document, float deltaTime);
+	void Update(const SceneDocument& document, float deltaTime,
+		const std::function<bool(uint64_t)>& shouldProcess = {});
 	const std::unordered_map<uint64_t, SceneTextMotionPresentation>&
 	GetPresentationOverrides() const;
 	std::vector<SceneTextMotionCompletion> ConsumeCompletions();

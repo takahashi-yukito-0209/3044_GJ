@@ -113,6 +113,15 @@ struct SceneEventAction {
 	std::string postProcessManagerEntityName;
 	std::string postProcessProfileId;
 	std::string textMotionClipId;
+	std::string pauseProfileId;
+	std::string pauseOperation = "Pause";
+	std::string pauseRequestId;
+};
+
+struct ScenePauseProfile {
+	std::string id = "Default";
+	std::string label = "Default";
+	std::vector<std::string> pausedDomains;
 };
 
 struct SceneInputTerm {
@@ -130,12 +139,40 @@ struct SceneInputExpression {
 	std::vector<SceneInputGroup> groups;
 };
 
+struct SceneEventConditionTerm {
+	std::string type = "StatCompare";
+	bool negate = false;
+	uint64_t targetEntityId = 0;
+	std::string targetEntityName;
+	std::string statId = "hp";
+	std::string statComparison = "LessOrEqual";
+	float statValue = 0.0f;
+	std::string stateName;
+	std::string pauseProfileId;
+	std::string pauseRequestId;
+	bool active = true;
+	Vector3 position{};
+	float radius = 1.0f;
+	std::optional<SceneInputExpression> inputExpression;
+};
+
+struct SceneEventConditionGroup {
+	std::string mode = "All";
+	std::vector<SceneEventConditionTerm> terms;
+};
+
+struct SceneEventConditionExpression {
+	std::string mode = "Any";
+	std::vector<SceneEventConditionGroup> groups;
+};
+
 struct SceneEventBinding {
 	std::string triggerType = "OnStart";
 	std::string triggerKey;
 	std::optional<SceneInputExpression> inputExpression;
 	uint64_t targetEntityId = 0;
 	std::string targetEntityName;
+	std::string stateName;
 	std::string statId = "hp";
 	std::string statComparison = "LessOrEqual";
 	float statValue = 0.0f;
@@ -143,6 +180,8 @@ struct SceneEventBinding {
 	float radius = 1.0f;
 	bool triggerOnce = true;
 	float cooldown = 0.0f;
+	int priority = 0;
+	std::optional<SceneEventConditionExpression> conditionExpression;
 	std::string textMotionClipId;
 	std::vector<SceneEventAction> actions;
 };
@@ -366,6 +405,8 @@ struct SceneComponent {
 	uint64_t localId = 0;
 	std::string type;
 	bool enabled = true;
+	std::string processMode = "Inherit";
+	std::vector<ScenePauseProfile> pauseProfiles;
 	std::string modelPath;
 	std::string meshCullMode = "Back";
 	Vector3 meshVisualRotation{};

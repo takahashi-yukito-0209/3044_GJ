@@ -2,6 +2,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "SceneAttackRunnerSystem.h"
@@ -40,6 +42,7 @@ public:
 	);
 	std::vector<SceneGroundCrackSpawnRequest> ConsumeGroundCrackRequests();
 	void Advance(SceneDocument& document, float deltaTime);
+	void SetWorldEffectsPaused(const std::string& ownerKey, bool paused);
 	void Clear(SceneDocument* document = nullptr);
 
 private:
@@ -50,4 +53,6 @@ private:
 	std::vector<RuntimeGroundPrefab> groundPrefabs_;
 	std::vector<SceneGroundCrackSpawnRequest> groundCrackRequests_;
 	uint32_t groundCrackSpawnSerial_ = 0;
+	std::unordered_set<std::string> particleGroupNames_;
+	std::string pauseOwnerKey_;
 };

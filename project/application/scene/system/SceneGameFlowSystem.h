@@ -26,7 +26,12 @@ struct SceneGameFlowResult {
 
 class SceneGameFlowSystem {
 public:
-	SceneGameFlowResult Update(SceneDocument& document, SceneEnemySpawnerSystem& spawnerSystem, float deltaTime);
+	SceneGameFlowResult Update(
+		SceneDocument& document,
+		SceneEnemySpawnerSystem& spawnerSystem,
+		float deltaTime,
+		bool advance
+	);
 	bool IsGameplayAllowed() const { return gameplayAllowed_; }
 	void Clear();
 

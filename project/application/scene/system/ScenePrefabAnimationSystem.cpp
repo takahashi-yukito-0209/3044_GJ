@@ -46,7 +46,8 @@ namespace {
 
 void ScenePrefabAnimationSystem::Update(
 	SceneDocument& document,
-	float deltaTime
+	float deltaTime,
+	const std::function<bool(uint64_t)>& shouldProcess
 ) {
 	std::unordered_set<uint64_t> requiredEntities;
 	for (SceneEntity& entity : document.GetEntities()) {
@@ -59,6 +60,9 @@ void ScenePrefabAnimationSystem::Update(
 			continue;
 		}
 		requiredEntities.insert(entity.id);
+		if (shouldProcess && !shouldProcess(entity.id)) {
+			continue;
+		}
 		AnimationRuntime& runtime = runtimes_[entity.id];
 		if (!runtime.initialized) {
 			runtime.initialized = true;

@@ -227,6 +227,7 @@
     <ClCompile Include="application\scene\system\SceneMonitorSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneObjectSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneParticleSystem.cpp" />
+	<ClCompile Include="application\scene\system\ScenePauseSystem.cpp" />
     <ClCompile Include="application\scene\system\ScenePhysicsSystem.cpp" />
     <ClCompile Include="application\scene\system\ScenePrefabAnimationSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneProjectileSystem.cpp" />
@@ -252,6 +253,7 @@
     <ClCompile Include="engine\2d\SpriteCommon.cpp" />
 	<ClCompile Include="engine\2d\TextSprite.cpp" />
 	<ClCompile Include="engine\text\TextRasterizer.cpp" />
+	<ClCompile Include="engine\text\TextResourceFontRasterizer.cpp" />
 	<ClCompile Include="engine\text\TextFontRegistry.cpp" />
     <ClCompile Include="engine\3d\SrvManager.cpp" />
     <ClCompile Include="engine\utility\StringUtility.cpp" />
@@ -437,6 +439,7 @@
     <ClInclude Include="engine\2d\SpriteCommon.h" />
 	<ClInclude Include="engine\2d\TextSprite.h" />
 	<ClInclude Include="engine\text\TextRasterizer.h" />
+	<ClInclude Include="engine\text\TextResourceFontRasterizer.h" />
 	<ClInclude Include="engine\text\TextFontRegistry.h" />
     <ClInclude Include="engine\3d\SrvManager.h" />
     <ClInclude Include="engine\utility\StringUtility.h" />
@@ -485,7 +488,8 @@
     <ClInclude Include="application\scene\system\SceneEnemySystem.h" />
 	<ClInclude Include="application\scene\system\SceneEnemySpawnerSystem.h" />
     <ClInclude Include="application\scene\system\SceneEventSystem.h" />
-	<ClInclude Include="application\scene\system\ScenePostProcessProfileSystem.h" />
+	<ClInclude Include="application\scene\system\ScenePauseSystem.h" />
+    <ClInclude Include="application\scene\system\ScenePostProcessProfileSystem.h" />
 	<ClInclude Include="application\scene\system\SceneAttackRunnerSystem.h" />
     <ClInclude Include="application\scene\system\SceneStateMachineSystem.h" />
     <ClInclude Include="application\scene\system\SceneEffectRenderSystem.h" />

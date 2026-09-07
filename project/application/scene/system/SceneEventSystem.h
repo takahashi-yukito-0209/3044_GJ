@@ -2,11 +2,13 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "SceneTextMotionSystem.h"
+#include "ScenePauseSystem.h"
 
 class SceneDocument;
 class SceneStatSystem;
@@ -81,6 +83,7 @@ struct SceneEventResult {
 	std::vector<SceneAudioRequest> audioRequests;
 	std::vector<SceneTextMotionRequest> textMotionRequests;
 	std::vector<SceneFishingFishCountRequest> fishingFishCountRequests;
+	std::vector<ScenePauseRequest> pauseRequests;
 };
 
 class SceneEventSystem {
@@ -89,8 +92,10 @@ public:
 		SceneDocument& document,
 		SceneStatSystem& statSystem,
 		SceneStateMachineSystem& stateMachineSystem,
+		const ScenePauseSystem& pauseSystem,
 		float deltaTime,
-		const SceneEventRuntimeSignals& signals
+		const SceneEventRuntimeSignals& signals,
+		const std::function<bool(uint64_t)>& shouldProcess
 	);
 	void Clear();
 

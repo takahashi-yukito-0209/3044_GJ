@@ -53,6 +53,7 @@
     <ClCompile Include="engine\2d\SpriteCommon.cpp" />
 	<ClCompile Include="engine\2d\TextSprite.cpp" />
 	<ClCompile Include="engine\text\TextRasterizer.cpp" />
+	<ClCompile Include="engine\text\TextResourceFontRasterizer.cpp" />
 	<ClCompile Include="engine\text\TextFontRegistry.cpp" />
     <ClCompile Include="engine\utility\StringUtility.cpp" />
     <ClCompile Include="engine\2d\TextureManager.cpp" />
@@ -211,6 +212,9 @@
     <ClCompile Include="application\scene\system\SceneParticleSystem.cpp">
       <Filter>Application\Scene\System</Filter>
     </ClCompile>
+	<ClCompile Include="application\scene\system\ScenePauseSystem.cpp">
+	  <Filter>Application\Scene\System</Filter>
+	</ClCompile>
     <ClCompile Include="application\scene\system\ScenePhysicsSystem.cpp">
       <Filter>Application\Scene\System</Filter>
     </ClCompile>
@@ -335,6 +339,7 @@
     <ClInclude Include="engine\2d\SpriteCommon.h" />
 	<ClInclude Include="engine\2d\TextSprite.h" />
 	<ClInclude Include="engine\text\TextRasterizer.h" />
+	<ClInclude Include="engine\text\TextResourceFontRasterizer.h" />
 	<ClInclude Include="engine\text\TextFontRegistry.h" />
     <ClInclude Include="engine\utility\StringUtility.h" />
     <ClInclude Include="engine\2d\TextureManager.h" />
@@ -475,7 +480,10 @@
     <ClInclude Include="application\scene\system\SceneEventSystem.h">
       <Filter>Application\Scene\System</Filter>
     </ClInclude>
-	<ClInclude Include="application\scene\system\ScenePostProcessProfileSystem.h">
+	<ClInclude Include="application\scene\system\ScenePauseSystem.h">
+	  <Filter>Application\Scene\System</Filter>
+	</ClInclude>
+    <ClInclude Include="application\scene\system\ScenePostProcessProfileSystem.h">
 	  <Filter>Application\Scene\System</Filter>
 	</ClInclude>
     <ClInclude Include="application\scene\system\SceneAttackRunnerSystem.h">

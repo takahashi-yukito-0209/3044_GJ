@@ -1292,13 +1292,39 @@ namespace {
 				{ "postProcessManagerEntityId", action.postProcessManagerEntityId },
 				{ "postProcessManagerEntityName", action.postProcessManagerEntityName },
 				{ "postProcessProfileId", action.postProcessProfileId },
-				{ "textMotionClipId", action.textMotionClipId }
+				{ "textMotionClipId", action.textMotionClipId },
+				{ "pauseProfileId", action.pauseProfileId },
+				{ "pauseOperation", action.pauseOperation },
+				{ "pauseRequestId", action.pauseRequestId }
 			});
 		}
 		return result;
 	}
 
 	json EventsToJson(const std::vector<SceneEventBinding>& bindings) {
+		auto conditionTermToJson = [](const SceneEventConditionTerm& term) {
+			json result = {
+				{ "type", term.type },
+				{ "negate", term.negate },
+				{ "targetEntityId", term.targetEntityId },
+				{ "targetEntityName", term.targetEntityName },
+				{ "statId", term.statId },
+				{ "statComparison", term.statComparison },
+				{ "statValue", term.statValue },
+				{ "stateName", term.stateName },
+				{ "pauseProfileId", term.pauseProfileId },
+				{ "pauseRequestId", term.pauseRequestId },
+				{ "active", term.active },
+				{ "position", VectorToJson(term.position) },
+				{ "radius", term.radius }
+			};
+			if (term.inputExpression) {
+				result["inputExpression"] = SceneInputExpressionToJson(
+					*term.inputExpression
+				);
+			}
+			return result;
+		};
 		json result = json::array();
 		for (const SceneEventBinding& binding : bindings) {
 			json bindingValue = {
@@ -1315,12 +1341,32 @@ namespace {
 				{ "radius", binding.radius },
 				{ "triggerOnce", binding.triggerOnce },
 				{ "cooldown", binding.cooldown },
+				{ "stateName", binding.stateName },
+				{ "priority", binding.priority },
 				{ "textMotionClipId", binding.textMotionClipId },
 				{ "actions", EventActionsToJson(binding.actions) }
 			};
 			if (binding.inputExpression) {
 				bindingValue["inputExpression"] =
 					SceneInputExpressionToJson(*binding.inputExpression);
+			}
+			if (binding.conditionExpression) {
+				json condition = {
+					{ "mode", binding.conditionExpression->mode },
+					{ "groups", json::array() }
+				};
+				for (const SceneEventConditionGroup& group :
+					binding.conditionExpression->groups) {
+					json groupValue = {
+						{ "mode", group.mode },
+						{ "terms", json::array() }
+					};
+					for (const SceneEventConditionTerm& term : group.terms) {
+						groupValue["terms"].push_back(conditionTermToJson(term));
+					}
+					condition["groups"].push_back(std::move(groupValue));
+				}
+				bindingValue["conditionExpression"] = std::move(condition);
 			}
 			result.push_back(std::move(bindingValue));
 		}
@@ -1545,6 +1591,20 @@ namespace {
 			{ "type", component.type },
 			{ "enabled", component.enabled }
 		};
+		if (component.type == "ProcessPolicy") {
+			result["processMode"] = component.processMode;
+		}
+		if (component.type == "PauseController") {
+			json profiles = json::array();
+			for (const ScenePauseProfile& profile : component.pauseProfiles) {
+				profiles.push_back({
+					{ "id", profile.id },
+					{ "label", profile.label },
+					{ "pausedDomains", profile.pausedDomains }
+				});
+			}
+			result["profiles"] = std::move(profiles);
+		}
 		if (component.type == "MeshRenderer") {
 			result["modelPath"] = component.modelPath;
 			result["cullMode"] = component.meshCullMode;
@@ -2289,7 +2349,82 @@ namespace {
 		action.textMotionClipId = value.value(
 			"textMotionClipId", action.textMotionClipId
 		);
+		action.pauseProfileId = value.value(
+			"pauseProfileId", action.pauseProfileId
+		);
+		action.pauseOperation = value.value(
+			"pauseOperation", action.pauseOperation
+		);
+		action.pauseRequestId = value.value(
+			"pauseRequestId", action.pauseRequestId
+		);
 		return action;
+	}
+
+	SceneEventConditionTerm ReadEventConditionTerm(const json& value) {
+		SceneEventConditionTerm term{};
+		term.type = value.value("type", term.type);
+		term.negate = value.value("negate", term.negate);
+		term.targetEntityId = value.value("targetEntityId", term.targetEntityId);
+		term.targetEntityName = value.value(
+			"targetEntityName", term.targetEntityName
+		);
+		term.statId = value.value("statId", term.statId);
+		term.statComparison = value.value(
+			"statComparison", term.statComparison
+		);
+		term.statValue = value.value("statValue", term.statValue);
+		term.stateName = value.value("stateName", term.stateName);
+		term.pauseProfileId = value.value(
+			"pauseProfileId", term.pauseProfileId
+		);
+		term.pauseRequestId = value.value(
+			"pauseRequestId", term.pauseRequestId
+		);
+		term.active = value.value("active", term.active);
+		if (value.contains("position")) {
+			term.position = JsonToVector(value.at("position"), term.position);
+		}
+		term.radius = (std::max)(value.value("radius", term.radius), 0.0f);
+		if (const auto inputExpression = value.find("inputExpression");
+			inputExpression != value.end()) {
+			term.inputExpression = ReadSceneInputExpression(*inputExpression);
+		}
+		return term;
+	}
+
+	void ReadEventConditionExpression(
+		const json& source,
+		std::optional<SceneEventConditionExpression>& destination
+	) {
+		if (!source.is_object()) {
+			return;
+		}
+		SceneEventConditionExpression expression{};
+		expression.mode = source.value("mode", expression.mode);
+		const auto groups = source.find("groups");
+		if (groups == source.end() || !groups->is_array()) {
+			return;
+		}
+		for (const json& groupValue : *groups) {
+			if (!groupValue.is_object()) {
+				continue;
+			}
+			SceneEventConditionGroup group{};
+			group.mode = groupValue.value("mode", group.mode);
+			const auto terms = groupValue.find("terms");
+			if (terms != groupValue.end() && terms->is_array()) {
+				for (const json& termValue : *terms) {
+					if (termValue.is_object()) {
+						group.terms.push_back(ReadEventConditionTerm(termValue));
+					}
+				}
+			}
+			expression.groups.push_back(std::move(group));
+		}
+		if (!expression.groups.empty()) {
+			destination = std::move(expression);
+		}
 	}
 
 	void ReadEvents(
@@ -2321,6 +2456,7 @@ namespace {
 			binding.targetEntityName = value.value(
 				"targetEntityName", binding.targetEntityName
 			);
+			binding.stateName = value.value("stateName", binding.stateName);
 			binding.statId = value.value("statId", binding.statId);
 			binding.statComparison = value.value(
 				"statComparison", binding.statComparison
@@ -2340,6 +2476,16 @@ namespace {
 				value.value("cooldown", binding.cooldown),
 				0.0f
 			);
+			binding.priority = std::clamp(
+				value.value("priority", binding.priority), -1000, 1000
+			);
+			if (const auto conditionExpression = value.find(
+				"conditionExpression"
+			); conditionExpression != value.end()) {
+				ReadEventConditionExpression(
+					*conditionExpression, binding.conditionExpression
+				);
+			}
 			binding.textMotionClipId = value.value(
 				"textMotionClipId", binding.textMotionClipId
 			);
@@ -2793,6 +2939,16 @@ namespace {
 			binding.targetEntityId = RemapEntityId(
 				binding.targetEntityId, idMap, preserveUnmappedIds
 			);
+			if (binding.conditionExpression) {
+				for (SceneEventConditionGroup& group :
+					binding.conditionExpression->groups) {
+					for (SceneEventConditionTerm& term : group.terms) {
+						term.targetEntityId = RemapEntityId(
+							term.targetEntityId, idMap, preserveUnmappedIds
+						);
+					}
+				}
+			}
 			for (SceneEventAction& action : binding.actions) {
 				action.targetEntityId = RemapEntityId(
 					action.targetEntityId, idMap, preserveUnmappedIds
@@ -2842,6 +2998,31 @@ namespace {
 				component.localId = value.value("localId", uint64_t{});
 				component.type = value.value("type", std::string{});
 				component.enabled = value.value("enabled", true);
+				component.processMode = value.value(
+					"processMode", component.processMode
+				);
+				if (component.type == "PauseController") {
+					const auto profiles = value.find("profiles");
+					if (profiles != value.end() && profiles->is_array()) {
+						for (const json& profileValue : *profiles) {
+							if (!profileValue.is_object()) {
+								continue;
+							}
+							ScenePauseProfile profile{};
+							profile.id = profileValue.value("id", profile.id);
+							profile.label = profileValue.value("label", profile.label);
+							const auto domains = profileValue.find("pausedDomains");
+							if (domains != profileValue.end() && domains->is_array()) {
+								for (const json& domain : *domains) {
+									if (domain.is_string()) {
+										profile.pausedDomains.push_back(domain.get<std::string>());
+									}
+								}
+							}
+							component.pauseProfiles.push_back(std::move(profile));
+						}
+					}
+				}
 				component.modelPath = value.value("modelPath", std::string{});
 				component.meshCullMode = value.value(
 					"cullMode",
@@ -8557,7 +8738,23 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 	);
 	if (found != entity->components.end()) {
 		bool changed = componentIdsChanged;
-		if (type == "MeshRenderer" && found->modelPath.empty()) {
+		if (type == "PauseController" && found->pauseProfiles.empty()) {
+			ScenePauseProfile profile{};
+			profile.pausedDomains = {
+				"Gameplay", "Physics", "GameplayInput",
+				"WorldAnimation", "WorldEffects"
+			};
+			found->pauseProfiles.push_back(std::move(profile));
+			changed = true;
+		} else if (type == "ProcessPolicy" &&
+			(found->processMode != "Inherit" &&
+				found->processMode != "Pausable" &&
+				found->processMode != "WhenPaused" &&
+				found->processMode != "Always" &&
+				found->processMode != "Disabled")) {
+			found->processMode = "Inherit";
+			changed = true;
+		} else if (type == "MeshRenderer" && found->modelPath.empty()) {
 			found->modelPath = entity->modelPath;
 			changed = true;
 		} else if (type == "MeshRenderer" && found->meshCullMode.empty()) {
@@ -9155,6 +9352,15 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.meshCullMode = "Back";
 		component.meshEnvironmentReflectionOverride = false;
 		component.meshEnvironmentReflectionIntensity = 0.3f;
+	} else if (type == "PauseController") {
+		ScenePauseProfile profile{};
+		profile.pausedDomains = {
+			"Gameplay", "Physics", "GameplayInput",
+			"WorldAnimation", "WorldEffects"
+		};
+		component.pauseProfiles.push_back(std::move(profile));
+	} else if (type == "ProcessPolicy") {
+		component.processMode = "Inherit";
 	} else if (type == "Environment") {
 		component.environmentSkyboxEnabled = true;
 		component.environmentSkyboxPath = "resources/rostock_laage_airport_4k.dds";

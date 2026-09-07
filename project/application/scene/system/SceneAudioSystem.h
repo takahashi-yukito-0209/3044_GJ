@@ -4,6 +4,7 @@
 #include "../../../engine/Audio/Audio.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -26,6 +27,10 @@ public:
 	// Event評価直前に、現行Bindingへ対応する自然終了Entityを一回だけ回収する。
 	std::vector<uint64_t> ConsumeFinishedEntityIds(const SceneDocument& document);
 	void ApplyRequests(const SceneDocument& document, const std::vector<SceneAudioRequest>& requests);
+	void ApplyProcessPolicy(
+		const SceneDocument& document,
+		const std::function<bool(uint64_t)>& shouldProcess
+	);
 	void PrepareForSceneTransition();
 	void Clear();
 
@@ -40,6 +45,8 @@ private:
 		bool wasActive = false;
 		bool streamFromDisk = false;
 		bool persistent = false;
+		bool eventPaused = false;
+		bool policyPaused = false;
 	};
 
 	static uint64_t MakeBindingKey(uint64_t entityId, uint64_t componentLocalId);

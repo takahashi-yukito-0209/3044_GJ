@@ -67,7 +67,12 @@ namespace {
 	}
 }
 
-SceneGameFlowResult SceneGameFlowSystem::Update(SceneDocument& document, SceneEnemySpawnerSystem& spawnerSystem, float deltaTime) {
+SceneGameFlowResult SceneGameFlowSystem::Update(
+	SceneDocument& document,
+	SceneEnemySpawnerSystem& spawnerSystem,
+	float deltaTime,
+	bool advance
+) {
 	SceneGameFlowResult result{};
 	uint64_t foundDirectorId = 0;
 	const SceneComponent* director = FindDirector(document, foundDirectorId);
@@ -77,6 +82,90 @@ SceneGameFlowResult SceneGameFlowSystem::Update(SceneDocument& document, SceneEn
 		return result;
 	}
 	result.hasDirector = true;
+	if (!advance) {
+		result.gameplayAllowed = gameplayAllowed_;
+		const auto addText = [&result](uint64_t entityId, std::string text) {
+			if (entityId != 0) {
+				result.textRequests.push_back({ entityId, std::move(text) });
+			}
+		};
+		if (state_ == SceneGameFlowState::Countdown) {
+			addText(
+				director->gameFlowCountdownTextEntityId,
+				std::to_string(countdownValue_)
+			);
+		} else if (state_ == SceneGameFlowState::StartCue) {
+			addText(
+				director->gameFlowCountdownTextEntityId,
+				director->gameFlowStartCueText
+			);
+		} else {
+			addText(director->gameFlowCountdownTextEntityId, {});
+		}
+		if (
+			state_ == SceneGameFlowState::PhaseActive ||
+			state_ == SceneGameFlowState::PhaseGap ||
+			state_ == SceneGameFlowState::ResultDelay
+		) {
+			const int labelIndex = state_ == SceneGameFlowState::PhaseActive
+				? phaseIndex_
+				: phaseIndex_ - 1;
+			addText(
+				director->gameFlowPhaseTextEntityId,
+				labelIndex >= 0 &&
+				labelIndex < static_cast<int>(director->gameFlowPhases.size())
+					? director->gameFlowPhases[labelIndex].label
+					: std::string{}
+			);
+		} else {
+			addText(director->gameFlowPhaseTextEntityId, {});
+		}
+		if (
+			state_ == SceneGameFlowState::PhaseActive ||
+			state_ == SceneGameFlowState::PhaseGap ||
+			state_ == SceneGameFlowState::ResultDelay
+		) {
+			const double displayedSeconds = std::floor(
+				elapsedSeconds_ / director->gameFlowTimerDisplayStepSeconds
+			) * director->gameFlowTimerDisplayStepSeconds;
+			addText(
+				director->gameFlowTimerTextEntityId,
+				director->gameFlowTimerPrefix + FormatTimer(displayedSeconds, false)
+			);
+		} else {
+			addText(director->gameFlowTimerTextEntityId, {});
+		}
+		if (state_ == SceneGameFlowState::PhaseActive) {
+			addText(
+				director->gameFlowRemainingTextEntityId,
+				director->gameFlowRemainingPrefix + std::to_string(
+					CalculateRemainingEnemies(
+						*director,
+						spawnerSystem,
+						phaseIndex_,
+						activeWaveGenerations_
+					)
+				)
+			);
+		} else if (
+			state_ == SceneGameFlowState::PhaseGap ||
+			state_ == SceneGameFlowState::ResultDelay
+		) {
+			addText(
+				director->gameFlowRemainingTextEntityId,
+				director->gameFlowRemainingPrefix + "0"
+			);
+		} else {
+			addText(director->gameFlowRemainingTextEntityId, {});
+		}
+		if (state_ == SceneGameFlowState::Result) {
+			addText(
+				director->gameFlowResultTimeTextEntityId,
+				director->gameFlowResultPrefix + FormatTimer(elapsedSeconds_, true)
+			);
+		}
+		return result;
+	}
 	if (directorEntityId_ != foundDirectorId) {
 		Clear();
 		directorEntityId_ = foundDirectorId;

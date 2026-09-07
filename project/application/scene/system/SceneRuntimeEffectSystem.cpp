@@ -28,14 +28,14 @@ namespace {
 		return { x * inverseW, y * inverseW, z * inverseW };
 	}
 
-	void EmitCpuParticle(const std::string& particleEffectPath, const Vector3& position) {
+	std::string EmitCpuParticle(const std::string& particleEffectPath, const Vector3& position) {
 		ParticleEffectDesc effect{};
 		if (
 			particleEffectPath.empty() ||
 			!ParticleEffectResource::Load(particleEffectPath, effect) ||
 			effect.simulationType != ParticleSimulationType::kCPU
 		) {
-			return;
+			return {};
 		}
 		// CreateEmitterは同名Groupを消去するため、既存粒子を保つPrepare+Emitを使う。
 		ParticleEffectResource::PrepareParticleGroup(effect, false);
@@ -46,6 +46,7 @@ namespace {
 			effect.emitter.count,
 			effect.behavior
 		);
+		return effect.name;
 	}
 }
 
@@ -72,7 +73,10 @@ void SceneRuntimeEffectSystem::Spawn(
 			request.localOffset,
 			SceneTransformResolver::ResolveSceneWorldMatrix(document, *spawnEntity)
 		);
-		EmitCpuParticle(request.particleEffectPath, position);
+		if (const std::string groupName = EmitCpuParticle(request.particleEffectPath, position);
+			!groupName.empty()) {
+			particleGroupNames_.insert(groupName);
+		}
 		if (!useLegacyPrefab && !useProceduralCrack) {
 			continue;
 		}
@@ -124,7 +128,10 @@ void SceneRuntimeEffectSystem::SpawnHitEffects(
 	const std::vector<SceneCombatHitEvent>& events
 ) {
 	for (const SceneCombatHitEvent& event : events) {
-		EmitCpuParticle(kDefaultHitParticlePath, event.hitPosition);
+		if (const std::string groupName = EmitCpuParticle(kDefaultHitParticlePath, event.hitPosition);
+			!groupName.empty()) {
+			particleGroupNames_.insert(groupName);
+		}
 	}
 }
 
@@ -140,7 +147,10 @@ void SceneRuntimeEffectSystem::SpawnDeathEffects(
 		const Vector3 position = TransformCoord(
 			{}, SceneTransformResolver::ResolveSceneWorldMatrix(document, *entity)
 		);
-		EmitCpuParticle(request.particleEffectPath, position);
+		if (const std::string groupName = EmitCpuParticle(request.particleEffectPath, position);
+			!groupName.empty()) {
+			particleGroupNames_.insert(groupName);
+		}
 	}
 }
 
@@ -164,7 +174,29 @@ void SceneRuntimeEffectSystem::Advance(SceneDocument& document, float deltaTime)
 	}
 }
 
+void SceneRuntimeEffectSystem::SetWorldEffectsPaused(
+	const std::string& ownerKey, bool paused
+) {
+	ParticleManager* particleManager = ParticleManager::GetInstance();
+	const std::string effectiveOwnerKey = "runtime-effects:" + ownerKey;
+	if (!pauseOwnerKey_.empty() && pauseOwnerKey_ != effectiveOwnerKey) {
+		for (const std::string& groupName : particleGroupNames_) {
+			particleManager->SetParticleGroupSimulationPaused(groupName, pauseOwnerKey_, false);
+		}
+	}
+	pauseOwnerKey_ = effectiveOwnerKey;
+	for (const std::string& groupName : particleGroupNames_) {
+		particleManager->SetParticleGroupSimulationPaused(groupName, effectiveOwnerKey, paused);
+	}
+}
+
 void SceneRuntimeEffectSystem::Clear(SceneDocument* document) {
+	if (!pauseOwnerKey_.empty()) {
+		ParticleManager* particleManager = ParticleManager::GetInstance();
+		for (const std::string& groupName : particleGroupNames_) {
+			particleManager->SetParticleGroupSimulationPaused(groupName, pauseOwnerKey_, false);
+		}
+	}
 	if (document) {
 		for (const RuntimeGroundPrefab& effect : groundPrefabs_) {
 			const SceneEntity* entity = document->FindEntity(effect.rootEntityId);
@@ -179,4 +211,6 @@ void SceneRuntimeEffectSystem::Clear(SceneDocument* document) {
 	}
 	groundPrefabs_.clear();
 	groundCrackRequests_.clear();
+	particleGroupNames_.clear();
+	pauseOwnerKey_.clear();
 }

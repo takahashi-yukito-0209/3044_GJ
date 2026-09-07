@@ -1,6 +1,8 @@
 // 役割: Windows GDIのSystem Font fallbackを使いText bitmapを生成する。
 #include "TextRasterizer.h"
 
+#include "TextResourceFontRasterizer.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -80,6 +82,16 @@ namespace {
 
 bool TextRasterizer::Rasterize(const Settings& settings, Bitmap& bitmap) const {
 	bitmap = {};
+	if (settings.resourceFont) {
+		TextResourceFontRasterizer resourceRasterizer;
+		if (resourceRasterizer.Rasterize(settings, bitmap)) {
+			return true;
+		}
+		Settings fallback = settings;
+		fallback.resourceFont.reset();
+		fallback.fontFamily = "Yu Gothic UI";
+		return Rasterize(fallback, bitmap);
+	}
 	const std::wstring text = ToWide(settings.text);
 	if (text.empty()) {
 		return false;

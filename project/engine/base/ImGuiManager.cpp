@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <cstdio>
@@ -47,6 +48,7 @@
 #include "../utility/EditableResourcePath.h"
 #include "../utility/StringUtility.h"
 #include "../utility/SystemPerformanceMonitor.h"
+#include "../text/TextFontRegistry.h"
 
 #include "../../externals/imgui/imgui.h"
 #include "../../externals/imgui/imgui_internal.h"
@@ -9503,7 +9505,138 @@ void ImGuiManager::DrawInspectorWindow() {
 				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
 				bool textChanged = false;
 				textChanged |= InputTextMultilineString(LocalizedComponentWidgetLabel(editorLanguage_, "Text"), component.textValue);
-				textChanged |= InputTextString(LocalizedComponentWidgetLabel(editorLanguage_, "Font Family"), component.textFontFamily);
+				TextFontRegistry& fontRegistry = TextFontRegistry::GetInstance();
+				const char* fontSources[] = { "System", "Resource" };
+				int fontSourceIndex = component.textFontSource == "Resource" ? 1 : 0;
+				if (ImGui::Combo(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Font Source"),
+					&fontSourceIndex,
+					fontSources,
+					IM_ARRAYSIZE(fontSources)
+				)) {
+					component.textFontSource = fontSources[fontSourceIndex];
+					textChanged = true;
+				}
+				if (component.textFontSource == "Resource") {
+					const std::vector<std::string>& resourcePaths = fontRegistry.GetResourcePaths();
+					bool resourcePathChanged = false;
+					const char* resourcePreview = component.textFontResourcePath.empty()
+						? SelectEditorText(editorLanguage_, "選択...", "Select...")
+						: component.textFontResourcePath.c_str();
+					if (ImGui::BeginCombo(
+						LocalizedComponentWidgetLabel(editorLanguage_, "Font Resource"),
+						resourcePreview
+					)) {
+						for (const std::string& path : resourcePaths) {
+							const bool selected = component.textFontResourcePath == path;
+							if (ImGui::Selectable(path.c_str(), selected)) {
+								component.textFontResourcePath = path;
+								resourcePathChanged = true;
+								textChanged = true;
+							}
+							if (selected) {
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						if (!component.textFontResourcePath.empty() && std::find(
+							resourcePaths.begin(), resourcePaths.end(), component.textFontResourcePath
+						) == resourcePaths.end()) {
+							const std::string missingLabel = "(Missing) " + component.textFontResourcePath;
+							ImGui::Selectable(missingLabel.c_str(), true);
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button(LocalizedComponentWidgetLabel(editorLanguage_, "Refresh Fonts"))) {
+						fontRegistry.Refresh();
+					}
+					TextFontResolution resolution{};
+					if (!component.textFontResourcePath.empty()) {
+						resolution = fontRegistry.AcquireResource(component.textFontResourcePath);
+					}
+					const std::vector<std::string>* families = nullptr;
+					if (resolution.resource) {
+						families = &resolution.resource->GetFamilies();
+					}
+					const bool familyFound = families && std::find(
+						families->begin(), families->end(), component.textFontFamily
+					) != families->end();
+					const std::vector<std::string> emptyFamilies;
+					if (!families) {
+						families = &emptyFamilies;
+					}
+					const char* familyPreview = component.textFontFamily.empty()
+						? SelectEditorText(editorLanguage_, "選択...", "Select...")
+						: component.textFontFamily.c_str();
+						if (ImGui::BeginCombo(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Font Family"), familyPreview
+						)) {
+							for (const std::string& family : *families) {
+								const bool selected = component.textFontFamily == family;
+								if (ImGui::Selectable(family.c_str(), selected)) {
+									component.textFontFamily = family;
+									textChanged = true;
+								}
+								if (selected) {
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							if (!component.textFontFamily.empty() && std::find(
+								families->begin(), families->end(), component.textFontFamily
+							) == families->end()) {
+								const std::string missingLabel = "(Missing) " + component.textFontFamily;
+								ImGui::Selectable(missingLabel.c_str(), true);
+							}
+							ImGui::EndCombo();
+					}
+					if (resourcePathChanged && resolution.resource && !families->empty() &&
+						std::find(families->begin(), families->end(), component.textFontFamily) == families->end()) {
+						component.textFontFamily = families->front();
+						textChanged = true;
+					}
+					if (!resolution.resource && !resolution.diagnostic.empty()) {
+						ImGui::TextDisabled("%s", resolution.diagnostic.c_str());
+						ImGui::TextDisabled(
+							"%s",
+							SelectEditorText(editorLanguage_, "Yu Gothic UIで代替表示", "Using Yu Gothic UI fallback")
+						);
+					} else if (resolution.resource && !familyFound) {
+						ImGui::TextDisabled(
+							"%s",
+							SelectEditorText(editorLanguage_, "指定familyがないためYu Gothic UIで代替表示", "Selected family is unavailable; using Yu Gothic UI fallback")
+						);
+					}
+				} else {
+					const std::vector<std::string>& families = fontRegistry.GetSystemFamilies();
+					const char* familyPreview = component.textFontFamily.empty()
+						? SelectEditorText(editorLanguage_, "選択...", "Select...")
+						: component.textFontFamily.c_str();
+					if (ImGui::BeginCombo(
+						LocalizedComponentWidgetLabel(editorLanguage_, "Font Family"), familyPreview
+					)) {
+						for (const std::string& family : families) {
+							const bool selected = component.textFontFamily == family;
+							if (ImGui::Selectable(family.c_str(), selected)) {
+								component.textFontFamily = family;
+								textChanged = true;
+							}
+							if (selected) {
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						if (!component.textFontFamily.empty() && std::find(
+							families.begin(), families.end(), component.textFontFamily
+						) == families.end()) {
+							const std::string missingLabel = "(Missing) " + component.textFontFamily;
+							ImGui::Selectable(missingLabel.c_str(), true);
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button(LocalizedComponentWidgetLabel(editorLanguage_, "Refresh Fonts"))) {
+						fontRegistry.Refresh();
+					}
+				}
 				textChanged |= ImGui::DragFloat(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Font Size"), &component.textFontSize, 1.0f, 1.0f, 512.0f
 				);
@@ -11162,7 +11295,7 @@ void ImGuiManager::DrawInspectorWindow() {
 						);
 						if (ImGui::BeginCombo(LocalizedComponentWidgetLabel(editorLanguage_, "Built-in Action"), state.actionId.c_str())) {
 							for (const char* actionId : {
-								"Builtin.Idle", "Builtin.Move", "Builtin.MeleeAttack",
+								"Builtin.Passive", "Builtin.Idle", "Builtin.Move", "Builtin.MeleeAttack",
 								"Builtin.MeleeComboAttack"
 							}) {
 								if (ImGui::Selectable(
@@ -11311,6 +11444,118 @@ void ImGuiManager::DrawInspectorWindow() {
 				if (stateMachineChanged) {
 					document.MarkDirty();
 				}
+				ImGui::EndDisabled();
+			} else if (component.type == "PauseController") {
+				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
+				bool pauseChanged = false;
+				const std::array<const char*, 6> pauseDomains = {
+					"Gameplay", "Physics", "GameplayInput",
+					"WorldAnimation", "WorldEffects", "Audio"
+				};
+				int removeProfileIndex = -1;
+				for (size_t profileIndex = 0;
+					profileIndex < component.pauseProfiles.size();
+					++profileIndex) {
+					ScenePauseProfile& profile = component.pauseProfiles[profileIndex];
+					ImGui::PushID(static_cast<int>(profileIndex));
+					if (ImGui::TreeNodeEx(
+						"PauseProfile",
+						ImGuiTreeNodeFlags_DefaultOpen,
+						"Profile %zu: %s",
+						profileIndex + 1,
+						profile.label.empty() ? profile.id.c_str() : profile.label.c_str()
+					)) {
+						pauseChanged |= InputTextString(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Profile Id"),
+							profile.id
+						);
+						pauseChanged |= InputTextString(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Label"),
+							profile.label
+						);
+						ImGui::TextUnformatted(SelectEditorText(
+							editorLanguage_, "停止対象Domain", "Paused Domains"
+						));
+						for (const char* domain : pauseDomains) {
+							bool selected = std::find(
+								profile.pausedDomains.begin(),
+								profile.pausedDomains.end(),
+								domain
+							) != profile.pausedDomains.end();
+							if (ImGui::Checkbox(domain, &selected)) {
+								if (selected) {
+									profile.pausedDomains.push_back(domain);
+								} else {
+									profile.pausedDomains.erase(
+										std::remove(
+											profile.pausedDomains.begin(),
+											profile.pausedDomains.end(),
+											domain
+										),
+										profile.pausedDomains.end()
+									);
+								}
+								pauseChanged = true;
+							}
+						}
+						if (ImGui::SmallButton(SelectEditorText(
+							editorLanguage_, "Profileを削除###RemovePauseProfile",
+							"Remove Profile###RemovePauseProfile"
+						))) {
+							removeProfileIndex = static_cast<int>(profileIndex);
+						}
+						ImGui::TreePop();
+					}
+					ImGui::PopID();
+				}
+				if (removeProfileIndex >= 0) {
+					component.pauseProfiles.erase(
+						component.pauseProfiles.begin() + removeProfileIndex
+					);
+					pauseChanged = true;
+				}
+				if (ImGui::Button(SelectEditorText(
+					editorLanguage_, "Profileを追加###AddPauseProfile",
+					"Add Profile###AddPauseProfile"
+				))) {
+					ScenePauseProfile profile{};
+					profile.id = "Profile" + std::to_string(
+						component.pauseProfiles.size() + 1
+					);
+					profile.label = profile.id;
+					profile.pausedDomains = {
+						"Gameplay", "Physics", "GameplayInput",
+						"WorldAnimation", "WorldEffects"
+					};
+					component.pauseProfiles.push_back(std::move(profile));
+					pauseChanged = true;
+				}
+				if (pauseChanged) {
+					document.MarkDirty();
+				}
+				ImGui::EndDisabled();
+			} else if (component.type == "ProcessPolicy") {
+				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
+				const char* processMode = component.processMode.c_str();
+				if (ImGui::BeginCombo(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Process Mode"),
+					processMode
+				)) {
+					for (const char* mode : {
+						"Inherit", "Pausable", "WhenPaused", "Always", "Disabled"
+					}) {
+						if (ImGui::Selectable(mode, component.processMode == mode)) {
+							component.processMode = mode;
+							document.MarkDirty();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::TextDisabled(SelectEditorText(
+					editorLanguage_,
+					"Inheritは親Entityの設定を使用します。",
+					"Inherit uses the nearest parent policy."
+				));
 				ImGui::EndDisabled();
 			} else if (component.type == "TextMotion") {
 				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
@@ -11570,7 +11815,7 @@ void ImGuiManager::DrawInspectorWindow() {
 								"OnPositionReached", "OnKeyPressed",
 								"OnFishingScoreAttackResultInput",
 								"OnCameraPathCompleted", "OnAudioFinished",
-								"OnTextMotionCompleted"
+								"OnTextMotionCompleted", "OnStateEntered"
 							}) {
 								if (ImGui::Selectable(
 									trigger,
@@ -11637,6 +11882,18 @@ void ImGuiManager::DrawInspectorWindow() {
 									"FishingScoreAttackDirectorがありません",
 									"Missing FishingScoreAttackDirector"
 								)
+							);
+						} else if (binding.triggerType == "OnStateEntered") {
+							drawComponentTargetCombo(
+								LocalizedComponentWidgetLabel(editorLanguage_, "State Machine"),
+								binding.targetEntityId,
+								binding.targetEntityName,
+								"StateMachine",
+								SelectEditorText(editorLanguage_, "StateMachineがありません", "Missing StateMachine")
+							);
+							eventsChanged |= InputTextString(
+								LocalizedComponentWidgetLabel(editorLanguage_, "Entered State"),
+								binding.stateName
 							);
 						} else if (triggerNeedsTarget) {
 							eventsChanged |= ImGui::InputScalar(
@@ -11708,6 +11965,136 @@ void ImGuiManager::DrawInspectorWindow() {
 						);
 						binding.radius = (std::max)(binding.radius, 0.0f);
 						binding.cooldown = (std::max)(binding.cooldown, 0.0f);
+						eventsChanged |= ImGui::DragInt(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Priority"),
+							&binding.priority, 1.0f, -1000, 1000
+						);
+
+						ImGui::SeparatorText(SelectEditorText(editorLanguage_, "Conditions", "Conditions"));
+						if (!binding.conditionExpression) {
+							if (ImGui::Button(SelectEditorText(editorLanguage_, "条件グループを追加", "Add Condition Group"))) {
+								SceneEventConditionExpression expression{};
+								expression.groups.push_back({});
+								binding.conditionExpression = std::move(expression);
+								eventsChanged = true;
+							}
+						} else {
+							ImGui::TextDisabled("OR of AND groups");
+							int removeGroupIndex = -1;
+							for (size_t groupIndex = 0;
+								groupIndex < binding.conditionExpression->groups.size();
+								++groupIndex) {
+								SceneEventConditionGroup& group =
+									binding.conditionExpression->groups[groupIndex];
+								ImGui::PushID(static_cast<int>(groupIndex));
+								ImGui::Text("Group %zu (All)", groupIndex + 1);
+								int removeTermIndex = -1;
+								for (size_t termIndex = 0;
+									termIndex < group.terms.size(); ++termIndex) {
+									SceneEventConditionTerm& term = group.terms[termIndex];
+									ImGui::PushID(static_cast<int>(termIndex));
+									const char* termTypes[] = {
+										"StatCompare", "EntityActive", "StateEquals",
+										"PauseActive", "PositionWithin", "InputExpression"
+									};
+									if (ImGui::BeginCombo("Type", term.type.c_str())) {
+										for (const char* type : termTypes) {
+											if (ImGui::Selectable(type, term.type == type)) {
+												term.type = type;
+												eventsChanged = true;
+											}
+										}
+										ImGui::EndCombo();
+									}
+									eventsChanged |= ImGui::Checkbox("Negate", &term.negate);
+									if (term.type != "InputExpression") {
+										const char* componentName =
+											term.type == "StatCompare" ? "StatSet" :
+											term.type == "StateEquals" ? "StateMachine" :
+											term.type == "PauseActive" ? "PauseController" : nullptr;
+										if (componentName) {
+											drawComponentTargetCombo(
+												"Target", term.targetEntityId, term.targetEntityName,
+												componentName, "Missing target component"
+												);
+										} else {
+											eventsChanged |= ImGui::InputScalar(
+												"Target Entity Id", ImGuiDataType_U64,
+												&term.targetEntityId
+											);
+											eventsChanged |= InputTextString(
+												"Target Entity Name", term.targetEntityName
+											);
+										}
+									}
+									if (term.type == "StatCompare") {
+										eventsChanged |= InputTextString("Stat Id", term.statId);
+										if (ImGui::BeginCombo("Comparison", term.statComparison.c_str())) {
+											for (const char* comparison : { "LessOrEqual", "Less", "Equal", "Greater", "GreaterOrEqual" }) {
+												if (ImGui::Selectable(comparison, term.statComparison == comparison)) {
+													term.statComparison = comparison;
+													eventsChanged = true;
+												}
+											}
+											ImGui::EndCombo();
+										}
+										eventsChanged |= ImGui::DragFloat("Value", &term.statValue, 0.1f);
+									} else if (term.type == "StateEquals") {
+										eventsChanged |= InputTextString("State", term.stateName);
+									} else if (term.type == "PauseActive") {
+										eventsChanged |= InputTextString("Pause Profile Id", term.pauseProfileId);
+										eventsChanged |= InputTextString("Pause Request Id", term.pauseRequestId);
+									} else if (term.type == "EntityActive") {
+										eventsChanged |= ImGui::Checkbox("Active", &term.active);
+									} else if (term.type == "PositionWithin") {
+										eventsChanged |= ImGui::DragFloat3("Position", &term.position.x, 0.05f);
+										eventsChanged |= ImGui::DragFloat("Radius", &term.radius, 0.05f, 0.0f, 10000.0f);
+									} else if (term.type == "InputExpression") {
+										std::string conditionInputKey;
+										if (term.inputExpression &&
+											!term.inputExpression->groups.empty() &&
+											!term.inputExpression->groups.front().terms.empty()) {
+											conditionInputKey = term.inputExpression->groups.front().terms.front().input;
+										}
+										eventsChanged |= DrawSceneInputExpressionEditor(
+											"Input", term.inputExpression, conditionInputKey, editorLanguage_
+										);
+									}
+									if (ImGui::Button("Remove Condition")) {
+										removeTermIndex = static_cast<int>(termIndex);
+									}
+									ImGui::PopID();
+								}
+								if (removeTermIndex >= 0) {
+									group.terms.erase(group.terms.begin() + removeTermIndex);
+									eventsChanged = true;
+								}
+								if (ImGui::Button("Add Condition")) {
+									group.terms.push_back({});
+									eventsChanged = true;
+								}
+								ImGui::SameLine();
+								if (ImGui::Button("Remove Group")) {
+									removeGroupIndex = static_cast<int>(groupIndex);
+								}
+								ImGui::PopID();
+							}
+							if (removeGroupIndex >= 0) {
+								binding.conditionExpression->groups.erase(
+									binding.conditionExpression->groups.begin() + removeGroupIndex
+								);
+								eventsChanged = true;
+							}
+							if (ImGui::Button("Add Condition Group")) {
+								binding.conditionExpression->groups.push_back({});
+								eventsChanged = true;
+							}
+							if (binding.conditionExpression->groups.empty() &&
+								ImGui::Button("Clear Conditions")) {
+								binding.conditionExpression.reset();
+								eventsChanged = true;
+							}
+						}
 
 						ImGui::SeparatorText(SelectEditorText(editorLanguage_, "Action", "Actions"));
 						int removeActionIndex = -1;
@@ -11732,8 +12119,8 @@ void ImGuiManager::DrawInspectorWindow() {
 										"ResetPostProcessProfile", "PlayCameraPath",
 										"StopCameraPath", "SelectCamera", "PlayAudio",
 									"StopAudio", "PauseAudio", "ResumeAudio",
-									"PlayTextMotion", "StopTextMotion", "ResetTextMotion",
-									"AdjustFishingFishCount"
+								"PlayTextMotion", "StopTextMotion", "ResetTextMotion",
+								"AdjustFishingFishCount", "SetPauseState"
 									}) {
 										if (ImGui::Selectable(
 											actionType,
@@ -11755,8 +12142,9 @@ void ImGuiManager::DrawInspectorWindow() {
 								action.type != "SelectCamera" &&
 								action.type != "PlayTextMotion" &&
 								action.type != "StopTextMotion" &&
-												action.type != "ResetTextMotion" &&
-												action.type != "AdjustFishingFishCount"
+								action.type != "ResetTextMotion" &&
+														action.type != "AdjustFishingFishCount" &&
+														action.type != "SetPauseState"
 								) {
 									eventsChanged |= ImGui::InputScalar(
 										LocalizedComponentWidgetLabel(editorLanguage_, "Action Target Entity Id"),
@@ -11810,6 +12198,71 @@ void ImGuiManager::DrawInspectorWindow() {
 										}
 										ImGui::EndCombo();
 									}
+								} else if (action.type == "SetPauseState") {
+									drawComponentTargetCombo(
+										LocalizedComponentWidgetLabel(editorLanguage_, "Pause Controller"),
+										action.targetEntityId,
+										action.targetEntityName,
+										"PauseController",
+										SelectEditorText(
+											editorLanguage_,
+											"PauseControllerがありません",
+											"Missing PauseController"
+										)
+									);
+									const SceneEntity* controllerEntity = action.targetEntityId != 0
+										? document.FindEntity(action.targetEntityId)
+										: nullptr;
+									if (!controllerEntity && !action.targetEntityName.empty()) {
+										controllerEntity = document.FindEntityByName(action.targetEntityName);
+									}
+									const SceneComponent* controller = controllerEntity
+										? FindComponent(*controllerEntity, "PauseController")
+										: nullptr;
+									const char* profilePreview = "Select Profile...";
+									if (controller) {
+										for (const ScenePauseProfile& profile : controller->pauseProfiles) {
+											if (profile.id == action.pauseProfileId) {
+												profilePreview = profile.label.empty()
+													? profile.id.c_str()
+													: profile.label.c_str();
+												break;
+											}
+										}
+									}
+									if (ImGui::BeginCombo(
+										LocalizedComponentWidgetLabel(editorLanguage_, "Pause Profile"),
+										profilePreview
+									)) {
+										if (controller) {
+											for (const ScenePauseProfile& profile : controller->pauseProfiles) {
+												const char* label = profile.label.empty()
+													? profile.id.c_str()
+													: profile.label.c_str();
+												if (ImGui::Selectable(label, action.pauseProfileId == profile.id)) {
+													action.pauseProfileId = profile.id;
+													eventsChanged = true;
+												}
+											}
+										}
+										ImGui::EndCombo();
+									}
+									if (ImGui::BeginCombo(
+										LocalizedComponentWidgetLabel(editorLanguage_, "Operation"),
+										action.pauseOperation.c_str()
+									)) {
+										for (const char* operation : { "Pause", "Resume", "Toggle" }) {
+											if (ImGui::Selectable(operation, action.pauseOperation == operation)) {
+												action.pauseOperation = operation;
+												eventsChanged = true;
+											}
+										}
+										ImGui::EndCombo();
+									}
+									eventsChanged |= InputTextString(
+										LocalizedComponentWidgetLabel(editorLanguage_, "Pause Request Id"),
+										action.pauseRequestId
+									);
 								} else if (action.type == "SetEntityActive") {
 									eventsChanged |= ImGui::Checkbox(
 										SelectEditorText(editorLanguage_, "有効###EventActionActive", "Active###EventActionActive"), &action.active

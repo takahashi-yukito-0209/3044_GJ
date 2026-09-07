@@ -124,7 +124,8 @@ public:
 		Player* player,
 		SceneAttackRunnerSystem& attackRunnerSystem,
 		ScenePrefabAnimationSystem& prefabAnimationSystem,
-		float deltaTime
+		float deltaTime,
+		const std::function<bool(uint64_t)>& shouldProcess
 	);
 	bool RequestState(uint64_t entityId, const std::string& stateName);
 	const std::string* GetCurrentState(uint64_t entityId) const;

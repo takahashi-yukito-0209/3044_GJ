@@ -28,7 +28,7 @@ namespace {
 		EditorComponentTag::Prefab
 	}};
 
-	constexpr std::array<EditorComponentDefinition, 45> kDefinitions = {{
+	constexpr std::array<EditorComponentDefinition, 47> kDefinitions = {{
 		{
 			"MeshRenderer", "3Dモデル表示", "Mesh Renderer",
 			"3DモデルとMaterialをSceneへ表示します。",
@@ -237,6 +237,23 @@ namespace {
 			EditorComponentCategory::EventAndFlow,
 			SceneContext, 22, -1, "",
 			EditorComponentTagBit(EditorComponentTag::Event)
+		},
+		{
+			"PauseController", "Pause管理", "Pause Controller",
+			"Scene内のPause Profileと停止対象Domainを定義します。",
+			"Defines pause profiles and paused domains for a Scene.",
+			EditorComponentCategory::EventAndFlow,
+			SceneContext, 41, -1, "",
+			EditorComponentTagBit(EditorComponentTag::Event)
+		},
+		{
+			"ProcessPolicy", "処理Policy", "Process Policy",
+			"Pause中にEntityを更新するかどうかを親から継承して定義します。",
+			"Defines whether an Entity processes during pause, with parent inheritance.",
+			EditorComponentCategory::EventAndFlow,
+			SceneAndPrefabContext, 42, 11, "",
+			EditorComponentTagBit(EditorComponentTag::Event) |
+			EditorComponentTagBit(EditorComponentTag::Prefab)
 		},
 		{
 			"AudioSource", "Audio Source", "Audio Source",

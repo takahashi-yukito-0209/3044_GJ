@@ -36,20 +36,137 @@ namespace {
 			: nullptr;
 	}
 
+	bool CompareStat(
+		float value,
+		const std::string& comparison,
+		float expectedValue
+	) {
+		if (comparison == "GreaterOrEqual") {
+			return value >= expectedValue;
+		}
+		if (comparison == "Greater") {
+			return value > expectedValue;
+		}
+		if (comparison == "Less") {
+			return value < expectedValue;
+		}
+		if (comparison == "Equal") {
+			return std::abs(value - expectedValue) <= 0.0001f;
+		}
+		return value <= expectedValue;
+	}
+
 	bool CompareStat(float value, const SceneEventBinding& binding) {
-		if (binding.statComparison == "GreaterOrEqual") {
-			return value >= binding.statValue;
+		return CompareStat(value, binding.statComparison, binding.statValue);
+	}
+
+	bool EvaluateConditionTerm(
+		const SceneEventConditionTerm& term,
+		SceneDocument& document,
+		SceneStatSystem& statSystem,
+		SceneStateMachineSystem& stateMachineSystem,
+		const ScenePauseSystem& pauseSystem
+	) {
+		bool resolved = true;
+		bool value = false;
+		SceneEntity* target = nullptr;
+		if (term.type != "InputExpression") {
+			target = ResolveEntity(
+				document, term.targetEntityId, term.targetEntityName, 0
+			);
+			resolved = target != nullptr;
 		}
-		if (binding.statComparison == "Greater") {
-			return value > binding.statValue;
+		if (resolved && term.type == "StatCompare") {
+			float statValue = 0.0f;
+			resolved = SceneEntityQuery::FindEnabledComponent(*target, "StatSet") &&
+				statSystem.TryGet(target->id, term.statId, statValue);
+			value = resolved && CompareStat(
+				statValue, term.statComparison, term.statValue
+			);
+		} else if (resolved && term.type == "EntityActive") {
+			value = SceneEntityQuery::IsEntityActiveInHierarchy(document, *target) ==
+				term.active;
+		} else if (resolved && term.type == "StateEquals") {
+			const std::string* current =
+				SceneEntityQuery::FindEnabledComponent(*target, "StateMachine")
+				? stateMachineSystem.GetCurrentState(target->id)
+				: nullptr;
+			resolved = current != nullptr;
+			value = resolved && *current == term.stateName;
+		} else if (resolved && term.type == "PauseActive") {
+			resolved = SceneEntityQuery::FindEnabledComponent(
+				*target, "PauseController"
+			) != nullptr;
+			value = resolved &&
+				pauseSystem.IsPauseActive(
+					target->id, term.pauseProfileId, term.pauseRequestId
+				);
+		} else if (resolved && term.type == "PositionWithin") {
+			const Transform transform = SceneTransformResolver::ResolveScene3DTransform(
+				document, *target
+			);
+			value = Math::Length(Math::Subtract(transform.translate, term.position)) <=
+				(std::max)(term.radius, 0.0f);
+		} else if (term.type == "InputExpression") {
+			resolved = term.inputExpression.has_value();
+			value = resolved && SceneRuntimeInput::EvaluateExpression(
+				term.inputExpression, ""
+			);
+		} else {
+			resolved = false;
 		}
-		if (binding.statComparison == "Less") {
-			return value < binding.statValue;
+		return resolved && (term.negate ? !value : value);
+	}
+
+	bool EvaluateConditionExpression(
+		const std::optional<SceneEventConditionExpression>& expression,
+		SceneDocument& document,
+		SceneStatSystem& statSystem,
+		SceneStateMachineSystem& stateMachineSystem,
+		const ScenePauseSystem& pauseSystem
+	) {
+		if (!expression) {
+			return true;
 		}
-		if (binding.statComparison == "Equal") {
-			return std::abs(value - binding.statValue) <= 0.0001f;
+		if (expression->mode != "Any" || expression->groups.empty()) {
+			return false;
 		}
-		return value <= binding.statValue;
+		for (const SceneEventConditionGroup& group : expression->groups) {
+			if (group.mode != "All" || group.terms.empty()) {
+				continue;
+			}
+			const bool allTermsTrue = std::all_of(
+				group.terms.begin(),
+				group.terms.end(),
+				[&document, &statSystem, &stateMachineSystem, &pauseSystem](
+					const SceneEventConditionTerm& term
+				) {
+					return EvaluateConditionTerm(
+						term, document, statSystem, stateMachineSystem, pauseSystem
+					);
+				}
+			);
+			if (allTermsTrue) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool IsValidChangeStateAction(
+		const SceneEventAction& action,
+		const SceneEntity* target
+	) {
+		const SceneComponent* machine = target
+			? SceneEntityQuery::FindEnabledComponent(*target, "StateMachine")
+			: nullptr;
+		return machine && !action.stateName.empty() && std::any_of(
+			machine->stateMachineStates.begin(),
+			machine->stateMachineStates.end(),
+			[&action](const SceneStateDefinition& state) {
+				return state.name == action.stateName;
+			}
+		);
 	}
 
 	bool IsValidPostProcessProfileAction(
@@ -165,18 +282,25 @@ SceneEventResult SceneEventSystem::Update(
 	SceneDocument& document,
 	SceneStatSystem& statSystem,
 	SceneStateMachineSystem& stateMachineSystem,
+	const ScenePauseSystem& pauseSystem,
 	float deltaTime,
-	const SceneEventRuntimeSignals& signals
+	const SceneEventRuntimeSignals& signals,
+	const std::function<bool(uint64_t)>& shouldProcess
 ) {
 	SceneEventResult result{};
 	struct QueuedAction {
 		uint64_t ownerEntityId = 0;
+		int priority = 0;
+		size_t entityOrder = 0;
+		size_t bindingOrder = 0;
 		SceneEventAction action{};
 	};
 	std::vector<QueuedAction> queuedActions;
 	std::unordered_set<uint64_t> requiredEntities;
 
-	for (const SceneEntity& entity : document.GetEntities()) {
+	const std::vector<SceneEntity>& entities = document.GetEntities();
+	for (size_t entityOrder = 0; entityOrder < entities.size(); ++entityOrder) {
+		const SceneEntity& entity = entities[entityOrder];
 		if (!SceneEntityQuery::IsEntityActiveInHierarchy(document, entity)) {
 			continue;
 		}
@@ -186,6 +310,9 @@ SceneEventResult SceneEventSystem::Update(
 			continue;
 		}
 		requiredEntities.insert(entity.id);
+		if (shouldProcess && !shouldProcess(entity.id)) {
+			continue;
+		}
 		auto& states = runtimes_[entity.id];
 		states.resize(eventComponent->eventBindings.size());
 		for (size_t index = 0;
@@ -281,17 +408,43 @@ SceneEventResult SceneEventSystem::Update(
 								(binding.textMotionClipId.empty() ||
 									completion.clipId == binding.textMotionClipId);
 						}
-					);
+				);
 				shouldFire = condition;
+			} else if (binding.triggerType == "OnStateEntered") {
+				SceneEntity* stateTarget = ResolveEntity(
+					document,
+					binding.targetEntityId,
+					binding.targetEntityName,
+					0
+				);
+				const std::string* current = stateTarget &&
+					SceneEntityQuery::FindEnabledComponent(*stateTarget, "StateMachine")
+					? stateMachineSystem.GetCurrentState(stateTarget->id)
+					: nullptr;
+				condition = current && *current == binding.stateName;
+				shouldFire = condition && !state.wasConditionTrue;
 			}
 
 			if (
 				shouldFire &&
+				EvaluateConditionExpression(
+					binding.conditionExpression,
+					document,
+					statSystem,
+					stateMachineSystem,
+					pauseSystem
+				) &&
 				state.cooldown <= 0.0f &&
 				(!binding.triggerOnce || !state.fired)
 			) {
 				for (const SceneEventAction& action : binding.actions) {
-					queuedActions.push_back({ entity.id, action });
+					queuedActions.push_back({
+						entity.id,
+						binding.priority,
+						entityOrder,
+						index,
+						action
+					});
 				}
 				state.fired = true;
 				state.cooldown = (std::max)(binding.cooldown, 0.0f);
@@ -308,7 +461,21 @@ SceneEventResult SceneEventSystem::Update(
 			++iterator;
 		}
 	}
+	std::stable_sort(
+		queuedActions.begin(),
+		queuedActions.end(),
+		[](const QueuedAction& left, const QueuedAction& right) {
+			if (left.priority != right.priority) {
+				return left.priority > right.priority;
+			}
+			if (left.entityOrder != right.entityOrder) {
+				return left.entityOrder < right.entityOrder;
+			}
+			return left.bindingOrder < right.bindingOrder;
+		}
+	);
 
+	std::unordered_set<uint64_t> changedStateTargets;
 	for (const QueuedAction& queued : queuedActions) {
 		const SceneEventAction& action = queued.action;
 		SceneEntity* target = ResolveEntity(
@@ -357,9 +524,33 @@ SceneEventResult SceneEventSystem::Update(
 				}
 			}
 		} else if (action.type == "ChangeState") {
-			if (target) {
+			if (
+				IsValidChangeStateAction(action, target) &&
+				changedStateTargets.insert(target->id).second
+			) {
 				stateMachineSystem.RequestState(target->id, action.stateName);
 			}
+		} else if (
+			action.type == "SetPauseState" &&
+			target &&
+			SceneEntityQuery::FindEnabledComponent(*target, "PauseController") &&
+			!action.pauseProfileId.empty() &&
+			!action.pauseRequestId.empty()
+		) {
+			ScenePauseOperation operation = ScenePauseOperation::Pause;
+			if (action.pauseOperation == "Resume") {
+				operation = ScenePauseOperation::Resume;
+			} else if (action.pauseOperation == "Toggle") {
+				operation = ScenePauseOperation::Toggle;
+			} else if (action.pauseOperation != "Pause") {
+				continue;
+			}
+			result.pauseRequests.push_back({
+				target->id,
+				action.pauseProfileId,
+				action.pauseRequestId,
+				operation
+			});
 		} else if (action.type == "AdjustFishingFishCount") {
 			const SceneComponent* director = target &&
 				SceneEntityQuery::IsEntityActiveInHierarchy(document, *target)
@@ -377,7 +568,8 @@ SceneEventResult SceneEventSystem::Update(
 			}
 		} else if (
 			action.type == "SceneTransition" &&
-			result.sceneTransitionId.empty()
+			result.sceneTransitionId.empty() &&
+			!action.sceneId.empty()
 		) {
 			result.sceneTransitionId = action.sceneId;
 		} else if (
@@ -465,6 +657,7 @@ SceneEventResult SceneEventSystem::Update(
 		result.cameraRequests.clear();
 		result.audioRequests.clear();
 		result.textMotionRequests.clear();
+		result.pauseRequests.clear();
 	}
 	return result;
 }

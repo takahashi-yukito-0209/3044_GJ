@@ -15,6 +15,7 @@
 #include "../../../engine/scene/SceneDocument.h"
 #include "../../../engine/scene/SceneEntityQuery.h"
 #include "../../../engine/scene/SceneTransformResolver.h"
+#include "../../../engine/text/TextFontRegistry.h"
 #include "../../../engine/text/TextRasterizer.h"
 
 namespace {
@@ -23,13 +24,16 @@ namespace {
 	using SceneTransformResolver::ResolveScene2DTransform;
 
 	TextRasterizer::Settings ToRasterizerSettings(
-		const SceneComponent& component,
+	const SceneComponent& component,
 		const std::string& text,
-		const Vector4& color
+		const Vector4& color,
+		const std::string& fontFamily,
+		const std::shared_ptr<const TextFontResource>& resourceFont
 	) {
 		TextRasterizer::Settings settings{};
 		settings.text = text;
-		settings.fontFamily = component.textFontFamily;
+		settings.fontFamily = fontFamily;
+		settings.resourceFont = resourceFont;
 		settings.fontSize = component.textFontSize;
 		settings.bold = component.textFontWeight == "Bold";
 		settings.italic = component.textFontStyle == "Italic";
@@ -61,12 +65,16 @@ namespace {
 	}
 
 	std::string BuildContentSignature(
-		const SceneComponent& component,
+	const SceneComponent& component,
 		const std::string& text,
-		const Vector4& color
+		const Vector4& color,
+		const std::string& resolutionKey,
+		uint64_t registryGeneration
 	) {
 		std::ostringstream stream;
-		stream << text << '\n' << component.textFontFamily << '|'
+		stream << text << '\n' << component.textFontSource << '|'
+			<< component.textFontResourcePath << '|' << component.textFontFamily << '|'
+			<< resolutionKey << "|generation=" << registryGeneration << '|'
 			<< component.textFontSize << '|' << component.textFontWeight << '|'
 			<< component.textFontStyle << '|' << color.x << ','
 			<< color.y << ',' << color.z << ',' << color.w << '|'
@@ -180,6 +188,7 @@ void SceneTextRenderSystem::Sync(SceneDocument* document) {
 	}
 	std::unordered_set<uint64_t> requiredIds;
 	TextRasterizer rasterizer;
+	TextFontRegistry& fontRegistry = TextFontRegistry::GetInstance();
 	for (const SceneEntity& entity : document->GetEntities()) {
 		const SceneComponent* component = FindEnabledComponent(entity, "TextRenderer");
 		if (!component) {
@@ -200,13 +209,44 @@ void SceneTextRenderSystem::Sync(SceneDocument* document) {
 		const Vector4& color = colorOverride != textColorOverrides_.end()
 			? colorOverride->second
 			: component->textColor;
-		const std::string signature = BuildContentSignature(*component, text, color);
+		std::shared_ptr<const TextFontResource> resourceFont;
+		std::string fontFamily = component->textFontFamily;
+		std::string fontResolutionKey;
+		std::string fontDiagnostic;
+		if (component->textFontSource == "Resource") {
+			const TextFontResolution resolution = fontRegistry.AcquireResource(
+				component->textFontResourcePath
+			);
+			fontResolutionKey = resolution.cacheKey;
+			fontDiagnostic = resolution.diagnostic;
+			if (resolution.resource && std::find(
+				resolution.resource->GetFamilies().begin(),
+				resolution.resource->GetFamilies().end(),
+				component->textFontFamily
+			) != resolution.resource->GetFamilies().end()) {
+				resourceFont = resolution.resource;
+			} else {
+				if (resolution.resource && fontDiagnostic.empty()) {
+					fontDiagnostic = "Selected family is not present in the resource font.";
+				}
+				fontFamily = "Yu Gothic UI";
+			}
+		} else if (component->textFontSource != "System") {
+			fontFamily = "Yu Gothic UI";
+			fontDiagnostic = "Unknown font source; using Yu Gothic UI.";
+		}
+		runtime.fontLease = resourceFont;
+		runtime.fontResolutionKey = fontResolutionKey;
+		runtime.fontDiagnostic = fontDiagnostic;
+		const std::string signature = BuildContentSignature(
+			*component, text, color, fontResolutionKey, fontRegistry.GetGeneration()
+		);
 		if (runtime.contentSignature == signature && runtime.bitmapSize.x > 0.0f) {
 			continue;
 		}
 		TextRasterizer::Bitmap bitmap{};
 		if (!rasterizer.Rasterize(
-			ToRasterizerSettings(*component, text, color), bitmap
+			ToRasterizerSettings(*component, text, color, fontFamily, resourceFont), bitmap
 		)) {
 			runtime.bitmapSize = {};
 			continue;

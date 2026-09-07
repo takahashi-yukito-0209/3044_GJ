@@ -178,7 +178,8 @@ void SceneTextMotionSystem::Reset(uint64_t entityId) {
 
 void SceneTextMotionSystem::Update(
 	const SceneDocument& document,
-	float deltaTime
+	float deltaTime,
+	const std::function<bool(uint64_t)>& shouldProcess
 ) {
 	completions_.clear();
 	const float elapsedDelta = (std::max)(deltaTime, 0.0f);
@@ -193,6 +194,9 @@ void SceneTextMotionSystem::Update(
 			continue;
 		}
 		requiredEntityIds.insert(entity.id);
+		if (shouldProcess && !shouldProcess(entity.id)) {
+			continue;
+		}
 		const auto runtimeIt = runtimes_.find(entity.id);
 		if (runtimeIt == runtimes_.end()) {
 			continue;

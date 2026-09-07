@@ -8,6 +8,7 @@
 #include "../../../engine/math/Vector4.h"
 
 #include <cstdint>
+#include <functional>
 #include <random>
 #include <string>
 #include <unordered_map>
@@ -116,7 +117,9 @@ public:
 	void UpdateFormationParticleEffect(
 		const SceneDocument& document,
 		const SceneAgentSystem& agentSystem,
-		float deltaTime
+		float deltaTime,
+		const std::function<bool(uint64_t)>& shouldProcessWorldEffects,
+		const std::string& pauseOwnerKey
 	);
 	void DrawFormationParticleTuningImGui(
 		const SceneDocument& document,
@@ -223,6 +226,7 @@ private:
 	float formationParticleEmissionAccumulator_ = 0.0f;
 	size_t formationParticlePointCursor_ = 0;
 	bool formationParticleActive_ = false;
+	std::string formationParticlePauseOwnerKey_;
 	int formationParticlePointCount_ = 0;
 	float formationParticleStartSize_ = 0.26f;
 	float formationParticleEndSize_ = 0.43f;

@@ -1428,12 +1428,28 @@ bool SceneFishingScoreAttackSystem::ConsumePlayerResetRequest(
 void SceneFishingScoreAttackSystem::UpdateFormationParticleEffect(
 	const SceneDocument& document,
 	const SceneAgentSystem& agentSystem,
-	float deltaTime
+	float deltaTime,
+	const std::function<bool(uint64_t)>& shouldProcessWorldEffects,
+	const std::string& pauseOwnerKey
 ) {
 	constexpr const char* kGroupName = "FishingFormationCloudCpu";
 	constexpr const char* kTexturePath = "resources/circleEntity.png";
 	ParticleManager* particleManager = ParticleManager::GetInstance();
+	const std::string effectivePauseOwnerKey = "formation:" + pauseOwnerKey;
+	if (!formationParticlePauseOwnerKey_.empty() &&
+		formationParticlePauseOwnerKey_ != effectivePauseOwnerKey) {
+		particleManager->SetParticleGroupSimulationPaused(
+			kGroupName, formationParticlePauseOwnerKey_, false
+		);
+	}
+	formationParticlePauseOwnerKey_ = effectivePauseOwnerKey;
+	auto setPaused = [&](bool paused) {
+		particleManager->SetParticleGroupSimulationPaused(
+			kGroupName, formationParticlePauseOwnerKey_, paused
+		);
+	};
 	auto stop = [&]() {
+		setPaused(false);
 		particleManager->ClearParticleGroup(kGroupName);
 		particleManager->ClearParticleGroupParentTransform(kGroupName);
 		formationParticleEmissionAccumulator_ = 0.0f;
@@ -1460,6 +1476,11 @@ void SceneFishingScoreAttackSystem::UpdateFormationParticleEffect(
 		stop();
 		return;
 	}
+	if (shouldProcessWorldEffects && !shouldProcessWorldEffects(directorEntity->id)) {
+		setPaused(true);
+		return;
+	}
+	setPaused(false);
 	LoadFormationParticleTuning(*director);
 	FormationCapsule capsule{};
 	if (!TryGetPlayerFormationCapsule(document, *director, agentSystem, capsule)) {
@@ -3612,12 +3633,18 @@ void SceneFishingScoreAttackSystem::Clear() {
 	iconRequests_.clear();
 	if (formationParticleActive_) {
 		ParticleManager* particleManager = ParticleManager::GetInstance();
+		if (!formationParticlePauseOwnerKey_.empty()) {
+			particleManager->SetParticleGroupSimulationPaused(
+				"FishingFormationCloudCpu", formationParticlePauseOwnerKey_, false
+			);
+		}
 		particleManager->ClearParticleGroup("FishingFormationCloudCpu");
 		particleManager->ClearParticleGroupParentTransform("FishingFormationCloudCpu");
 	}
 	formationParticleEmissionAccumulator_ = 0.0f;
 	formationParticlePointCursor_ = 0;
 	formationParticleActive_ = false;
+	formationParticlePauseOwnerKey_.clear();
 	formationParticlePointCount_ = 0;
 	formationParticleStartSize_ = 0.26f;
 	formationParticleEndSize_ = 0.43f;

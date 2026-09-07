@@ -17,6 +17,12 @@
       "name": "RESULT",
       "path": "resources/scenes/RESULT.scene.json",
       "runtimeProfile": "RUNTIME"
+    },
+    {
+      "id": "tutorial",
+      "name": "TUTORIAL",
+      "path": "resources/scenes/TUTORIAL.scene.json",
+      "runtimeProfile": "RUNTIME"
     }
   ],
   "startScene": "gameplay",

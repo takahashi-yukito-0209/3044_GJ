@@ -473,6 +473,15 @@ public:
 		float yaw
 	);
 	void ClearParticleGroupParentTransform(const std::string& name);
+	void SetParticleGroupSimulationPaused(
+		const std::string& name,
+		const std::string& ownerKey,
+		bool paused
+	);
+	void SetSceneParticleSimulationPaused(
+		const std::string& sceneId,
+		bool paused
+	);
 
 	void Emit(
 		const std::string& name,
@@ -636,8 +645,13 @@ private:
 	Camera* camera_ = nullptr;
 
 	std::unordered_map<std::string, ParticleGroup> particleGroups_;
+	std::unordered_map<std::string, std::unordered_set<std::string>>
+		particleGroupPauseOwners_;
 	std::unordered_map<std::string, std::unique_ptr<GpuParticle>> gpuParticles_;
 	std::unordered_set<std::string> sceneGpuParticleKeys_;
+	std::unordered_set<std::string> pausedSceneParticleIds_;
+	std::unordered_map<std::string, std::unordered_set<std::string>>
+		sceneParticleGroupNames_;
 	bool gpuParticleEnabled_ = false;
 	std::unordered_map<std::string, ParticlePlacementAsset> particlePlacementAssets_;
 	std::unordered_map<std::string, std::vector<SceneParticleAssetInstance>> sceneParticleAssetInstances_;

@@ -651,8 +651,16 @@ namespace {
 		}
 	};
 
+	class BuiltinPassiveState final : public IEntityStateAction {
+	public:
+		void Update(StateContext&, float) override {}
+	};
+
 	void RegisterBuiltinStates() {
 		EntityStateRegistry& registry = EntityStateRegistry::GetInstance();
+		if (!registry.Contains("Builtin.Passive")) {
+			registry.Register<BuiltinPassiveState>("Builtin.Passive");
+		}
 		if (!registry.Contains("Builtin.Idle")) {
 			registry.Register<BuiltinIdleState>("Builtin.Idle");
 		}
@@ -908,7 +916,8 @@ void SceneStateMachineSystem::Update(
 	Player* player,
 	SceneAttackRunnerSystem& attackRunnerSystem,
 	ScenePrefabAnimationSystem& prefabAnimationSystem,
-	float deltaTime
+	float deltaTime,
+	const std::function<bool(uint64_t)>& shouldProcess
 ) {
 	auto findBinding = [&](uint64_t entityId) -> const SceneRuntimeObjectBinding* {
 		const auto found = std::find_if(
@@ -996,6 +1005,9 @@ void SceneStateMachineSystem::Update(
 				}
 				runtime = {};
 			}
+			continue;
+		}
+		if (shouldProcess && !shouldProcess(entity.id)) {
 			continue;
 		}
 		if (!runtime.initialized) {

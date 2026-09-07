@@ -38,8 +38,29 @@ void SceneParticleSystem::Initialize(Camera* camera) {
 
 void SceneParticleSystem::Update(
 	const std::string& sceneId,
-	bool editing
+	bool editing,
+	bool advanceWorldEffects
 ) {
+	ParticleManager* particleManager = ParticleManager::GetInstance();
+	if (!activeSceneId_.empty() && activeSceneId_ != sceneId) {
+		particleManager->SetSceneParticleSimulationPaused(activeSceneId_, false);
+	}
+	activeSceneId_ = sceneId;
+	const std::string groupPauseOwnerKey = "scene-particle:" + sceneId;
+	// Editor previewはRuntimeのPause対象ではない。
+	particleManager->SetSceneParticleSimulationPaused(sceneId, !editing && !advanceWorldEffects);
+	if (!editing) {
+		if (!primaryEffect_.name.empty()) {
+			particleManager->SetParticleGroupSimulationPaused(
+				primaryEffect_.name, groupPauseOwnerKey, !advanceWorldEffects
+			);
+		}
+		if (!secondaryEffect_.name.empty()) {
+			particleManager->SetParticleGroupSimulationPaused(
+				secondaryEffect_.name, groupPauseOwnerKey, !advanceWorldEffects
+			);
+		}
+	}
 	// Editor PreviewとRuntime Emitterを同じManager更新へ集約し、生成順を揃える。
 	std::string particlePath;
 	ImGuiManager* imguiManager = ImGuiManager::GetInstance();
@@ -56,18 +77,20 @@ void SceneParticleSystem::Update(
 
 	Input* input = Input::GetInstance();
 	if (editing && input && input->TriggerKey(DIK_SPACE)) {
-		ParticleManager::GetInstance()->CycleSceneParticleAssets(sceneId);
+		particleManager->CycleSceneParticleAssets(sceneId);
 	}
 	if (editorPreviewEmitter_) {
 		editorPreviewEmitter_->Update();
 	}
-	if (primaryEmitter_) {
+	if (primaryEmitter_ && (editing || advanceWorldEffects)) {
 		primaryEmitter_->Update();
 	}
-	if (secondaryEmitter_) {
+	if (secondaryEmitter_ && (editing || advanceWorldEffects)) {
 		secondaryEmitter_->Update();
 	}
-	ParticleManager::GetInstance()->UpdateSceneParticles(sceneId);
+	if (editing || advanceWorldEffects) {
+		particleManager->UpdateSceneParticles(sceneId);
+	}
 }
 
 void SceneParticleSystem::DrawEditor(const std::string& sceneId) {
@@ -105,6 +128,21 @@ void SceneParticleSystem::DrawEditor(const std::string& sceneId) {
 }
 
 void SceneParticleSystem::Finalize() {
+	if (!activeSceneId_.empty()) {
+		const std::string groupPauseOwnerKey = "scene-particle:" + activeSceneId_;
+		ParticleManager::GetInstance()->SetSceneParticleSimulationPaused(activeSceneId_, false);
+		if (!primaryEffect_.name.empty()) {
+			ParticleManager::GetInstance()->SetParticleGroupSimulationPaused(
+				primaryEffect_.name, groupPauseOwnerKey, false
+			);
+		}
+		if (!secondaryEffect_.name.empty()) {
+			ParticleManager::GetInstance()->SetParticleGroupSimulationPaused(
+				secondaryEffect_.name, groupPauseOwnerKey, false
+			);
+		}
+	}
+	activeSceneId_.clear();
 	delete editorPreviewEmitter_;
 	editorPreviewEmitter_ = nullptr;
 	delete primaryEmitter_;

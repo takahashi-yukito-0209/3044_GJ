@@ -12,6 +12,7 @@
 
 class DirectXCommon;
 class SceneDocument;
+class TextFontResource;
 
 class SceneTextRenderSystem {
 public:
@@ -38,8 +39,11 @@ public:
 private:
 	struct RuntimeText {
 		std::unique_ptr<TextSprite> sprite;
+		std::shared_ptr<const TextFontResource> fontLease;
 		std::string textureKey;
 		std::string contentSignature;
+		std::string fontResolutionKey;
+		std::string fontDiagnostic;
 		Vector2 bitmapSize{};
 		bool spriteInitialized = false;
 	};

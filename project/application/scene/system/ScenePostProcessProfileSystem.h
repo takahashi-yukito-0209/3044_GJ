@@ -24,6 +24,7 @@ public:
 		return effectiveSettings_;
 	}
 	uint64_t GetGeneration() const { return generation_; }
+	uint64_t GetActiveManagerEntityId() const { return activeManagerEntityId_; }
 	const std::string& GetActiveProfileLabel() const {
 		return activeProfileLabel_;
 	}
