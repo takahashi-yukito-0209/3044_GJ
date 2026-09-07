@@ -907,12 +907,6 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 		directorEntityId_ = foundDirectorEntityId;
 	}
 	hasDirector_ = true;
-	if (scorePopup_.active) {
-		scorePopup_.elapsedSeconds += (std::max)(deltaTime, 0.0f);
-		if (scorePopup_.elapsedSeconds >= scorePopup_.durationSeconds) {
-			scorePopup_ = {};
-		}
-	}
 	if (state_ == SceneFishingScoreAttackState::Result) {
 		resultInputArmed_ = true;
 	}
@@ -1109,8 +1103,6 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	}
 	long long sharkPenaltyTotal = 0;
 	bool sharkPenaltyApplied = false;
-	Vector3 sharkPenaltyWorldPosition{};
-	bool hasSharkPenaltyWorldPosition = false;
 	if (director->fishingUseFormationCapsuleCollision) {
 		for (const SceneEntity& entity : document.GetEntities()) {
 			if (!IsEntityActiveInHierarchy(document, entity)) {
@@ -1158,14 +1150,6 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 				shark->fishingSharkHitCooldownSeconds,
 				0.0f
 			);
-			if (!hasSharkPenaltyWorldPosition && sharkBinding->object) {
-				const Matrix4x4& sharkWorld = sharkBinding->object->GetWorldMatrix();
-				sharkPenaltyWorldPosition = {
-					sharkWorld.m[3][0], sharkWorld.m[3][1] + 1.25f,
-					sharkWorld.m[3][2]
-				};
-				hasSharkPenaltyWorldPosition = true;
-			}
 			sharkPenaltyApplied = true;
 		}
 	}
@@ -1176,15 +1160,6 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			totalScore_ = minimumScore;
 		} else {
 			totalScore_ -= sharkPenaltyTotal;
-		}
-		if (hasSharkPenaltyWorldPosition &&
-			director->fishingResultTextEntityId != 0) {
-			scorePopup_.entityId = director->fishingResultTextEntityId;
-			scorePopup_.text = "-" + std::to_string(sharkPenaltyTotal);
-			scorePopup_.color = { 1.0f, 0.18f, 0.18f, 1.0f };
-			scorePopup_.worldPosition = sharkPenaltyWorldPosition;
-			scorePopup_.elapsedSeconds = 0.0f;
-			scorePopup_.active = true;
 		}
 		DeactivatePoolHooks(document, *director);
 		playerConstraintRequest_ = {};
@@ -1197,7 +1172,6 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	}
 	const ActiveHook* hitHook = nullptr;
 	const SceneComponent* hitHookComponent = nullptr;
-	const SceneRuntimeObjectBinding* hitHookBinding = nullptr;
 	for (const ActiveHook& activeHook : activeHooks_) {
 		const SceneRuntimeObjectBinding* hookBinding = FindBinding(bindings, activeHook.entityId);
 		if (!hookBinding || !hookBinding->entity || !hookBinding->collider ||
@@ -1245,7 +1219,6 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		}
 		if (intersects) {
 			hitHook = &activeHook;
-			hitHookBinding = hookBinding;
 			hitHookComponent = FindComponent(
 				document,
 				activeHook.entityId,
@@ -1309,34 +1282,13 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			static_cast<double>(hitHookComponent->fishingHookBaseScore)
 		);
 	}
-	long long awardedScore = 0;
-	if (score > 0.0) {
-		const long long maximumTotalScore =
-			(std::numeric_limits<long long>::max)();
-		const long long requestedScore = static_cast<long long>((std::min)(
-			score,
-			static_cast<double>(maximumTotalScore)
-		));
-		if (totalScore_ > 0 &&
-			requestedScore > maximumTotalScore - totalScore_) {
-			awardedScore = maximumTotalScore - totalScore_;
-		} else {
-			awardedScore = requestedScore;
-		}
-		totalScore_ += awardedScore;
-	}
-	if (awardedScore > 0 &&
-		director->fishingResultTextEntityId != 0 &&
-		hitHookBinding && hitHookBinding->object) {
-		const Matrix4x4& hookWorld = hitHookBinding->object->GetWorldMatrix();
-		scorePopup_.entityId = director->fishingResultTextEntityId;
-		scorePopup_.text = "+" + std::to_string(awardedScore);
-		scorePopup_.color = rank.color;
-		scorePopup_.worldPosition = {
-			hookWorld.m[3][0], hookWorld.m[3][1] + 1.25f, hookWorld.m[3][2]
-		};
-		scorePopup_.elapsedSeconds = 0.0f;
-		scorePopup_.active = true;
+	const double maximumScore = static_cast<double>(
+		(std::numeric_limits<long long>::max)()
+	);
+	if (score > 0.0 && score >= maximumScore - static_cast<double>(totalScore_)) {
+		totalScore_ = (std::numeric_limits<long long>::max)();
+	} else {
+		totalScore_ += static_cast<long long>(score);
 	}
 	DeactivatePoolHooks(document, *director);
 	playerConstraintRequest_ = {};
@@ -3750,21 +3702,12 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 				) + "x"
 			: std::string{}
 	);
-	if (state_ == SceneFishingScoreAttackState::Result) {
-		addText(
-			director.fishingResultTextEntityId,
-			director.fishingResultPrefix + std::to_string(totalScore_)
-		);
-	} else if (scorePopup_.active && scorePopup_.entityId != 0) {
-		textRequests_.push_back({
-			scorePopup_.entityId,
-			scorePopup_.text,
-			true,
-			scorePopup_.color
-		});
-	} else {
-		addText(director.fishingResultTextEntityId, {});
-	}
+	addText(
+		director.fishingResultTextEntityId,
+		state_ == SceneFishingScoreAttackState::Result
+			? director.fishingResultPrefix + std::to_string(totalScore_)
+			: std::string{}
+	);
 	const bool showLegend =
 		director.fishingUseHookBandSettings &&
 		director.fishingHookLegendVisible &&
