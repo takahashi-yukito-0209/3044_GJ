@@ -195,7 +195,7 @@ bool DrawPostProcessSettingsEditor(ScenePostProcessSettings& settings) {
 		changed |= ImGui::ColorEdit4("Tint", &settings.waterRefractionTintColor.x);
 		changed |= ImGui::SliderFloat("Strength", &settings.waterRefractionStrength, 0.0f, 0.08f, "%.4f");
 		changed |= ImGui::SliderFloat("Edge Softness", &settings.waterRefractionEdgeSoftness, 0.0f, 1.0f, "%.4f");
-		changed |= ImGui::SliderFloat("Tint Strength", &settings.waterRefractionTintStrength, 0.0f, 1.0f, "%.4f");
+		changed |= ImGui::SliderFloat("Tint Density", &settings.waterRefractionTintStrength, 0.0f, 1.0f, "%.4f");
 		ImGui::TreePop();
 	}
 	ImGui::PopID();

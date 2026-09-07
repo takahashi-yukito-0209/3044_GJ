@@ -14,6 +14,7 @@
 #include "../../../engine/utility/StringUtility.h"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 
 namespace {
@@ -206,7 +207,68 @@ void SceneEnvironmentSystem::DrawWaterSurfaces(
 		settings.waveScale = waterVolume->waterSurfaceWaveScale;
 		settings.normalStrength = waterVolume->waterSurfaceNormalStrength;
 		settings.fresnelPower = waterVolume->waterSurfaceFresnelPower;
-		waterSurfaceRenderer_->Draw(camera, center, halfSize, settings);
+
+		// 水面を実際に横切るMeshだけに、モデルのXZスケールに沿った泡を置く。
+		std::vector<WaterSurfaceRenderer::FoamEmitter> foamEmitters;
+		foamEmitters.reserve(16);
+		for (const SceneEntity& candidate : document.GetEntities()) {
+			if (
+				candidate.id == entity.id ||
+				candidate.id == skipEntityId ||
+				!SceneEntityQuery::IsEntityActiveInHierarchy(document, candidate) ||
+				!SceneEntityQuery::FindEnabledComponent(candidate, "MeshRenderer")
+			) {
+				continue;
+			}
+			const Transform candidateTransform =
+				SceneTransformResolver::ResolveScene3DTransform(document, candidate);
+			const float scaleX = std::abs(candidateTransform.scale.x);
+			const float scaleY = std::abs(candidateTransform.scale.y);
+			const float scaleZ = std::abs(candidateTransform.scale.z);
+			const SceneComponent* collider =
+				SceneEntityQuery::FindEnabledComponent(candidate, "OBBCollider");
+			if ((std::max)(scaleX, scaleZ) > 32.0f) {
+				continue;
+			}
+			// OBBがあれば、そのサイズを正確な水面上の輪郭として使う。
+			const float footprintX = collider
+				? std::abs(collider->colliderSizeMultiplier.x) * scaleX
+				: scaleX;
+			const float footprintY = collider
+				? std::abs(collider->colliderSizeMultiplier.y) * scaleY
+				: scaleY;
+			const float footprintZ = collider
+				? std::abs(collider->colliderSizeMultiplier.z) * scaleZ
+				: scaleZ;
+			// 上端／下端の間に水面がなければ、完全に水上または水中なので泡を出さない。
+			const float verticalReach = (std::max)(footprintY, 0.35f);
+			const float objectBottom = candidateTransform.translate.y - verticalReach;
+			const float objectTop = candidateTransform.translate.y + verticalReach;
+			// わずかなBounds接触ではなく、目に見える量が水上へ出ている場合だけ泡を出す。
+			constexpr float kMinimumEmergence = 0.28f;
+			constexpr float kWaterlineOverlap = 0.06f;
+			if (
+				objectBottom > center.y - kWaterlineOverlap ||
+				objectTop < center.y + kMinimumEmergence
+			) {
+				continue;
+			}
+			const float yaw = candidateTransform.rotate.y;
+			const float cosine = std::cos(yaw);
+			const float sine = std::sin(yaw);
+			const float offsetX = collider ? collider->colliderOffset.x * scaleX : 0.0f;
+			const float offsetZ = collider ? collider->colliderOffset.z * scaleZ : 0.0f;
+			foamEmitters.push_back({
+				{ candidateTransform.translate.x + offsetX * cosine + offsetZ * sine,
+					center.y + 0.035f,
+					candidateTransform.translate.z - offsetX * sine + offsetZ * cosine },
+				(std::max)(footprintX, 0.25f),
+				(std::max)(footprintZ, 0.25f),
+				yaw,
+				static_cast<uint32_t>(candidate.id)
+			});
+		}
+		waterSurfaceRenderer_->Draw(camera, center, halfSize, settings, foamEmitters);
 	}
 }
 
