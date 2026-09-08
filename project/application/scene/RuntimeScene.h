@@ -23,6 +23,7 @@
 #include "system/SceneMonitorSystem.h"
 #include "system/SceneObjectSystem.h"
 #include "system/SceneParticleSystem.h"
+#include "system/SceneOptionMenuSystem.h"
 #include "system/ScenePostProcessProfileSystem.h"
 #include "system/ScenePhysicsSystem.h"
 #include "system/ScenePrefabAnimationSystem.h"
@@ -32,6 +33,8 @@
 #include "system/SceneStateMachineSystem.h"
 #include "system/SceneTextRenderSystem.h"
 #include "system/SceneTextMotionSystem.h"
+#include "system/SceneTitleBoatMotionSystem.h"
+#include "system/SceneTitleMenuSystem.h"
 #include "system/SceneTransitionSystem.h"
 
 #include <cstdint>
@@ -112,6 +115,7 @@ private:
 	SceneMiniMapSystem miniMapSystem_;
 	SceneMonitorSystem monitorSystem_;
 	SceneObjectSystem objectSystem_;
+	SceneOptionMenuSystem optionMenuSystem_;
 	SceneTransitionSystem transitionSystem_;
 	SceneParticleSystem particleSystem_;
 	ScenePostProcessProfileSystem postProcessProfileSystem_;
@@ -123,5 +127,7 @@ private:
 	SceneStateMachineSystem stateMachineSystem_;
 	SceneTextMotionSystem textMotionSystem_;
 	SceneTextRenderSystem textRenderSystem_;
+	SceneTitleBoatMotionSystem titleBoatMotionSystem_;
+	SceneTitleMenuSystem titleMenuSystem_;
 };
 

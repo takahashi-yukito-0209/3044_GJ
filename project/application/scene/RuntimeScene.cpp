@@ -258,6 +258,30 @@ void RuntimeScene::Update(float deltaTime)
 
 	// 遷移が成立したフレームは旧Sceneの状態をこれ以上変更しない。
 	if (playing && gameplayDeltaTime > 0.0f && activeDocument) {
+		if (GetSceneAssetId() == "title") {
+			const SceneTitleMenuResult titleMenuResult =
+				titleMenuSystem_.Update(*activeDocument);
+			if (!titleMenuResult.requestedSceneId.empty()) {
+				sceneManager_->RequestSceneTransition(
+					titleMenuResult.requestedSceneId
+				);
+				return;
+			}
+			optionMenuSystem_.Clear();
+		} else if (GetSceneAssetId() == "option") {
+			const SceneOptionMenuResult optionMenuResult =
+				optionMenuSystem_.Update(*activeDocument);
+			if (!optionMenuResult.requestedSceneId.empty()) {
+				sceneManager_->RequestSceneTransition(
+					optionMenuResult.requestedSceneId
+				);
+				return;
+			}
+			titleMenuSystem_.Clear();
+		} else {
+			titleMenuSystem_.Clear();
+			optionMenuSystem_.Clear();
+		}
 		const std::string targetSceneId =
 			transitionSystem_.Update(*activeDocument);
 		if (!targetSceneId.empty()) {
@@ -409,6 +433,15 @@ void RuntimeScene::Update(float deltaTime)
 			*activeDocument,
 			runtimeObjectBindings_
 		);
+		if (playing && GetSceneAssetId() == "title") {
+			titleBoatMotionSystem_.Update(
+				*activeDocument,
+				runtimeObjectBindings_,
+				deltaTime
+			);
+		} else {
+			titleBoatMotionSystem_.Clear();
+		}
 		fishingScoreAttackSystem_.ApplyHookVisualOverrides(
 			*activeDocument,
 			runtimeObjectBindings_
@@ -775,6 +808,17 @@ void RuntimeScene::Update(float deltaTime)
 				statusText->id,
 				postProcessProfileSystem_.GetStatusTextPrefix() +
 					postProcessProfileSystem_.GetActiveProfileLabel()
+			);
+		}
+		if (playing && GetSceneAssetId() == "title") {
+			titleMenuSystem_.ApplyTextOverrides(
+				*activeDocument,
+				textRenderSystem_
+			);
+		} else if (playing && GetSceneAssetId() == "option") {
+			optionMenuSystem_.ApplyTextOverrides(
+				*activeDocument,
+				textRenderSystem_
 			);
 		}
 	}

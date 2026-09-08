@@ -13,13 +13,31 @@
       "runtimeProfile": "RUNTIME"
     },
     {
+      "id": "tutorial",
+      "name": "TUTORIAL",
+      "path": "resources/scenes/tutorial.scene.json",
+      "runtimeProfile": "RUNTIME"
+    },
+    {
+      "id": "option",
+      "name": "OPTION",
+      "path": "resources/scenes/option.scene.json",
+      "runtimeProfile": "RUNTIME"
+    },
+    {
+      "id": "credit",
+      "name": "CREDIT",
+      "path": "resources/scenes/credit.scene.json",
+      "runtimeProfile": "RUNTIME"
+    },
+    {
       "id": "result",
       "name": "RESULT",
       "path": "resources/scenes/RESULT.scene.json",
       "runtimeProfile": "RUNTIME"
     }
   ],
-  "startScene": "gameplay",
+  "startScene": "title",
   "startup": {
     "debug": "EDITOR",
     "development": "EDITOR",

@@ -1,0 +1,118 @@
+{
+  "entities": [
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [0.95, 0.98, 1.0, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 52.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [700.0, 80.0],
+          "localId": 1,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, -80.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 0,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "text": "TUTORIAL",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "id": 1,
+      "name": "TutorialTitleText"
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [0.78, 0.86, 0.94, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 28.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Regular",
+          "horizontalAlignment": "Center",
+          "layoutSize": [760.0, 64.0],
+          "localId": 1,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, 20.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 1,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "text": "操作説明はここへ追加する",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "id": 2,
+      "name": "TutorialBodyText"
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [1.0, 0.92, 0.55, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 24.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [620.0, 48.0],
+          "localId": 1,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, 140.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 2,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "text": "PRESS ESCAPE : BACK TO TITLE",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        },
+        {
+          "enabled": true,
+          "localId": 2,
+          "targetSceneId": "title",
+          "triggerKey": "ESCAPE",
+          "triggerType": "Key",
+          "type": "SceneTransition"
+        }
+      ],
+      "id": 3,
+      "name": "TutorialBackGuideText"
+    }
+  ],
+  "lighting": {
+    "shadowMapSize": 1024
+  },
+  "postProcess": {
+    "baseExposure": 1.0,
+    "bloomEnabled": false
+  },
+  "sceneName": "TUTORIAL",
+  "teams": [],
+  "version": 27
+}

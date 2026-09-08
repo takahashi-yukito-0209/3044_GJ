@@ -1,0 +1,189 @@
+{
+  "entities": [
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [0.95, 0.98, 1.0, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 56.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [700.0, 84.0],
+          "localId": 1,
+          "outlineColor": [0.02, 0.05, 0.08, 1.0],
+          "outlineEnabled": true,
+          "outlineWidth": 3.0,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, -150.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 0,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "shadowColor": [0.0, 0.0, 0.0, 0.45],
+          "shadowEnabled": true,
+          "shadowOffset": [3.0, 5.0],
+          "text": "OPTION",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "id": 1,
+      "name": "OptionTitleText"
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [1.0, 0.92, 0.55, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 32.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [560.0, 52.0],
+          "localId": 1,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, -32.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 1,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "shadowColor": [0.0, 0.0, 0.0, 0.35],
+          "shadowEnabled": true,
+          "shadowOffset": [2.0, 3.0],
+          "text": "BGM VOLUME < 100% >",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "id": 2,
+      "name": "OptionBgmVolumeText"
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [0.78, 0.86, 0.94, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 32.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [560.0, 52.0],
+          "localId": 1,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, 24.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 2,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "shadowColor": [0.0, 0.0, 0.0, 0.35],
+          "shadowEnabled": true,
+          "shadowOffset": [2.0, 3.0],
+          "text": "SE  VOLUME < 100% >",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "id": 3,
+      "name": "OptionSeVolumeText"
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [0.78, 0.86, 0.94, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 32.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [560.0, 52.0],
+          "localId": 1,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, 92.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 3,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "shadowColor": [0.0, 0.0, 0.0, 0.35],
+          "shadowEnabled": true,
+          "shadowOffset": [2.0, 3.0],
+          "text": "BACK",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "id": 4,
+      "name": "OptionBackText"
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "color": [0.8, 0.88, 0.95, 1.0],
+          "enabled": true,
+          "fontFamily": "Yu Gothic UI",
+          "fontSize": 22.0,
+          "fontStyle": "Normal",
+          "fontWeight": "Regular",
+          "horizontalAlignment": "Center",
+          "layoutSize": [720.0, 48.0],
+          "localId": 1,
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [0.5, 0.5],
+            "position": [0.0, 176.0],
+            "rotation": 0.0,
+            "scale": [1.0, 1.0],
+            "sortingOrder": 4,
+            "viewportAnchor": [0.5, 0.5]
+          },
+          "renderSpace": "ScreenOverlay",
+          "text": "W/S or UP/DOWN : SELECT    A/D or LEFT/RIGHT : CHANGE    ESCAPE : BACK",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "id": 5,
+      "name": "OptionGuideText"
+    }
+  ],
+  "lighting": {
+    "shadowMapSize": 1024
+  },
+  "postProcess": {
+    "baseExposure": 1.0,
+    "bloomEnabled": false
+  },
+  "sceneName": "OPTION",
+  "teams": [],
+  "version": 27
+}
