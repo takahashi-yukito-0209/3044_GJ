@@ -279,6 +279,66 @@ namespace {
 		};
 		return true;
 	}
+
+	void ApplyHookBubbleSpriteOverrides(
+		SceneObjectSystem& objectSystem,
+		const SceneFishingScoreAttackSystem& fishingScoreAttackSystem,
+		Camera* camera
+	) {
+		for (const SceneFishingScoreAttackHookBubbleRequest& request :
+			fishingScoreAttackSystem.GetHookBubbleRequests()) {
+			Vector2 viewportPosition{};
+			const bool projected = camera &&
+			TryProjectWorldPositionToViewport(
+				*camera,
+				request.worldAnchor,
+				viewportPosition
+			) &&
+			viewportPosition.x >= 0.0f && viewportPosition.x <= 1.0f &&
+			viewportPosition.y >= 0.0f && viewportPosition.y <= 1.0f;
+			const auto apply = [
+				&objectSystem,
+				&viewportPosition,
+				projected
+			](
+				uint64_t entityId,
+				const std::string& texturePath,
+				const Vector2& size,
+				const Vector2& screenOffset,
+				bool requestedVisible
+			) {
+				if (entityId == 0) {
+					return;
+				}
+				SceneSpriteRuntimeOverride overrideValue{};
+				overrideValue.entityId = entityId;
+				overrideValue.texturePath = texturePath;
+				overrideValue.size = size;
+				overrideValue.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+				overrideValue.visible = requestedVisible && projected;
+				if (overrideValue.visible) {
+					overrideValue.hasViewportPositionOverride = true;
+					overrideValue.viewportPosition = viewportPosition;
+					overrideValue.positionOffsetPixels = screenOffset;
+				}
+				objectSystem.SetSpriteRuntimeOverride(overrideValue);
+			};
+			apply(
+				request.bubbleSpriteEntityId,
+				request.bubbleTexturePath,
+				request.bubbleSize,
+				request.bubbleScreenOffset,
+				request.bubbleVisible
+			);
+			apply(
+				request.rankIconSpriteEntityId,
+				request.rankIconTexturePath,
+				request.rankIconSize,
+				request.rankIconScreenOffset,
+				request.rankIconVisible
+			);
+		}
+	}
 }
 
 void RuntimeScene::ApplyRenderCamera(Camera* viewCamera) {
@@ -983,6 +1043,13 @@ void RuntimeScene::Update(float deltaTime)
 			hitReactionSystem_.ConsumeDeathEffectRequests()
 		);
 	}
+	if (activeDocument) {
+		// Physics／AI反映後の最終Hook位置から、bubble requestを再構築する。
+		fishingScoreAttackSystem_.ApplyHookVisualOverrides(
+			*activeDocument,
+			runtimeObjectBindings_
+		);
+	}
 	runtimeEffectSystem_.SetWorldEffectsPaused(runtimeSceneId, worldEffectsPaused);
 	objectSystem_.ClearSpriteOverrides();
 	if (activeDocument) {
@@ -997,7 +1064,6 @@ void RuntimeScene::Update(float deltaTime)
 			});
 		}
 	}
-	objectSystem_.SyncSprites(activeDocument);
 	if (activeDocument) {
 		cameraSystem_.UpdateAfterSimulation(
 			*activeDocument,
@@ -1011,6 +1077,14 @@ void RuntimeScene::Update(float deltaTime)
 	} else if (camera_) {
 		camera_->Update();
 	}
+	if (activeDocument) {
+		ApplyHookBubbleSpriteOverrides(
+			objectSystem_,
+			fishingScoreAttackSystem_,
+			GetSceneViewCamera()
+		);
+	}
+	objectSystem_.SyncSprites(activeDocument);
 	// Transform確定後に環境設定とDebug形状を登録し、描画時の状態を揃える。
 	environmentSystem_.Sync(activeDocument, runtimeObjectBindings_);
 	if (activeDocument) {
@@ -1233,6 +1307,29 @@ void RuntimeScene::UpdatePaused()
 		? sceneManager_->GetExecutionContext()
 		: nullptr;
 	SceneDocument* document = GetSceneDocument();
+	if (document) {
+		fishingScoreAttackSystem_.ApplyHookVisualOverrides(
+			*document,
+			runtimeObjectBindings_
+		);
+		objectSystem_.ClearSpriteOverrides();
+		for (const SceneFishingScoreAttackIconRequest& request :
+			fishingScoreAttackSystem_.GetIconRequests()) {
+			objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
+				request.entityId,
+				request.texturePath,
+				request.size,
+				{ 1.0f, 1.0f, 1.0f, 1.0f },
+				request.visible
+			});
+		}
+		ApplyHookBubbleSpriteOverrides(
+			objectSystem_,
+			fishingScoreAttackSystem_,
+			GetSceneViewCamera()
+		);
+		objectSystem_.SyncSprites(document);
+	}
 	lightingSystem_.Sync(document);
 #if defined(_DEBUG) || defined(DEVELOPMENT)
 	debugSystem_.DrawEditor(document, objectSystem_, true);

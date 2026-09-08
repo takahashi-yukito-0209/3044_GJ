@@ -12,6 +12,9 @@ SrvManager* SrvManager::GetInstance() {
 void SrvManager::Initialize(DirectXCommon* dxCommon){
 	instance_ = this;
 	this->directXCommon = dxCommon;
+	useIndex = 0;
+	freeIndices_.clear();
+	allocated_.assign(kMaxSRVCount, false);
 	//デスクリプタヒープの生成
 	descriptorHeap = directXCommon->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kMaxSRVCount, true);
 	//デスクリプタ一個分のサイズを取得して記録
@@ -19,20 +22,37 @@ void SrvManager::Initialize(DirectXCommon* dxCommon){
 }
 
 uint32_t SrvManager::Allocate(){
+	if (!freeIndices_.empty()) {
+		const uint32_t index = freeIndices_.back();
+		freeIndices_.pop_back();
+		assert(index < allocated_.size());
+		assert(!allocated_[index]);
+		allocated_[index] = true;
+		return index;
+	}
+
 	assert(useIndex < kMaxSRVCount);
 
 	//returnする番号を記録しておく
-	int index = useIndex;
+	const uint32_t index = useIndex;
 	//次回のために番号を1進める
 	useIndex++;
+	allocated_[index] = true;
 	//上で記録した番号をreturn
 	return index;
+}
 
-	return 0;
+bool SrvManager::Release(uint32_t index) {
+	if (index >= allocated_.size() || !allocated_[index]) {
+		return false;
+	}
+	allocated_[index] = false;
+	freeIndices_.push_back(index);
+	return true;
 }
 
 bool SrvManager::CanAllocate() const{
-	return useIndex < kMaxSRVCount;
+	return !freeIndices_.empty() || useIndex < kMaxSRVCount;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE SrvManager::GetCPUDescriptorHandle(uint32_t index){

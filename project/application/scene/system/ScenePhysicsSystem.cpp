@@ -468,7 +468,8 @@ void ScenePhysicsSystem::RebuildStaticColliders(
 		if (
 			formationCollisionDelegated &&
 			fishingObstacle &&
-			binding.collider->GetType() == Collider::Type::OBB &&
+			(binding.collider->GetType() == Collider::Type::OBB ||
+				binding.collider->GetType() == Collider::Type::Sphere) &&
 			binding.collider->IsActive() &&
 			!binding.collider->IsTrigger()
 		) {

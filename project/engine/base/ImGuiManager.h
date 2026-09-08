@@ -214,6 +214,7 @@ public:
 
 	uint32_t GetSceneViewWidth() const { return sceneViewWidth_; }
 	uint32_t GetSceneViewHeight() const { return sceneViewHeight_; }
+	float GetSceneViewAspectRatio() const { return 16.0f / 9.0f; }
 	float GetSceneViewMinX() const { return sceneViewMinX_; }
 	float GetSceneViewMinY() const { return sceneViewMinY_; }
 	float GetSceneViewMaxX() const { return sceneViewMaxX_; }
@@ -547,6 +548,8 @@ private:
 	uint64_t selectedEntityId_ = 0;
 	uint64_t fishingConsoleDirectorEntityId_ = 0;
 	int fishingConsolePreviewFishCount_ = 1;
+	std::string fishingHookRankBubbleSaveStatus_;
+	bool fishingHookRankBubbleSaveStatusIsError_ = false;
 	ComponentPickerState sceneComponentPicker_;
 	// Hierarchyの複数選択と表示状態を保持する。selectedEntityId_はInspector/Gizmo用の基準Entity。
 	std::unordered_set<uint64_t> selectedEntityIds_;

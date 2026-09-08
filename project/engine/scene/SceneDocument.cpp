@@ -1787,13 +1787,22 @@ namespace {
 					{ "modelPath", rank.modelPath },
 					{ "iconTexturePath", rank.iconTexturePath },
 					{ "scoreMultiplier", rank.scoreMultiplier },
-					{ "color", VectorToJson(rank.color) }
+					{ "color", VectorToJson(rank.color) },
+					{ "bubbleIconScale", VectorToJson(rank.bubbleIconScale) },
+					{ "bubbleIconOffset", VectorToJson(rank.bubbleIconOffset) }
 				});
 				legacyScoreMultipliers.push_back(rank.scoreMultiplier);
 				legacyColors.push_back(VectorToJson(rank.color));
 			}
 			result["hookRanks"] = std::move(hookRanks);
 			result["hookRankCount"] = component.fishingHookRankCount;
+			result["hookRankBubbleVisible"] = component.fishingHookRankBubbleVisible;
+			result["hookRankBubbleTexturePath"] = component.fishingHookRankBubbleTexturePath;
+			result["hookRankBubbleWorldOffset"] = VectorToJson(component.fishingHookRankBubbleWorldOffset);
+			result["hookRankBubbleScreenOffset"] = VectorToJson(component.fishingHookRankBubbleScreenOffset);
+			result["hookRankBubbleSize"] = VectorToJson(component.fishingHookRankBubbleSize);
+			result["hookRankBubbleIconBaseSize"] = VectorToJson(component.fishingHookRankBubbleIconBaseSize);
+			result["hookRankBubbleIconBaseOffset"] = VectorToJson(component.fishingHookRankBubbleIconBaseOffset);
 			result["hookTierScoreMultipliers"] = std::move(legacyScoreMultipliers);
 			result["hookMultiplierColors"] = std::move(legacyColors);
 			result["hookColorEmissiveIntensity"] =
@@ -1872,6 +1881,8 @@ namespace {
 			result["entries"] = std::move(entries);
 		} else if (component.type == "FishingHook") {
 			result["baseScore"] = component.fishingHookBaseScore;
+			result["bubbleSpriteEntityId"] = component.fishingHookBubbleSpriteEntityId;
+			result["rankIconSpriteEntityId"] = component.fishingHookRankIconSpriteEntityId;
 		} else if (component.type == "FishingShark") {
 			result["radiusX"] = component.fishingSharkRadiusX;
 			result["radiusZ"] = component.fishingSharkRadiusZ;
@@ -3492,6 +3503,18 @@ namespace {
 								color != rankValue.end()) {
 								rank.color = JsonToVector(*color, rank.color);
 							}
+							if (const auto bubbleIconScale = rankValue.find("bubbleIconScale");
+								bubbleIconScale != rankValue.end()) {
+								rank.bubbleIconScale = JsonToVector(
+									*bubbleIconScale, rank.bubbleIconScale
+								);
+							}
+							if (const auto bubbleIconOffset = rankValue.find("bubbleIconOffset");
+								bubbleIconOffset != rankValue.end()) {
+								rank.bubbleIconOffset = JsonToVector(
+									*bubbleIconOffset, rank.bubbleIconOffset
+								);
+							}
 							parsedRanks.push_back(std::move(rank));
 						}
 						if (parsedRanks.size() == 10) {
@@ -3507,6 +3530,42 @@ namespace {
 					component.fishingHookRankCount = value.value(
 						"hookRankCount", component.fishingHookRankCount
 					);
+					component.fishingHookRankBubbleVisible = value.value(
+						"hookRankBubbleVisible", component.fishingHookRankBubbleVisible
+					);
+					component.fishingHookRankBubbleTexturePath = value.value(
+						"hookRankBubbleTexturePath", component.fishingHookRankBubbleTexturePath
+					);
+					if (value.contains("hookRankBubbleWorldOffset")) {
+						component.fishingHookRankBubbleWorldOffset = JsonToVector(
+							value.at("hookRankBubbleWorldOffset"),
+							component.fishingHookRankBubbleWorldOffset
+						);
+					}
+					if (value.contains("hookRankBubbleScreenOffset")) {
+						component.fishingHookRankBubbleScreenOffset = JsonToVector(
+							value.at("hookRankBubbleScreenOffset"),
+							component.fishingHookRankBubbleScreenOffset
+						);
+					}
+					if (value.contains("hookRankBubbleSize")) {
+						component.fishingHookRankBubbleSize = JsonToVector(
+							value.at("hookRankBubbleSize"),
+							component.fishingHookRankBubbleSize
+						);
+					}
+					if (value.contains("hookRankBubbleIconBaseSize")) {
+						component.fishingHookRankBubbleIconBaseSize = JsonToVector(
+							value.at("hookRankBubbleIconBaseSize"),
+							component.fishingHookRankBubbleIconBaseSize
+						);
+					}
+					if (value.contains("hookRankBubbleIconBaseOffset")) {
+						component.fishingHookRankBubbleIconBaseOffset = JsonToVector(
+							value.at("hookRankBubbleIconBaseOffset"),
+							component.fishingHookRankBubbleIconBaseOffset
+						);
+					}
 					component.fishingHookColorEmissiveIntensity = value.value(
 						"hookColorEmissiveIntensity",
 						component.fishingHookColorEmissiveIntensity
@@ -3750,6 +3809,12 @@ namespace {
 					component.fishingHookBaseScore = (std::max)(
 						value.value("baseScore", component.fishingHookBaseScore),
 						0
+					);
+					component.fishingHookBubbleSpriteEntityId = value.value(
+						"bubbleSpriteEntityId", component.fishingHookBubbleSpriteEntityId
+					);
+					component.fishingHookRankIconSpriteEntityId = value.value(
+						"rankIconSpriteEntityId", component.fishingHookRankIconSpriteEntityId
 					);
 				} else if (component.type == "FishingShark") {
 					component.fishingSharkRadiusX = (std::max)(
@@ -9505,6 +9570,13 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 			component.fishingHookMultiplierColors
 		);
 		component.fishingHookRankCount = 10;
+		component.fishingHookRankBubbleVisible = false;
+		component.fishingHookRankBubbleTexturePath.clear();
+		component.fishingHookRankBubbleWorldOffset = { 0.0f, 1.5f, 0.0f };
+		component.fishingHookRankBubbleScreenOffset = { 48.0f, -40.0f };
+		component.fishingHookRankBubbleSize = { 128.0f, 128.0f };
+		component.fishingHookRankBubbleIconBaseSize = { 64.0f, 64.0f };
+		component.fishingHookRankBubbleIconBaseOffset = { 8.0f, -4.0f };
 		component.fishingHookColorEmissiveIntensity = 0.35f;
 		component.fishingHookLegendVisible = false;
 		component.fishingHookLegendTitleTextEntityId = 0;
@@ -9557,6 +9629,8 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingHookPoolEntries.clear();
 	} else if (type == "FishingHook") {
 		component.fishingHookBaseScore = 0;
+		component.fishingHookBubbleSpriteEntityId = 0;
+		component.fishingHookRankIconSpriteEntityId = 0;
 	} else if (type == "FishingShark") {
 		component.fishingSharkRadiusX = 12.0f;
 		component.fishingSharkRadiusZ = 18.0f;

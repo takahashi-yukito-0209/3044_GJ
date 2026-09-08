@@ -569,8 +569,7 @@ void Game::Update() {
 		imguiManager_->GetSceneViewHeight() > 0
 	) {
 		editorCamera->SetAspectRatio(
-			static_cast<float>(imguiManager_->GetSceneViewWidth()) /
-			static_cast<float>(imguiManager_->GetSceneViewHeight())
+			imguiManager_->GetSceneViewAspectRatio()
 		);
 	}
 	}

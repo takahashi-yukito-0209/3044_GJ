@@ -42,6 +42,21 @@ struct SceneFishingScoreAttackIconRequest {
 	bool visible = false;
 };
 
+struct SceneFishingScoreAttackHookBubbleRequest {
+	uint64_t hookEntityId = 0;
+	uint64_t bubbleSpriteEntityId = 0;
+	uint64_t rankIconSpriteEntityId = 0;
+	Vector3 worldAnchor{};
+	std::string bubbleTexturePath;
+	std::string rankIconTexturePath;
+	Vector2 bubbleSize = { 128.0f, 128.0f };
+	Vector2 bubbleScreenOffset = { 0.0f, 0.0f };
+	Vector2 rankIconSize = { 64.0f, 64.0f };
+	Vector2 rankIconScreenOffset = { 0.0f, 0.0f };
+	bool bubbleVisible = false;
+	bool rankIconVisible = false;
+};
+
 // 得点した釣り針の位置に重ねる、一時的な加点表示。
 struct SceneFishingScoreAttackScorePopup {
 	uint64_t entityId = 0;
@@ -161,6 +176,9 @@ public:
 	const std::vector<SceneFishingScoreAttackIconRequest>& GetIconRequests() const {
 		return iconRequests_;
 	}
+	const std::vector<SceneFishingScoreAttackHookBubbleRequest>& GetHookBubbleRequests() const {
+		return hookBubbleRequests_;
+	}
 	const SceneFishingScoreAttackScorePopup& GetScorePopup() const {
 		return scorePopup_;
 	}
@@ -264,6 +282,7 @@ private:
 	std::string diagnostic_;
 	std::vector<SceneFishingScoreAttackTextRequest> textRequests_;
 	std::vector<SceneFishingScoreAttackIconRequest> iconRequests_;
+	std::vector<SceneFishingScoreAttackHookBubbleRequest> hookBubbleRequests_;
 	SceneFishingScoreAttackScorePopup scorePopup_{};
 	float formationParticleEmissionAccumulator_ = 0.0f;
 	size_t formationParticlePointCursor_ = 0;

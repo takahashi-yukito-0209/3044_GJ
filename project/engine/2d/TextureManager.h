@@ -62,6 +62,8 @@ public:
 		TextureColorSpace colorSpace = TextureColorSpace::Automatic
 	);
 	bool HasTexture(const std::string& textureKey) const;
+	// 管理対象のTextureと対応するSRVスロットを解除する。
+	bool ReleaseTexture(const std::string& textureKey);
 	bool LoadTextureFromMemory(
 		const std::string& textureKey,
 		const uint8_t* data,

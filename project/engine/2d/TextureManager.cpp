@@ -168,7 +168,7 @@ bool TextureManager::ReloadTexture(
 	const std::string& filePath,
 	TextureColorSpace colorSpace
 ) {
-	textureDatas.erase(filePath);
+	ReleaseTexture(filePath);
 	failedTextureKeys.erase(filePath);
 	return LoadTexture(filePath, colorSpace);
 }
@@ -337,7 +337,9 @@ bool TextureManager::RegisterTexture(
 		dxCommon->UploadTextureData(textureData.resource, *uploadImage)
 	);
 	if (!intermediateResource) {
+		const uint32_t srvIndex = textureData.srvIndex;
 		textureDatas.erase(textureKey);
+		srvManager->Release(srvIndex);
 		Logger::Log("Failed to upload texture: " + textureKey + "\n");
 		return false;
 	}
@@ -396,6 +398,18 @@ bool TextureManager::UpdateTextureFromPixels(
 
 bool TextureManager::HasTexture(const std::string& textureKey) const {
 	return textureDatas.contains(textureKey);
+}
+
+bool TextureManager::ReleaseTexture(const std::string& textureKey) {
+	auto iterator = textureDatas.find(textureKey);
+	if (iterator == textureDatas.end()) {
+		return false;
+	}
+
+	const uint32_t srvIndex = iterator->second.srvIndex;
+	textureDatas.erase(iterator);
+	failedTextureKeys.erase(textureKey);
+	return srvManager->Release(srvIndex);
 }
 
 void TextureManager::ClearFailedTextureCache() {

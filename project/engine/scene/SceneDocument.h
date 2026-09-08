@@ -391,6 +391,8 @@ struct SceneFishingHookRankDefinition {
 	std::string iconTexturePath;
 	float scoreMultiplier = 1.0f;
 	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	Vector2 bubbleIconScale = { 1.0f, 1.0f };
+	Vector2 bubbleIconOffset = { 0.0f, 0.0f };
 };
 
 struct SceneFishingHookBandSettings {
@@ -501,6 +503,13 @@ struct SceneComponent {
 	float fishingFishMultiplierPerAdditionalFish = 1.0f;
 	std::vector<SceneFishingHookRankDefinition> fishingHookRanks;
 	int fishingHookRankCount = 10;
+	bool fishingHookRankBubbleVisible = false;
+	std::string fishingHookRankBubbleTexturePath;
+	Vector3 fishingHookRankBubbleWorldOffset = { 0.0f, 1.5f, 0.0f };
+	Vector2 fishingHookRankBubbleScreenOffset = { 48.0f, -40.0f };
+	Vector2 fishingHookRankBubbleSize = { 128.0f, 128.0f };
+	Vector2 fishingHookRankBubbleIconBaseSize = { 64.0f, 64.0f };
+	Vector2 fishingHookRankBubbleIconBaseOffset = { 8.0f, -4.0f };
 	std::vector<float> fishingHookTierScoreMultipliers = {
 		1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
 		6.0f, 7.0f, 8.0f, 9.0f, 10.0f
@@ -554,6 +563,8 @@ struct SceneComponent {
 	int fishingSpawnMaxAttempts = 16;
 	std::vector<SceneFishingHookPoolEntry> fishingHookPoolEntries;
 	int fishingHookBaseScore = 0;
+	uint64_t fishingHookBubbleSpriteEntityId = 0;
+	uint64_t fishingHookRankIconSpriteEntityId = 0;
 	float fishingSharkRadiusX = 12.0f;
 	float fishingSharkRadiusZ = 18.0f;
 	float fishingSharkAngularSpeed = 0.35f;
