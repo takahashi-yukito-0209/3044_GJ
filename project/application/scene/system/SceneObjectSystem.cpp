@@ -716,10 +716,11 @@ void SceneObjectSystem::BuildBindings(
 			continue;
 		}
 		bindings.push_back(SceneRuntimeObjectBinding{
+			entity.id,
 			&entity,
 			runtime->object.get(),
 			runtime->hasCollider ? runtime->collider : nullptr,
-		runtime->hasPhysicsBody
+			runtime->hasPhysicsBody
 				? &runtime->physicsBody
 				: nullptr
 		});

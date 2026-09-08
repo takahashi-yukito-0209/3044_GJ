@@ -105,7 +105,9 @@ private:
 		bool acceptWheelZoom
 	);
 	void ApplyPlayerDissolve(
+		const SceneDocument& document,
 		const std::vector<SceneRuntimeObjectBinding>& bindings,
+		uint64_t targetEntityId,
 		bool enabled
 	) const;
 	bool TryStartCameraPath(
