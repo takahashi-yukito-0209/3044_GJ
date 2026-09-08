@@ -3077,7 +3077,49 @@ bool SceneValidator::ValidateDocument(
 					component.fishingSharkObstacleAvoidanceStrength < 0.0f ||
 					component.fishingSharkObstacleAvoidanceStrength > 1.0f ||
 					!std::isfinite(component.fishingSharkObstacleAvoidanceResponse) ||
-					component.fishingSharkObstacleAvoidanceResponse < 0.0f) {
+					component.fishingSharkObstacleAvoidanceResponse < 0.0f ||
+					!std::isfinite(component.fishingSharkPatrolRouteRebuildIntervalSeconds) ||
+					component.fishingSharkPatrolRouteRebuildIntervalSeconds <= 0.0f ||
+					!std::isfinite(component.fishingSharkNavigationCellSize) ||
+					component.fishingSharkNavigationCellSize <= 0.0f ||
+					!std::isfinite(component.fishingSharkWaypointAcceptanceDistance) ||
+					component.fishingSharkWaypointAcceptanceDistance <= 0.0f ||
+					!std::isfinite(component.fishingSharkObstacleClearance) ||
+					component.fishingSharkObstacleClearance < 0.0f ||
+					!std::isfinite(component.fishingSharkDetectionDistance) ||
+					component.fishingSharkDetectionDistance < 0.0f ||
+					!std::isfinite(component.fishingSharkLoseDistance) ||
+					component.fishingSharkLoseDistance <
+						component.fishingSharkDetectionDistance ||
+					!std::isfinite(component.fishingSharkDetectionDelaySeconds) ||
+					component.fishingSharkDetectionDelaySeconds < 0.0f ||
+					!std::isfinite(component.fishingSharkLostTargetDelaySeconds) ||
+					component.fishingSharkLostTargetDelaySeconds < 0.0f ||
+					!std::isfinite(component.fishingSharkReacquireCooldownSeconds) ||
+					component.fishingSharkReacquireCooldownSeconds < 0.0f ||
+					!std::isfinite(component.fishingSharkChaseMoveSpeed) ||
+					component.fishingSharkChaseMoveSpeed < 0.0f ||
+					!std::isfinite(component.fishingSharkChaseMaximumTurnRate) ||
+					component.fishingSharkChaseMaximumTurnRate <= 0.0f ||
+					!std::isfinite(component.fishingSharkChaseRouteRebuildIntervalSeconds) ||
+					component.fishingSharkChaseRouteRebuildIntervalSeconds <= 0.0f ||
+					!std::isfinite(component.fishingSharkAlertColor.x) ||
+					!std::isfinite(component.fishingSharkAlertColor.y) ||
+					!std::isfinite(component.fishingSharkAlertColor.z) ||
+					!std::isfinite(component.fishingSharkAlertColor.w) ||
+					component.fishingSharkAlertColor.x < 0.0f ||
+					component.fishingSharkAlertColor.x > 1.0f ||
+					component.fishingSharkAlertColor.y < 0.0f ||
+					component.fishingSharkAlertColor.y > 1.0f ||
+					component.fishingSharkAlertColor.z < 0.0f ||
+					component.fishingSharkAlertColor.z > 1.0f ||
+					component.fishingSharkAlertColor.w < 0.0f ||
+					component.fishingSharkAlertColor.w > 1.0f ||
+					!std::isfinite(component.fishingSharkAlertEmissiveIntensity) ||
+					component.fishingSharkAlertEmissiveIntensity < 0.0f ||
+					component.fishingSharkAlertEmissiveIntensity > 8.0f ||
+					!std::isfinite(component.fishingSharkAlertPulseSpeed) ||
+					component.fishingSharkAlertPulseSpeed < 0.0f) {
 					addIssue(
 						SceneValidationSeverity::Error,
 						entity.id,

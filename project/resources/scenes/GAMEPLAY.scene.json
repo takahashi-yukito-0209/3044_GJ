@@ -5,7 +5,7 @@
     "showCameraDirection": true,
     "showCameraPath": true,
     "showCameraPathPointCameraDirection": true,
-    "showColliders": false,
+    "showColliders": true,
     "showJointAxes": true,
     "showJointNames": false,
     "showSkeleton": false
@@ -6133,6 +6133,7 @@
           "resultTextEntityId": 21,
           "scorePrefix": "SCORE ",
           "scoreTextEntityId": 19,
+          "sharkRouteDebugVisible": true,
           "timerPrefix": "TIME ",
           "timerTextEntityId": 18,
           "type": "FishingScoreAttackDirector",
@@ -12404,17 +12405,17 @@
       "components": [
         {
           "castsShadow": true,
-          "cullMode": "Back",
+          "cullMode": "None",
           "enabled": true,
-          "environmentReflectionIntensity": 0.30000001192092896,
-          "environmentReflectionOverride": false,
+          "environmentReflectionIntensity": 0.0,
+          "environmentReflectionOverride": true,
           "localId": 1,
           "materialOverrides": [],
-          "modelPath": "tuna.gltf",
+          "modelPath": "shark.gltf",
           "type": "MeshRenderer",
           "visualRotation": [
             0.0,
-            0.0,
+            1.5700000524520874,
             0.0
           ]
         },
@@ -12428,7 +12429,7 @@
           ],
           "debugDrawMode": "Wireframe",
           "debugSegments": 16,
-          "debugVisible": false,
+          "debugVisible": true,
           "enabled": true,
           "isTrigger": true,
           "layer": 4294967295,
@@ -12441,36 +12442,56 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            5.0,
-            2.0,
+            1.0,
+            1.0,
             2.0
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
         },
         {
+          "alertColor": [
+            1.0,
+            0.25,
+            0.07999999821186066,
+            1.0
+          ],
+          "alertEmissiveIntensity": 2.0,
+          "alertPulseSpeed": 8.0,
           "angularSpeed": 0.3499999940395355,
+          "chaseMaximumTurnRate": 2.200000047683716,
+          "chaseMoveSpeed": 13.0,
+          "chaseRouteRebuildIntervalSeconds": 0.3499999940395355,
+          "detectionDelaySeconds": 0.75,
+          "detectionDistance": 60.0,
           "enabled": true,
           "hitCooldownSeconds": 2.0,
           "initialPhase": 0.0,
           "localId": 3,
+          "loseDistance": 80.0,
+          "lostTargetDelaySeconds": 2.0,
+          "navigationCellSize": 4.0,
           "obstacleAvoidanceDistance": 14.0,
           "obstacleAvoidanceResponse": 4.0,
           "obstacleAvoidanceStrength": 1.0,
+          "obstacleClearance": 2.0,
           "pathRandomness": 0.75,
+          "patrolRouteRebuildIntervalSeconds": 8.0,
           "penaltyScore": 300,
           "radiusX": 30.0,
           "radiusZ": 24.0,
+          "reacquireCooldownSeconds": 4.0,
           "type": "FishingShark",
           "wanderMaximumTurnRate": 1.399999976158142,
-          "wanderMoveSpeed": 9.5
+          "wanderMoveSpeed": 9.5,
+          "waypointAcceptanceDistance": 1.5
         }
       ],
       "folder": false,
       "folderTeamEnabled": false,
       "id": 88,
       "locked": false,
-      "modelPath": "tuna.gltf",
+      "modelPath": "shark.gltf",
       "name": "Fishing Shark",
       "parentId": 83,
       "sprite": {
@@ -12501,13 +12522,13 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
-          0.3242835998535156,
+          1.0271589756011963,
           -189.1333770751953
         ]
       }
@@ -15853,6 +15874,84 @@
         "translate": [
           0.0,
           0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "castsShadow": false,
+          "color": [
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "decay": 0.0,
+          "enabled": true,
+          "innerAngle": 88.5,
+          "intensity": 18.850000381469727,
+          "lightType": "Spot",
+          "localId": 1,
+          "outerAngle": 89.0,
+          "range": 66.0999984741211,
+          "shadow": {
+            "bias": 0.0024999999441206455,
+            "distance": 45.0,
+            "farClip": 120.0,
+            "nearClip": 0.10000000149011612,
+            "normalBias": 0.019999999552965164,
+            "orthographicSize": 40.0,
+            "strength": 0.550000011920929,
+            "texelSnap": true
+          },
+          "type": "Light"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 135,
+      "locked": false,
+      "modelPath": "",
+      "name": "Entity",
+      "parentId": 88,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.7068251967430115,
+          0.0,
+          0.0,
+          0.7073882818222046
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          -0.20800000429153442,
           0.0
         ]
       }
