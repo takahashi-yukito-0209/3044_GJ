@@ -218,6 +218,9 @@
 	<ClCompile Include="application\scene\system\SceneOptionMenuSystem.cpp">
 	  <Filter>Application\Scene\System</Filter>
 	</ClCompile>
+	<ClCompile Include="application\scene\system\ScenePauseMenuSystem.cpp">
+	  <Filter>Application\Scene\System</Filter>
+	</ClCompile>
     <ClCompile Include="application\scene\system\SceneParticleSystem.cpp">
       <Filter>Application\Scene\System</Filter>
     </ClCompile>
@@ -529,6 +532,9 @@
       <Filter>Application\Scene\System</Filter>
     </ClInclude>
 	<ClInclude Include="application\scene\system\SceneOptionMenuSystem.h">
+	  <Filter>Application\Scene\System</Filter>
+	</ClInclude>
+	<ClInclude Include="application\scene\system\ScenePauseMenuSystem.h">
 	  <Filter>Application\Scene\System</Filter>
 	</ClInclude>
     <ClInclude Include="application\scene\system\SceneParticleSystem.h">

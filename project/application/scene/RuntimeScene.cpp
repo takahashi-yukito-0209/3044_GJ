@@ -622,8 +622,35 @@ void RuntimeScene::Update(float deltaTime)
 	const float realDeltaTime = (std::max)(deltaTime, 0.0f);
 	if (activeDocument && playing) {
 		pauseSystem_.BeginFrame(*activeDocument);
+		if (GetSceneAssetId() == "gameplay") {
+			const ScenePauseMenuResult pauseMenuResult = pauseMenuSystem_.Update(
+				*activeDocument, pauseSystem_, optionMenuSystem_
+			);
+			const SceneEntity* pauseController =
+				activeDocument->FindEntityByName("Pause Menu Controller");
+			if (pauseController && (pauseMenuResult.pauseRequested ||
+				pauseMenuResult.resumeRequested)) {
+				pauseSystem_.CommitRequests(*activeDocument, { {
+					pauseController->id,
+					"PauseMenu",
+					"PauseMenu",
+					pauseMenuResult.pauseRequested
+						? ScenePauseOperation::Pause
+						: ScenePauseOperation::Resume
+				} });
+			}
+			if (!pauseMenuResult.requestedSceneId.empty()) {
+				sceneManager_->RequestSceneTransition(
+					pauseMenuResult.requestedSceneId
+				);
+				return;
+			}
+		} else {
+			pauseMenuSystem_.Clear();
+		}
 	} else {
 		pauseSystem_.Clear();
+		pauseMenuSystem_.Clear();
 	}
 	const bool gameplayPaused =
 		activeDocument && playing &&
@@ -1224,6 +1251,18 @@ void RuntimeScene::Update(float deltaTime)
 				request.visible
 			});
 		}
+		if (GetSceneAssetId() == "gameplay") {
+			if (const SceneEntity* pauseOverlay =
+				activeDocument->FindEntityByName("Pause Dim Overlay")) {
+				objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
+					pauseOverlay->id,
+					"human/white.png",
+					{ 4096.0f, 4096.0f },
+					{ 0.0f, 0.0f, 0.0f, 0.58f },
+					gameplayPaused
+				});
+			}
+		}
 	}
 	if (activeDocument) {
 		cameraSystem_.UpdateAfterSimulation(
@@ -1422,6 +1461,33 @@ void RuntimeScene::Update(float deltaTime)
 			optionMenuSystem_.ApplyTextOverrides(
 				*activeDocument,
 				textRenderSystem_
+			);
+		} else if (playing && GetSceneAssetId() == "gameplay") {
+			const bool pauseActive =
+				pauseSystem_.IsDomainPaused(ScenePauseDomain::Gameplay);
+			if (pauseActive) {
+				for (const SceneEntity& entity : activeDocument->GetEntities()) {
+					const SceneComponent* textRenderer =
+						SceneEntityQuery::FindEnabledComponent(entity, "TextRenderer");
+					if (!textRenderer ||
+						!SceneEntityQuery::IsEntityActiveInHierarchy(
+							*activeDocument, entity
+						) ||
+						entity.name.rfind("Pause", 0) == 0) {
+						continue;
+					}
+					Vector4 dimmedColor = textRenderer->textColor;
+					dimmedColor.x *= 0.42f;
+					dimmedColor.y *= 0.42f;
+					dimmedColor.z *= 0.42f;
+					textRenderSystem_.SetTextColorOverride(entity.id, dimmedColor);
+				}
+			}
+			pauseMenuSystem_.ApplyTextOverrides(
+				*activeDocument,
+				textRenderSystem_,
+				pauseActive,
+				optionMenuSystem_
 			);
 		}
 	}
@@ -1714,6 +1780,7 @@ void RuntimeScene::Finalize()
 	enemySystem_.Clear();
 	eventSystem_.Clear();
 	pauseSystem_.Clear();
+	pauseMenuSystem_.Clear();
 	textMotionSystem_.Clear();
 	gameFlowSystem_.Clear();
 	ClearTitleStartTransition();
@@ -1752,6 +1819,7 @@ void RuntimeScene::Finalize()
 void RuntimeScene::PrepareForSceneTransition()
 {
 	pauseSystem_.Clear();
+	pauseMenuSystem_.Clear();
 	textMotionSystem_.Clear();
 	gameFlowSystem_.Clear();
 	ClearTitleStartTransition();

@@ -155,6 +155,22 @@ void SceneOptionMenuSystem::Clear() {
 	selectedIndex_ = 0;
 }
 
+void SceneOptionMenuSystem::AdjustBgmVolume(int deltaPercent) {
+	AdjustVolume("BGM", deltaPercent);
+}
+
+void SceneOptionMenuSystem::AdjustSeVolume(int deltaPercent) {
+	AdjustVolume("SE", deltaPercent);
+}
+
+int SceneOptionMenuSystem::GetBgmVolumePercent() const {
+	return gBgmVolumePercent;
+}
+
+int SceneOptionMenuSystem::GetSeVolumePercent() const {
+	return gSeVolumePercent;
+}
+
 std::vector<SceneOptionMenuSystem::MenuItem>
 SceneOptionMenuSystem::CollectMenuItems(const SceneDocument& document) const {
 	std::vector<MenuItem> menuItems; // Sceneから見つかったメニュー項目。

@@ -24,6 +24,7 @@
 #include "system/SceneObjectSystem.h"
 #include "system/SceneParticleSystem.h"
 #include "system/SceneOptionMenuSystem.h"
+#include "system/ScenePauseMenuSystem.h"
 #include "system/ScenePauseSystem.h"
 #include "system/ScenePostProcessProfileSystem.h"
 #include "system/ScenePhysicsSystem.h"
@@ -139,6 +140,7 @@ private:
 	SceneMonitorSystem monitorSystem_;
 	SceneObjectSystem objectSystem_;
 	SceneOptionMenuSystem optionMenuSystem_;
+	ScenePauseMenuSystem pauseMenuSystem_;
 	SceneTransitionSystem transitionSystem_;
 	SceneParticleSystem particleSystem_;
 	ScenePauseSystem pauseSystem_;

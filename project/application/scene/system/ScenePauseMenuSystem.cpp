@@ -1,0 +1,224 @@
+// 役割: Gameplay Sceneのポーズメニュー操作とTextRenderer表示を実装する。
+#include "ScenePauseMenuSystem.h"
+
+#include "SceneOptionMenuSystem.h"
+#include "ScenePauseSystem.h"
+#include "SceneTextRenderSystem.h"
+#include "../../../engine/io/Input.h"
+#include "../../../engine/scene/SceneDocument.h"
+#include "../../../engine/scene/SceneEntityQuery.h"
+
+#include <algorithm>
+#include <array>
+#include <initializer_list>
+
+namespace {
+	constexpr const char* kPauseControllerName = "Pause Menu Controller";
+	constexpr const char* kPauseProfileId = "PauseMenu";
+	constexpr const char* kPauseRequestId = "PauseMenu";
+	constexpr std::array<const char*, 3> kMainMenuEntityNames = { {
+		"PauseTitleText", "PauseRestartText", "PauseOptionText"
+	} };
+	constexpr std::array<const char*, 3> kOptionMenuEntityNames = { {
+		"PauseOptionBgmText", "PauseOptionSeText", "PauseOptionBackText"
+	} };
+	constexpr Vector4 kSelectedColor = { 1.0f, 0.92f, 0.55f, 1.0f };
+	constexpr Vector4 kNormalColor = { 0.78f, 0.86f, 0.94f, 1.0f };
+
+	bool TriggerAnyKey(Input* input, std::initializer_list<BYTE> keyCodes) {
+		if (!input) {
+			return false;
+		}
+		for (BYTE keyCode : keyCodes) {
+			if (input->TriggerKey(keyCode)) {
+				return true;
+			}
+		}
+		return false;
+	}
+}
+
+ScenePauseMenuResult ScenePauseMenuSystem::Update(
+	const SceneDocument& document,
+	const ScenePauseSystem& pauseSystem,
+	SceneOptionMenuSystem& optionMenuSystem
+) {
+	ScenePauseMenuResult result{};
+	const uint64_t controllerEntityId = FindControllerEntityId(document);
+	if (controllerEntityId == 0) {
+		return result;
+	}
+
+	Input* input = Input::GetInstance();
+	const bool pauseActive = pauseSystem.IsPauseActive(
+		controllerEntityId, kPauseProfileId, kPauseRequestId
+	);
+	if (TriggerAnyKey(input, { DIK_ESCAPE })) {
+		if (pauseActive) {
+			if (optionOpen_) {
+				optionOpen_ = false;
+				selectedIndex_ = 0;
+			} else {
+				result.resumeRequested = true;
+			}
+		} else {
+			optionOpen_ = false;
+			selectedIndex_ = 0;
+			result.pauseRequested = true;
+		}
+		return result;
+	}
+	if (!pauseActive) {
+		return result;
+	}
+
+	const std::vector<MenuItem> menuItems = CollectMenuItems(document);
+	if (menuItems.empty()) {
+		selectedIndex_ = 0;
+		return result;
+	}
+	const int itemCount = static_cast<int>(menuItems.size());
+	selectedIndex_ = std::clamp(selectedIndex_, 0, itemCount - 1);
+	if (TriggerAnyKey(input, { DIK_UP, DIK_W })) {
+		selectedIndex_ = (selectedIndex_ + itemCount - 1) % itemCount;
+	} else if (TriggerAnyKey(input, { DIK_DOWN, DIK_S })) {
+		selectedIndex_ = (selectedIndex_ + 1) % itemCount;
+	}
+	const MenuItem& selectedItem = menuItems[selectedIndex_];
+	if (optionOpen_) {
+		if (TriggerAnyKey(input, { DIK_LEFT, DIK_A })) {
+			if (selectedIndex_ == 0) {
+				optionMenuSystem.AdjustBgmVolume(-10);
+			} else if (selectedIndex_ == 1) {
+				optionMenuSystem.AdjustSeVolume(-10);
+			}
+		} else if (TriggerAnyKey(input, { DIK_RIGHT, DIK_D })) {
+			if (selectedIndex_ == 0) {
+				optionMenuSystem.AdjustBgmVolume(10);
+			} else if (selectedIndex_ == 1) {
+				optionMenuSystem.AdjustSeVolume(10);
+			}
+		}
+		if (selectedIndex_ == 2 &&
+			TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })) {
+			optionOpen_ = false;
+			selectedIndex_ = 0;
+		}
+	} else if (TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })) {
+		if (selectedIndex_ == 2) {
+			optionOpen_ = true;
+			selectedIndex_ = 0;
+		} else {
+			result.requestedSceneId = selectedItem.targetSceneId;
+		}
+	}
+	return result;
+}
+
+void ScenePauseMenuSystem::ApplyTextOverrides(
+	const SceneDocument& document,
+	SceneTextRenderSystem& textRenderSystem,
+	bool pauseActive,
+	const SceneOptionMenuSystem& optionMenuSystem
+) const {
+	const auto applyVisibility = [&document, &textRenderSystem, pauseActive](
+		const char* name,
+		bool visible
+	) {
+		const SceneEntity* entity = document.FindEntityByName(name);
+		if (!entity || !SceneEntityQuery::IsEntityActiveInHierarchy(document, *entity) ||
+			!SceneEntityQuery::FindEnabledComponent(*entity, "TextRenderer")) {
+			return;
+		}
+		textRenderSystem.SetPresentationOverride(
+			entity->id, {}, 0.0f, { 1.0f, 1.0f },
+			pauseActive && visible ? 1.0f : 0.0f
+		);
+	};
+	const SceneEntity* header = document.FindEntityByName("PauseMenuHeaderText");
+	if (header && SceneEntityQuery::IsEntityActiveInHierarchy(document, *header) &&
+		SceneEntityQuery::FindEnabledComponent(*header, "TextRenderer")) {
+		textRenderSystem.SetTextOverride(
+			header->id, optionOpen_ ? "OPTION" : "PAUSE"
+		);
+	}
+	const SceneEntity* guide = document.FindEntityByName("PauseMenuGuideText");
+	if (guide && SceneEntityQuery::IsEntityActiveInHierarchy(document, *guide) &&
+		SceneEntityQuery::FindEnabledComponent(*guide, "TextRenderer")) {
+		textRenderSystem.SetTextOverride(
+			guide->id,
+			optionOpen_
+				? "W/S or UP/DOWN : SELECT    A/D or LEFT/RIGHT : CHANGE    ESCAPE : BACK"
+				: "W/S or UP/DOWN : SELECT    ENTER : CONFIRM    ESCAPE : RESUME"
+		);
+	}
+	applyVisibility("PauseMenuHeaderText", true);
+	applyVisibility("PauseMenuGuideText", true);
+	for (const char* name : kMainMenuEntityNames) {
+		applyVisibility(name, !optionOpen_);
+	}
+	for (const char* name : kOptionMenuEntityNames) {
+		applyVisibility(name, optionOpen_);
+	}
+
+	const std::vector<MenuItem> menuItems = CollectMenuItems(document);
+	const int itemCount = static_cast<int>(menuItems.size());
+	const int selectedIndex = itemCount > 0
+		? std::clamp(selectedIndex_, 0, itemCount - 1)
+		: 0;
+	for (int index = 0; index < itemCount; ++index) {
+		const bool selected = index == selectedIndex;
+		textRenderSystem.SetPresentationOverride(
+			menuItems[index].entityId, {}, 0.0f, { 1.0f, 1.0f },
+			pauseActive ? 1.0f : 0.0f
+		);
+		textRenderSystem.SetTextColorOverride(
+			menuItems[index].entityId, selected ? kSelectedColor : kNormalColor
+		);
+		if (optionOpen_ && index == 0) {
+			textRenderSystem.SetTextOverride(
+				menuItems[index].entityId,
+				"BGM VOLUME < " + std::to_string(optionMenuSystem.GetBgmVolumePercent()) + "% >"
+			);
+		} else if (optionOpen_ && index == 1) {
+			textRenderSystem.SetTextOverride(
+				menuItems[index].entityId,
+				"SE  VOLUME < " + std::to_string(optionMenuSystem.GetSeVolumePercent()) + "% >"
+			);
+		}
+	}
+}
+
+void ScenePauseMenuSystem::Clear() {
+	optionOpen_ = false;
+	selectedIndex_ = 0;
+}
+
+std::vector<ScenePauseMenuSystem::MenuItem>
+ScenePauseMenuSystem::CollectMenuItems(const SceneDocument& document) const {
+	constexpr std::array<const char*, 3> kTargetSceneIds = { {
+		"title", "gameplay", "option"
+	} };
+	std::vector<MenuItem> items;
+	const auto& names = optionOpen_ ? kOptionMenuEntityNames : kMainMenuEntityNames;
+	items.reserve(names.size());
+	for (size_t index = 0; index < names.size(); ++index) {
+		const SceneEntity* entity = document.FindEntityByName(names[index]);
+		if (!entity || !SceneEntityQuery::IsEntityActiveInHierarchy(document, *entity) ||
+			!SceneEntityQuery::FindEnabledComponent(*entity, "TextRenderer")) {
+			continue;
+		}
+		items.push_back({ entity->id, kTargetSceneIds[index] });
+	}
+	return items;
+}
+
+uint64_t ScenePauseMenuSystem::FindControllerEntityId(
+	const SceneDocument& document
+) const {
+	const SceneEntity* controller = document.FindEntityByName(kPauseControllerName);
+	return controller && SceneEntityQuery::IsEntityActiveInHierarchy(document, *controller) &&
+		SceneEntityQuery::FindEnabledComponent(*controller, "PauseController")
+		? controller->id
+		: 0;
+}

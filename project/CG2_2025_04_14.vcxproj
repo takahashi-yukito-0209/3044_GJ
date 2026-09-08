@@ -229,6 +229,7 @@
     <ClCompile Include="application\scene\system\SceneMonitorSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneObjectSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneOptionMenuSystem.cpp" />
+	<ClCompile Include="application\scene\system\ScenePauseMenuSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneParticleSystem.cpp" />
 	<ClCompile Include="application\scene\system\ScenePauseSystem.cpp" />
     <ClCompile Include="application\scene\system\ScenePhysicsSystem.cpp" />
@@ -505,6 +506,7 @@
     <ClInclude Include="application\scene\system\SceneMonitorSystem.h" />
     <ClInclude Include="application\scene\system\SceneObjectSystem.h" />
 	<ClInclude Include="application\scene\system\SceneOptionMenuSystem.h" />
+	<ClInclude Include="application\scene\system\ScenePauseMenuSystem.h" />
     <ClInclude Include="application\scene\system\SceneParticleSystem.h" />
     <ClInclude Include="application\scene\system\ScenePhysicsSystem.h" />
     <ClInclude Include="application\scene\system\ScenePrefabAnimationSystem.h" />
