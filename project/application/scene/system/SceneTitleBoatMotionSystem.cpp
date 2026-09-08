@@ -24,6 +24,7 @@ namespace {
 	constexpr float kRollResponsiveness = 0.52f;
 	constexpr float kForwardDriftAmplitude = 0.16f;
 	constexpr float kForwardDriftSpeed = 0.42f;
+	constexpr float kExitMoveDistance = 4.2f;
 	constexpr float kWakeSheetEmissionInterval = 0.11f;
 	constexpr float kBowWaveXOffset = 1.46f;
 	constexpr float kBowWaveZOffset = 0.24f;
@@ -52,6 +53,14 @@ namespace {
 	float SmoothStep(float value) {
 		const float t = std::clamp(value, 0.0f, 1.0f); // 補間に使う正規化値。
 		return t * t * (3.0f - 2.0f * t);
+	}
+
+	/// <summary>
+	/// タイトル退出時の船移動量を返します。
+	/// </summary>
+	float EvaluateExitMove(float exitProgress) {
+		const float easedProgress = SmoothStep(exitProgress); // 退出演出の補間値。
+		return easedProgress * kExitMoveDistance;
 	}
 
 	/// <summary>
@@ -334,7 +343,8 @@ namespace {
 void SceneTitleBoatMotionSystem::Update(
 	const SceneDocument& document,
 	const std::vector<SceneRuntimeObjectBinding>& bindings,
-	float deltaTime
+	float deltaTime,
+	float exitProgress
 ) {
 	elapsedSeconds_ += (std::max)(deltaTime, 0.0f);
 	if (!particleGroupsPrepared_) {
@@ -358,6 +368,7 @@ void SceneTitleBoatMotionSystem::Update(
 			MakeEulerFromQuaternion(binding.entity->transform.rotate); // Scene上の基準回転。
 		const float time = elapsedSeconds_; // 波揺れ計算に使う経過時間。
 		translate.x += EvaluateForwardDrift(time); // 右方向への進行感。
+		translate.x += EvaluateExitMove(exitProgress); // START後の退出移動。
 		if (water.valid) {
 			const Vector3 centerSample = translate; // 船中央の水面サンプル位置。
 			const Vector3 bowSample{

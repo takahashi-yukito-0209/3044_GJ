@@ -86,6 +86,25 @@ private:
 		Camera* viewCamera,
 		uint64_t skipEntityId
 	);
+	/// <summary>
+	/// タイトルのSTART決定後に退出演出を開始します。
+	/// </summary>
+	void BeginTitleStartTransition();
+
+	/// <summary>
+	/// タイトル退出演出を進め、遷移可能になったかを返します。
+	/// </summary>
+	bool UpdateTitleStartTransition(float deltaTime);
+
+	/// <summary>
+	/// タイトル退出演出の進行度を0から1で返します。
+	/// </summary>
+	float GetTitleStartTransitionProgress() const;
+
+	/// <summary>
+	/// タイトル退出演出の状態を初期化します。
+	/// </summary>
+	void ClearTitleStartTransition();
 	bool ShouldHidePlayerModelForCamera(Camera* viewCamera) const;
 	void ApplyRenderCamera(Camera* viewCamera);
 	Camera* GetSceneViewCamera() const;
@@ -94,6 +113,8 @@ private:
 	Camera* debugCamera_ = nullptr;
 	Player* player_ = nullptr;
 	std::vector<SceneRuntimeObjectBinding> runtimeObjectBindings_;
+	bool titleStartTransitionActive_ = false; // タイトルSTART後の退出演出中か。
+	float titleStartTransitionElapsedSeconds_ = 0.0f; // タイトル退出演出の経過時間。
 
 	SceneAgentSystem agentSystem_;
 	SceneAudioSystem audioSystem_;

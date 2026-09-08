@@ -4,6 +4,7 @@
 #include "../../engine/scene/SceneManager.h"
 #include "../../engine/scene/SceneExecutionContext.h"
 #include "../../engine/scene/SceneDocument.h"
+#include "../../engine/scene/SceneEntityQuery.h"
 #include "../../engine/scene/SceneTransformResolver.h"
 #include "../../engine/3d/SrvManager.h"
 #include "../../engine/base/DirectXCommon.h"
@@ -15,7 +16,48 @@
 #include "../../engine/particle/ParticleManager.h"
 #include "../player/Player.h"
 
+#include <algorithm>
+
 namespace {
+	constexpr const char* kTitleSceneId = "title";
+	constexpr const char* kTitleStartTargetSceneId = "gameplay";
+	constexpr float kTitleStartTransitionSeconds = 0.85f;
+	constexpr float kTitleStartTextFadeSeconds = 0.25f;
+
+	/// <summary>
+	/// 0から1の範囲へ値を制限します。
+	/// </summary>
+	float Clamp01(float value) {
+		return std::clamp(value, 0.0f, 1.0f);
+	}
+
+	/// <summary>
+	/// タイトル退出中に全TextRendererの透明度をまとめて上書きします。
+	/// </summary>
+	void ApplyTitleTextOpacityOverride(
+		const SceneDocument& document,
+		SceneTextRenderSystem& textRenderSystem,
+		float opacityMultiplier
+	) {
+		for (const SceneEntity& entity : document.GetEntities()) { // Scene上のText候補。
+			const SceneComponent* textRenderer =
+				SceneEntityQuery::FindEnabledComponent(entity, "TextRenderer"); // 表示対象Text。
+			if (
+				!textRenderer ||
+				!SceneEntityQuery::IsEntityActiveInHierarchy(document, entity)
+			) {
+				continue;
+			}
+			textRenderSystem.SetPresentationOverride(
+				entity.id,
+				{},
+				0.0f,
+				{ 1.0f, 1.0f },
+				opacityMultiplier
+			);
+		}
+	}
+
 	Transform MakeRuntimeTransform(const QuaternionTransform& source) {
 		Transform result{};
 		result.scale = source.scale;
@@ -94,6 +136,45 @@ bool RuntimeScene::TryGetRuntimePostProcessSettings(
 	settings = postProcessProfileSystem_.GetEffectiveSettings();
 	generation = postProcessProfileSystem_.GetGeneration();
 	return true;
+}
+
+/// <summary>
+/// タイトルのSTART決定後に退出演出を開始します。
+/// </summary>
+void RuntimeScene::BeginTitleStartTransition() {
+	titleStartTransitionActive_ = true;
+	titleStartTransitionElapsedSeconds_ = 0.0f;
+}
+
+/// <summary>
+/// タイトル退出演出を進め、遷移可能になったかを返します。
+/// </summary>
+bool RuntimeScene::UpdateTitleStartTransition(float deltaTime) {
+	if (!titleStartTransitionActive_) {
+		return false;
+	}
+	titleStartTransitionElapsedSeconds_ += (std::max)(deltaTime, 0.0f);
+	return titleStartTransitionElapsedSeconds_ >= kTitleStartTransitionSeconds;
+}
+
+/// <summary>
+/// タイトル退出演出の進行度を0から1で返します。
+/// </summary>
+float RuntimeScene::GetTitleStartTransitionProgress() const {
+	if (!titleStartTransitionActive_) {
+		return 0.0f;
+	}
+	return Clamp01(
+		titleStartTransitionElapsedSeconds_ / kTitleStartTransitionSeconds
+	);
+}
+
+/// <summary>
+/// タイトル退出演出の状態を初期化します。
+/// </summary>
+void RuntimeScene::ClearTitleStartTransition() {
+	titleStartTransitionActive_ = false;
+	titleStartTransitionElapsedSeconds_ = 0.0f;
 }
 
 void RuntimeScene::DrawSceneView(Camera* viewCamera, uint64_t skipEntityId) {
@@ -258,17 +339,34 @@ void RuntimeScene::Update(float deltaTime)
 
 	// 遷移が成立したフレームは旧Sceneの状態をこれ以上変更しない。
 	if (playing && gameplayDeltaTime > 0.0f && activeDocument) {
-		if (GetSceneAssetId() == "title") {
-			const SceneTitleMenuResult titleMenuResult =
-				titleMenuSystem_.Update(*activeDocument);
-			if (!titleMenuResult.requestedSceneId.empty()) {
-				sceneManager_->RequestSceneTransition(
-					titleMenuResult.requestedSceneId
-				);
-				return;
+		if (GetSceneAssetId() == kTitleSceneId) {
+			if (titleStartTransitionActive_) {
+				if (UpdateTitleStartTransition(deltaTime)) {
+					sceneManager_->RequestSceneTransition(
+						kTitleStartTargetSceneId
+					);
+					return;
+				}
+			} else {
+				const SceneTitleMenuResult titleMenuResult =
+					titleMenuSystem_.Update(*activeDocument);
+				if (!titleMenuResult.requestedSceneId.empty()) {
+					if (
+						titleMenuResult.requestedSceneId ==
+						kTitleStartTargetSceneId
+					) {
+						BeginTitleStartTransition();
+					} else {
+						sceneManager_->RequestSceneTransition(
+							titleMenuResult.requestedSceneId
+						);
+						return;
+					}
+				}
 			}
 			optionMenuSystem_.Clear();
 		} else if (GetSceneAssetId() == "option") {
+			ClearTitleStartTransition();
 			const SceneOptionMenuResult optionMenuResult =
 				optionMenuSystem_.Update(*activeDocument);
 			if (!optionMenuResult.requestedSceneId.empty()) {
@@ -279,6 +377,7 @@ void RuntimeScene::Update(float deltaTime)
 			}
 			titleMenuSystem_.Clear();
 		} else {
+			ClearTitleStartTransition();
 			titleMenuSystem_.Clear();
 			optionMenuSystem_.Clear();
 		}
@@ -437,7 +536,8 @@ void RuntimeScene::Update(float deltaTime)
 			titleBoatMotionSystem_.Update(
 				*activeDocument,
 				runtimeObjectBindings_,
-				deltaTime
+				deltaTime,
+				GetTitleStartTransitionProgress()
 			);
 		} else {
 			titleBoatMotionSystem_.Clear();
@@ -810,7 +910,7 @@ void RuntimeScene::Update(float deltaTime)
 					postProcessProfileSystem_.GetActiveProfileLabel()
 			);
 		}
-		if (playing && GetSceneAssetId() == "title") {
+		if (playing && GetSceneAssetId() == kTitleSceneId) {
 			titleMenuSystem_.ApplyTextOverrides(
 				*activeDocument,
 				textRenderSystem_
@@ -830,6 +930,22 @@ void RuntimeScene::Update(float deltaTime)
 			presentation.rotationOffset,
 			presentation.scaleMultiplier,
 			presentation.opacityMultiplier
+		);
+	}
+	if (
+		activeDocument &&
+		playing &&
+		GetSceneAssetId() == kTitleSceneId &&
+		titleStartTransitionActive_
+	) {
+		const float textFadeProgress = Clamp01(
+			titleStartTransitionElapsedSeconds_ /
+			kTitleStartTextFadeSeconds
+		); // タイトル文字のフェード進行度。
+		ApplyTitleTextOpacityOverride(
+			*activeDocument,
+			textRenderSystem_,
+			1.0f - textFadeProgress
 		);
 	}
 	textRenderSystem_.Sync(activeDocument);
@@ -1008,6 +1124,7 @@ void RuntimeScene::Finalize()
 	eventSystem_.Clear();
 	textMotionSystem_.Clear();
 	gameFlowSystem_.Clear();
+	ClearTitleStartTransition();
 	audioSystem_.Clear();
 	postProcessProfileSystem_.Reset();
 	stateMachineSystem_.Clear();
@@ -1044,6 +1161,7 @@ void RuntimeScene::PrepareForSceneTransition()
 {
 	textMotionSystem_.Clear();
 	gameFlowSystem_.Clear();
+	ClearTitleStartTransition();
 	SceneExecutionContext* executionContext = sceneManager_
 		? sceneManager_->GetExecutionContext()
 		: nullptr;

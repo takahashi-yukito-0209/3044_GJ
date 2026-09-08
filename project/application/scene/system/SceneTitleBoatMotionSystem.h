@@ -15,7 +15,8 @@ public:
 	void Update(
 		const SceneDocument& document,
 		const std::vector<SceneRuntimeObjectBinding>& bindings,
-		float deltaTime
+		float deltaTime,
+		float exitProgress = 0.0f
 	);
 
 	/// <summary>
