@@ -491,6 +491,36 @@ void RuntimeScene::Initialize()
 			*initialDocument,
 			runtimeObjectBindings_
 		);
+		// フェード中にPlayerの設定や水域状態が未同期にならないよう、
+		// 開始位置を設定した直後に物理の初期状態まで確定する。
+		physicsSystem_.SyncSceneSettings(
+			*initialDocument,
+			player_,
+			runtimeObjectBindings_,
+			initialEditing
+		);
+		// フェード遷移中はUpdateを止めたまま描画へ入るため、ここで
+		// Scene定義の開始Cameraを反映して、生成直後のOrbit Cameraを出さない。
+		cameraSystem_.UpdateBeforeSimulation(
+			*initialDocument,
+			camera_,
+			player_,
+			runtimeObjectBindings_,
+			0.0f,
+			initialPlaying,
+			initialPlaying,
+			false,
+			false
+		);
+		cameraSystem_.UpdateAfterSimulation(
+			*initialDocument,
+			camera_,
+			player_,
+			runtimeObjectBindings_,
+			0.0f,
+			initialPlaying,
+			initialPlaying
+		);
 		environmentSystem_.Sync(
 			initialDocument,
 			runtimeObjectBindings_
@@ -1529,6 +1559,19 @@ void RuntimeScene::DrawOffscreenViews()
 	if (document) {
 		// Offscreen描画が差し替えたCameraを、通常Scene View用へ戻す。
 		ApplyRenderCamera(GetSceneViewCamera());
+	}
+}
+
+void RuntimeScene::SetRenderAspectRatio(float aspectRatio)
+{
+	const float safeAspectRatio = (std::max)(aspectRatio, 0.001f);
+	if (camera_) {
+		camera_->SetAspectRatio(safeAspectRatio);
+		camera_->Update();
+	}
+	if (debugCamera_) {
+		debugCamera_->SetAspectRatio(safeAspectRatio);
+		debugCamera_->Update();
 	}
 }
 

@@ -94,6 +94,22 @@ bool EditorSession::LoadRuntimeScene(
 	return true;
 }
 
+bool EditorSession::AdoptPreloadedRuntimeScene(
+	const std::string& sceneId,
+	const std::string& sceneFilePath,
+	SceneDocument&& document
+) {
+	if (IsEditing() || sceneId.empty() || sceneFilePath.empty()) {
+		return false;
+	}
+
+	runtimeDocument_ = std::move(document);
+	runtimeSceneId_ = sceneId;
+	runtimeSceneFilePath_ = sceneFilePath;
+	lastLoadError_.clear();
+	return true;
+}
+
 void EditorSession::Play() {
 	if (state_ != EditorPlayState::Edit) {
 		return;

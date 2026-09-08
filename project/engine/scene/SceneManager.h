@@ -36,11 +36,13 @@ public:
 	void DrawScreenOverlay(uint32_t width, uint32_t height);
 	void DrawShadow();
 	void DrawOffscreenViews();
+	void SetRenderAspectRatio(float aspectRatio);
 	void SetDeferForegroundEffects(bool defer);
 
 	// ChangeSceneは予約のみ行い、次のUpdate先頭でDocument読込と初期化を確定する。
 	void ChangeScene(const std::string& sceneId);
-	// Runtime中のScene遷移を予約する。演出を使わない場合は次のUpdateで即時切り替える。
+	// Runtime中のScene遷移を予約する。演出を使う場合は遷移先を先行初期化してからフェードアウトする。
+	// 演出を使わない場合は次のUpdateで即時切り替える。
 	// ChangeSceneは起動処理・Editor操作向けの通常切り替えとして残す。
 	void RequestSceneTransition(const std::string& sceneId, bool useEffect = true);
 	bool IsSceneTransitioning() const;
@@ -110,6 +112,8 @@ private:
 	};
 
 	void AdvanceSceneTransition(float deltaTime);
+	// フェードアウト中に遷移先を初期化し、切り替え時の停止を避ける。
+	bool PreloadPendingSceneForTransition();
 	void ActivatePendingScene();
 	void DiscardPendingScene();
 	void ProcessPendingSceneUnloads();

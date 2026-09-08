@@ -68,6 +68,7 @@ public:
 	bool HasScreenOverlay() const override;
 	void DrawScreenOverlay(uint32_t width, uint32_t height) override;
 	void DrawOffscreenViews() override;
+	void SetRenderAspectRatio(float aspectRatio) override;
 	void DrawShadow() override;
 	void CollectShadowCasters(std::vector<Object3d*>& shadowCasters) override;
 	void RenderShadowCasters(

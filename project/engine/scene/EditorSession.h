@@ -30,6 +30,11 @@ public:
 		const std::string& sceneId,
 		const std::string& sceneFilePath
 	) override;
+	bool AdoptPreloadedRuntimeScene(
+		const std::string& sceneId,
+		const std::string& sceneFilePath,
+		SceneDocument&& document
+	) override;
 
 	void Play();
 	void Pause();

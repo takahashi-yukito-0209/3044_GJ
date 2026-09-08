@@ -52,6 +52,7 @@ private:
 	void Finalize();
 	void BindDocument(SceneDocument* document);
 	void OwnDocument(std::unique_ptr<SceneDocument> document);
+	std::unique_ptr<SceneDocument> ReleaseOwnedDocument();
 	void SetPersistent(bool persistent);
 	void DetachDocument();
 	BaseScene* GetScene() const {
