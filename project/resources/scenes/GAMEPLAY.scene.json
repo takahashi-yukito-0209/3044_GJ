@@ -4507,7 +4507,7 @@
           "inputMode": "Both",
           "jumpVelocity": 37.20000076293945,
           "localId": 2,
-          "moveSpeed": 19.799999237060547,
+          "moveSpeed": 100.0,
           "turnResponsiveness": 0.05000000074505806,
           "type": "PlayerBehavior"
         },
@@ -4669,7 +4669,7 @@
         "translate": [
           0.0,
           0.8146223425865173,
-          -138.26654052734375
+          -118.21926879882813
         ]
       }
     },
