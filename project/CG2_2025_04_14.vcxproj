@@ -289,6 +289,9 @@
 	<ClCompile Include="engine\3d\Skybox.cpp" />
 	<ClCompile Include="engine\3d\StarFieldGenerator.cpp" />
   </ItemGroup>
+	<ItemGroup>
+		<ResourceCompile Include="resources\WindowIcon.rc" />
+	</ItemGroup>
   <ItemGroup>
 	<FxCompile Include="resources\shaders\ChromaticAberration.PS.hlsl">
 	  <ShaderType>Pixel</ShaderType>
@@ -384,6 +387,7 @@
   </ItemGroup>
   <ItemGroup>
 	<ClInclude Include="externals\ImGuizmo\ImGuizmo.h" />
+	<ClInclude Include="resources\WindowIcon.h" />
     <ClInclude Include="engine\collision\Collider.h" />
     <ClInclude Include="engine\collision\OBBCollider.h" />
     <ClInclude Include="engine\collision\SphereCollider.h" />

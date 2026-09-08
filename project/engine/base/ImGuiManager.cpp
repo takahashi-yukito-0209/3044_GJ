@@ -1003,6 +1003,7 @@ namespace {
 			, { "Loop", "繰り返す" }, { "Default Clip Index", "既定Clip番号" }
 			, { "Transition Duration", "切替時間" }, { "Blend Curve", "Blend Curve" }
 			, { "Clip Name", "Clip名" }, { "Duration", "時間" }
+			, { "Run Timer During Fish Selection", "魚数選択中も時間を進める" }
 			, { "Property", "Property" }, { "Easing", "Easing" }, { "Time", "時間" }
 			, { "Active Value", "Active値" }, { "Target Bone", "対象Bone" }
 			, { "Alignment Mode", "配置Mode" }, { "Weapon Bone", "Weapon Bone" }
@@ -13740,6 +13741,12 @@ void ImGuiManager::DrawInspectorWindow() {
 					&component.fishingDurationSeconds, 0.1f, 0.1f, 3600.0f
 				);
 				fishingChanged |= ImGui::Checkbox(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Run Timer During Fish Selection"
+					),
+					&component.fishingTimerRunsDuringFishSelection
+				);
+				fishingChanged |= ImGui::Checkbox(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Use Hook Band Settings"),
 					&component.fishingUseHookBandSettings
 				);
@@ -22749,6 +22756,7 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 
 	if (ImGui::TreeNodeEx("Game###FishingConsoleGame", ImGuiTreeNodeFlags_DefaultOpen, text("ゲーム", "Game"))) {
 		changed |= ImGui::DragFloat(text("制限時間（秒）", "Duration Seconds"), &director->fishingDurationSeconds, 0.1f, 0.1f, 3600.0f);
+		changed |= ImGui::Checkbox(text("魚数選択中も時間を進める", "Run Timer During Fish Selection"), &director->fishingTimerRunsDuringFishSelection);
 		changed |= ImGui::SliderInt(text("魚の最大数", "Maximum Fish Count"), &director->fishingMaxSelectableFishCount, 1, fishCountUpperBound);
 		changed |= DrawSceneInputExpressionEditor(
 			text("魚数決定入力", "Fish Count Confirm Input"),

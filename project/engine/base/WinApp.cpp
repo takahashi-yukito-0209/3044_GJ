@@ -1,5 +1,6 @@
 // 役割: Win32ウィンドウ手続きとメッセージ取得を実装する。
 #include "WinApp.h"
+#include "../../resources/WindowIcon.h"
 #include "../externals/imgui/imgui.h"
 #include "../externals/imgui/imgui_impl_dx12.h"
 #include "../externals/imgui/imgui_impl_win32.h"
@@ -39,6 +40,8 @@ void WinApp::Initialize(){
 	wc.lpszClassName = L"CG2WindowClass";
 	// インスタンスハンドル
 	wc.hInstance = GetModuleHandle(nullptr);
+	// ツナ缶アイコン
+	wc.hIcon = LoadIcon(wc.hInstance, MAKEINTRESOURCE(IDI_TUNACAN));
 	// カーソル
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 

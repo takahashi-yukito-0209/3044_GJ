@@ -1606,7 +1606,11 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 		InitializeRun(document, *director);
 	}
 
-	if (timerRunning_) {
+	const bool fishSelectionPausesTimer =
+		!director->fishingTimerRunsDuringFishSelection &&
+		(state_ == SceneFishingScoreAttackState::SelectingInitial ||
+			state_ == SceneFishingScoreAttackState::SelectingNext);
+	if (timerRunning_ && !fishSelectionPausesTimer) {
 		elapsedSeconds_ += (std::max)(deltaTime, 0.0f);
 		if (elapsedSeconds_ >= director->fishingDurationSeconds) {
 			elapsedSeconds_ = director->fishingDurationSeconds;
@@ -2034,6 +2038,9 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		if (!SpawnHooks(document, *director)) {
 			return;
 		}
+		if (!ResetSharksForRound(document, *director)) {
+			return;
+		}
 		state_ = SceneFishingScoreAttackState::SelectingNext;
 		SetFishPreview(document, *director);
 		BuildTextRequests(*director);
@@ -2186,6 +2193,9 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	hasPlayerConstraintRequest_ = false;
 	hasPlayerResetRequest_ = hasInitialPlayerTransform_;
 	if (!SpawnHooks(document, *director)) {
+		return;
+	}
+	if (!ResetSharksForRound(document, *director)) {
 		return;
 	}
 	state_ = SceneFishingScoreAttackState::SelectingNext;
@@ -3745,6 +3755,9 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 	if (!SpawnHooks(document, director)) {
 		return;
 	}
+	if (!ResetSharksForRound(document, director)) {
+		return;
+	}
 	SetFishPreview(document, director);
 	state_ = SceneFishingScoreAttackState::SelectingInitial;
 	BuildTextRequests(director);
@@ -4100,9 +4113,6 @@ void SceneFishingScoreAttackSystem::StartRound(
 	hasFormationNoProgressReference_ = false;
 	playerConstraintRequest_ = {};
 	hasPlayerConstraintRequest_ = false;
-	if (!ResetSharksForRound(document, director)) {
-		return;
-	}
 	pendingFishCountDelta_ = 0;
 	state_ = SceneFishingScoreAttackState::Navigating;
 	SetFishPreview(document, director);
@@ -4668,8 +4678,9 @@ bool SceneFishingScoreAttackSystem::ResetSharksForRound(
 	);
 	const std::vector<SharkObstacleFootprint> obstacles =
 		BuildSharkObstacleFootprints(document);
-	const Transform playerTransform =
-		SceneTransformResolver::ResolveScene3DTransform(document, *player);
+	const Transform playerTransform = hasInitialPlayerTransform_
+		? initialPlayerTransform_
+		: SceneTransformResolver::ResolveScene3DTransform(document, *player);
 	const Transform areaTransform =
 		SceneTransformResolver::ResolveScene3DTransform(document, *spawnAreaEntity);
 	Transform bandWaterTransform =

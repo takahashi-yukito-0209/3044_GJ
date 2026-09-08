@@ -1815,6 +1815,8 @@ namespace {
 			result["boundaryNegativeZWallEntityId"] = component.fishingBoundaryNegativeZWallEntityId;
 			result["boundaryPositiveZWallEntityId"] = component.fishingBoundaryPositiveZWallEntityId;
 			result["durationSeconds"] = component.fishingDurationSeconds;
+			result["timerRunsDuringFishSelection"] =
+				component.fishingTimerRunsDuringFishSelection;
 			result["maxSelectableFishCount"] = component.fishingMaxSelectableFishCount;
 			result["confirmInput"] = component.fishingConfirmInputExpression
 				? FirstSceneInputExpressionTerm(component.fishingConfirmInputExpression)
@@ -3510,6 +3512,10 @@ namespace {
 					component.fishingDurationSeconds = (std::max)(
 						value.value("durationSeconds", component.fishingDurationSeconds),
 						0.001f
+					);
+					component.fishingTimerRunsDuringFishSelection = value.value(
+						"timerRunsDuringFishSelection",
+						component.fishingTimerRunsDuringFishSelection
 					);
 					component.fishingMaxSelectableFishCount = std::clamp(
 						value.value("maxSelectableFishCount", component.fishingMaxSelectableFishCount),
@@ -9781,6 +9787,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingBoundaryNegativeZWallEntityId = 0;
 		component.fishingBoundaryPositiveZWallEntityId = 0;
 		component.fishingDurationSeconds = 60.0f;
+		component.fishingTimerRunsDuringFishSelection = true;
 		component.fishingMaxSelectableFishCount = 5;
 		component.fishingConfirmInput = "ENTER";
 		component.fishingConfirmInputExpression.reset();

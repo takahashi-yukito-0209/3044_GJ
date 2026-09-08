@@ -494,6 +494,7 @@ struct SceneComponent {
 	uint64_t fishingBoundaryNegativeZWallEntityId = 0;
 	uint64_t fishingBoundaryPositiveZWallEntityId = 0;
 	float fishingDurationSeconds = 60.0f;
+	bool fishingTimerRunsDuringFishSelection = true;
 	int fishingMaxSelectableFishCount = 5;
 	std::string fishingConfirmInput = "ENTER";
 	std::optional<SceneInputExpression> fishingConfirmInputExpression;

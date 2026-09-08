@@ -6134,6 +6134,7 @@
           "scorePrefix": "SCORE ",
           "scoreTextEntityId": 19,
           "sharkRouteDebugVisible": true,
+          "timerRunsDuringFishSelection": false,
           "timerPrefix": "TIME ",
           "timerTextEntityId": 18,
           "type": "FishingScoreAttackDirector",

@@ -1,0 +1,3 @@
+#include "WindowIcon.h"
+
+IDI_TUNACAN ICON "tunacan.ico"
