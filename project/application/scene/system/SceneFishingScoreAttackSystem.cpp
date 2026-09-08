@@ -204,6 +204,74 @@ namespace {
 		);
 	}
 
+	// Spawn判定はRuntime Colliderと同じワールド倍率を使う。
+	// これを省くと、Play開始時にランダム倍率が掛かった岩へ釣り針が重なる。
+	float ColliderRadiusXZ(
+		const SceneComponent& collider,
+		const Transform& transform
+	) {
+		const float sizeX = std::abs(collider.colliderSizeMultiplier.x) *
+			(std::max)(std::abs(transform.scale.x), 0.001f);
+		const float sizeZ = std::abs(collider.colliderSizeMultiplier.z) *
+			(std::max)(std::abs(transform.scale.z), 0.001f);
+		return std::sqrt(sizeX * sizeX + sizeZ * sizeZ);
+	}
+
+	Vector3 ColliderCenterXZ(
+		const Transform& transform,
+		const SceneComponent& collider
+	) {
+		const float scaleX = (std::max)(std::abs(transform.scale.x), 0.001f);
+		const float scaleY = (std::max)(std::abs(transform.scale.y), 0.001f);
+		const float scaleZ = (std::max)(std::abs(transform.scale.z), 0.001f);
+		return ToSpawnWorldPosition(
+			transform,
+			collider.colliderOffset.x * scaleX,
+			collider.colliderOffset.z * scaleZ,
+			transform.translate.y + collider.colliderOffset.y * scaleY
+		);
+	}
+
+	// 岩はPlay開始時にモデルがランダムに差し替わるため、各プロファイルを
+	// 包含する半径を使う。Entity原点から判定すれば、差し替え後のoffset差も
+	// 含めて釣り針との重なりを防げる。
+	float FishingObstacleSpawnExclusionRadius(
+		const SceneDocument& document,
+		const SceneComponent& collider,
+		const Transform& transform
+	) {
+		const float scaleX = (std::max)(std::abs(transform.scale.x), 0.001f);
+		const float scaleZ = (std::max)(std::abs(transform.scale.z), 0.001f);
+		const float fallbackRadius = ColliderRadiusXZ(collider, transform) +
+			std::sqrt(
+				collider.colliderOffset.x * collider.colliderOffset.x * scaleX * scaleX +
+				collider.colliderOffset.z * collider.colliderOffset.z * scaleZ * scaleZ
+			);
+		float exclusionRadius = fallbackRadius;
+		for (const SceneFishingObstacleColliderProfile& profile :
+			document.GetFishingObstacleSettings().colliderProfiles) {
+			if (!profile.enabled ||
+				!std::isfinite(profile.colliderOffset.x) ||
+				!std::isfinite(profile.colliderOffset.z) ||
+				!std::isfinite(profile.colliderSizeMultiplier.x) ||
+				!std::isfinite(profile.colliderSizeMultiplier.z)) {
+				continue;
+			}
+			const float offsetRadius = std::sqrt(
+				profile.colliderOffset.x * profile.colliderOffset.x * scaleX * scaleX +
+				profile.colliderOffset.z * profile.colliderOffset.z * scaleZ * scaleZ
+			);
+			const float colliderRadius = std::sqrt(
+				profile.colliderSizeMultiplier.x * profile.colliderSizeMultiplier.x * scaleX * scaleX +
+				profile.colliderSizeMultiplier.z * profile.colliderSizeMultiplier.z * scaleZ * scaleZ
+			);
+			exclusionRadius = (std::max)(
+				exclusionRadius, offsetRadius + colliderRadius
+			);
+		}
+		return exclusionRadius;
+	}
+
 	struct XZPoint {
 		float x = 0.0f;
 		float z = 0.0f;
@@ -2906,6 +2974,17 @@ void SceneFishingScoreAttackSystem::StartRound(
 			const SceneComponent* hookCollider = FindComponent(
 				document, selectedEntry->hookEntityId, "OBBCollider"
 			);
+			const SceneEntity* hookEntityForPlacement = document.FindEntity(
+				selectedEntry->hookEntityId
+			);
+			if (!hookEntityForPlacement) {
+				Fault(document, director, "Selected FishingHook is missing");
+				return;
+			}
+			const Transform hookTransform =
+				SceneTransformResolver::ResolveScene3DTransform(
+					document, *hookEntityForPlacement
+				);
 			Vector3 spawnPosition{};
 			bool foundPosition = false;
 			for (int attempt = 0; attempt < spawnArea->fishingSpawnMaxAttempts; ++attempt) {
@@ -2927,26 +3006,38 @@ void SceneFishingScoreAttackSystem::StartRound(
 					DistanceXZ(candidate, playerTransform.translate) < spawnArea->fishingSpawnMinimumDistance) {
 					continue;
 				}
-				const float hookRadius = hookCollider ? ColliderRadiusXZ(*hookCollider) : 0.0f;
+				Transform candidateHookTransform = hookTransform;
+				candidateHookTransform.translate = candidate;
+				const Vector3 candidateHookCenter = hookCollider
+					? ColliderCenterXZ(candidateHookTransform, *hookCollider)
+					: candidate;
+				const float hookRadius = hookCollider
+					? ColliderRadiusXZ(*hookCollider, candidateHookTransform)
+					: 0.0f;
 				bool overlaps = false;
 				for (size_t existingIndex = 0; existingIndex < spawnPositions.size(); ++existingIndex) {
-					if (DistanceXZ(candidate, spawnPositions[existingIndex]) < hookRadius + spawnRadii[existingIndex]) {
+					if (DistanceXZ(
+						candidateHookCenter, spawnPositions[existingIndex]
+					) < hookRadius + spawnRadii[existingIndex]) {
 						overlaps = true;
 						break;
 					}
 				}
 				for (const SceneEntity& entity : document.GetEntities()) {
-					if (!FindEnabledComponent(entity, "FishingObstacle")) { continue; }
+					if (!IsEntityActiveInHierarchy(document, entity) ||
+						!FindEnabledComponent(entity, "FishingObstacle")) {
+						continue;
+					}
 					const SceneComponent* obstacleCollider = FindEnabledComponent(entity, "OBBCollider");
-					if (!obstacleCollider) { continue; }
+					if (!obstacleCollider || !obstacleCollider->colliderActive ||
+						obstacleCollider->colliderIsTrigger) {
+						continue;
+					}
 					const Transform obstacleTransform = SceneTransformResolver::ResolveScene3DTransform(document, entity);
-					const Vector3 obstacleCenter = ToSpawnWorldPosition(
-						obstacleTransform,
-						obstacleCollider->colliderOffset.x,
-						obstacleCollider->colliderOffset.z,
-						obstacleTransform.translate.y + obstacleCollider->colliderOffset.y
-					);
-					if (DistanceXZ(candidate, obstacleCenter) < hookRadius + ColliderRadiusXZ(*obstacleCollider)) {
+					if (DistanceXZ(candidateHookCenter, obstacleTransform.translate) <
+						hookRadius + FishingObstacleSpawnExclusionRadius(
+							document, *obstacleCollider, obstacleTransform
+						)) {
 						overlaps = true; break;
 					}
 				}
@@ -2957,12 +3048,17 @@ void SceneFishingScoreAttackSystem::StartRound(
 				return;
 			}
 			SceneEntity* hookEntity = document.FindEntity(selectedEntry->hookEntityId);
-			if (!hookEntity) { Fault(document, director, "Selected FishingHook is missing"); return; }
 			hookEntity->transform.translate = spawnPosition;
 			hookEntity->active = true;
 			usedHookIds.insert(hookEntity->id);
-			spawnPositions.push_back(spawnPosition);
-			spawnRadii.push_back(hookCollider ? ColliderRadiusXZ(*hookCollider) : 0.0f);
+			Transform placedHookTransform = hookTransform;
+			placedHookTransform.translate = spawnPosition;
+			spawnPositions.push_back(hookCollider
+				? ColliderCenterXZ(placedHookTransform, *hookCollider)
+				: spawnPosition);
+			spawnRadii.push_back(hookCollider
+				? ColliderRadiusXZ(*hookCollider, placedHookTransform)
+				: 0.0f);
 			const float distanceMultiplier = useHookBandSettings
 				? director.fishingHookBands[static_cast<size_t>(bandIndex)].distanceMultiplier
 				: director.fishingDistanceMultiplierBase +
