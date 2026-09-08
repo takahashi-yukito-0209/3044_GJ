@@ -1145,10 +1145,17 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			)) {
 				continue;
 			}
-			const long long penalty = static_cast<long long>(
+			const long long maximumScore = (std::numeric_limits<long long>::max)();
+			const long long basePenalty = static_cast<long long>(
 				(std::max)(shark->fishingSharkPenaltyScore, 0)
 			);
-			const long long maximumScore = (std::numeric_limits<long long>::max)();
+			// 減点はこのラウンドで編成したプレイヤー（魚群）数に比例させる。
+			const long long playerCount = static_cast<long long>(
+				(std::max)(roundFishCount_, 1)
+			);
+			const long long penalty = basePenalty > maximumScore / playerCount
+				? maximumScore
+				: basePenalty * playerCount;
 			if (sharkPenaltyTotal > maximumScore - penalty) {
 				sharkPenaltyTotal = maximumScore;
 			} else {
