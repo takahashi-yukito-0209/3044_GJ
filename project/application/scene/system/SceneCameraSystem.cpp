@@ -415,7 +415,7 @@ bool SceneCameraSystem::UpdateThirdPersonCamera(
 	if (!playing || !camera) {
 		playerCameraInitialized_ = false;
 		thirdPersonCameraEntityId_ = 0;
-		ApplyPlayerDissolve(bindings, false);
+		ApplyPlayerDissolve(document, bindings, 0, false);
 		return false;
 	}
 
@@ -433,7 +433,7 @@ bool SceneCameraSystem::UpdateThirdPersonCamera(
 	) {
 		playerCameraInitialized_ = false;
 		thirdPersonCameraEntityId_ = 0;
-		ApplyPlayerDissolve(bindings, false);
+		ApplyPlayerDissolve(document, bindings, 0, false);
 		return false;
 	}
 	const SceneEntity* targetEntity = ResolveThirdPersonTarget(
@@ -444,7 +444,7 @@ bool SceneCameraSystem::UpdateThirdPersonCamera(
 	if (!targetEntity) {
 		playerCameraInitialized_ = false;
 		thirdPersonCameraEntityId_ = 0;
-		ApplyPlayerDissolve(bindings, false);
+		ApplyPlayerDissolve(document, bindings, 0, false);
 		return false;
 	}
 
@@ -532,29 +532,32 @@ bool SceneCameraSystem::UpdateThirdPersonCamera(
 	std::vector<OBBCollider*> obstacles;
 	obstacles.reserve(bindings.size());
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
+		const SceneEntity* bindingEntity = binding.entityId != 0
+			? document.FindEntity(binding.entityId)
+			: nullptr; // 現在Document上のEntity。
 		// 以前はTarget自身だけを除外していたため、子のHurtBoxや武器HitBoxが
 		// Camera Rayを遮っていた。TriggerとTarget階層は遮蔽物に含めない。
 		if (
-			!binding.entity ||
+			!bindingEntity ||
 			!binding.collider ||
 			!binding.collider->IsActive() ||
 			binding.collider->IsTrigger() ||
-			binding.entity->id == targetEntity->id ||
+			bindingEntity->id == targetEntity->id ||
 			document.IsDescendantOf(
-				binding.entity->id,
+				bindingEntity->id,
 				targetEntity->id
 			) ||
 			(
 				binding.collider->GetCollisionAttribute() &
 				thirdPerson->thirdPersonOcclusionMask
 			) == 0 ||
-			!IsEntityActiveInHierarchy(document, *binding.entity)
+			!IsEntityActiveInHierarchy(document, *bindingEntity)
 		) {
 			continue;
 		}
-		std::string modelPath = binding.entity->modelPath;
+		std::string modelPath = bindingEntity->modelPath;
 		if (const SceneComponent* meshRenderer =
-			FindEnabledComponent(*binding.entity, "MeshRenderer")) {
+			FindEnabledComponent(*bindingEntity, "MeshRenderer")) {
 			modelPath = meshRenderer->modelPath;
 		}
 		std::transform(
@@ -586,14 +589,18 @@ bool SceneCameraSystem::UpdateThirdPersonCamera(
 		acceptWheelZoom
 	);
 	ApplyPlayerDissolve(
+		document,
 		bindings,
+		targetEntity->id,
 		HasComponent(*targetEntity, "PlayerBehavior")
 	);
 	return true;
 }
 
 void SceneCameraSystem::ApplyPlayerDissolve(
+	const SceneDocument& document,
 	const std::vector<SceneRuntimeObjectBinding>& bindings,
+	uint64_t targetEntityId,
 	bool enabled
 ) const {
 	constexpr float kStartPitch = -0.35f;
@@ -608,10 +615,14 @@ void SceneCameraSystem::ApplyPlayerDissolve(
 		? rawAmount * rawAmount * (3.0f - 2.0f * rawAmount)
 		: 0.0f;
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
+		const SceneEntity* bindingEntity = binding.entityId != 0
+			? document.FindEntity(binding.entityId)
+			: nullptr; // 現在Document上のEntity。
 		if (
-			binding.entity &&
+			bindingEntity &&
 			binding.object &&
-			HasComponent(*binding.entity, "PlayerBehavior")
+			HasComponent(*bindingEntity, "PlayerBehavior") &&
+			(!enabled || bindingEntity->id == targetEntityId)
 		) {
 			binding.object->SetDissolve(amount, 0.08f, 6.0f);
 		}
