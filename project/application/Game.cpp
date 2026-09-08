@@ -1435,7 +1435,7 @@ void Game::Draw() {
 		return;
 	}
 
-	// 影描画でもスキニングパレットSRVを使うので先に必要
+	// ShadowMapを含む描画用SRVヒープを、影パスより先に設定する。
 	srvManager_->PreDraw();
 
 	sceneManager_->DrawShadow();

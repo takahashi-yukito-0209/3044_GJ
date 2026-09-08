@@ -2,8 +2,11 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 #include "../math/Vector2.h"
+#include "../math/Vector3.h"
 #include "../math/Vector4.h"
 
 // Scene-wide settings that are serialized independently of the entity hierarchy.
@@ -96,4 +99,18 @@ struct SceneDebugSettings {
 	bool showJointAxes = true;
 	float jointRadius = 0.018f;
 	float jointAxisLength = 0.06f;
+};
+
+// 全FishingObstacleで共有する岩モデル別Collider設定。
+struct SceneFishingObstacleColliderProfile {
+	std::string modelPath;
+	bool enabled = true;
+	Vector3 colliderOffset{};
+	Vector3 colliderRotation{};
+	Vector3 colliderSizeMultiplier = { 1.0f, 1.0f, 1.0f };
+	float colliderSphereRadius = 0.5f;
+};
+
+struct SceneFishingObstacleSettings {
+	std::vector<SceneFishingObstacleColliderProfile> colliderProfiles;
 };

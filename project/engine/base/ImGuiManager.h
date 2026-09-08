@@ -342,6 +342,7 @@ private:
 	void DrawHierarchyWindow(const char* sceneName);
 	void DrawInspectorWindow();
 	void DrawFishingScoreAttackConsoleWindow();
+	void DrawRockLayoutWindow();
 	void DrawInputSettingsWindow();
 	void StopAudioPreview();
 	void DrawSceneComponentPicker();
@@ -518,6 +519,7 @@ private:
 	bool showProject_ = true;
 	bool showConsole_ = true;
 	bool showFishingScoreAttackConsole_ = true;
+	bool showRockLayout_ = true;
 	bool showInputSettings_ = true;
 	bool showLoadedScenes_ = true;
 	bool showPrefab_ = false;

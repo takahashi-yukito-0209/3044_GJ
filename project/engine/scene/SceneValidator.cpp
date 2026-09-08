@@ -2942,6 +2942,38 @@ bool SceneValidator::ValidateDocument(
 			}
 		}
 	}
+	std::unordered_set<std::string> obstacleProfileModelPaths;
+	for (const SceneFishingObstacleColliderProfile& profile :
+		document.GetFishingObstacleSettings().colliderProfiles) {
+		const bool hasFiniteValues =
+			std::isfinite(profile.colliderOffset.x) &&
+			std::isfinite(profile.colliderOffset.y) &&
+			std::isfinite(profile.colliderOffset.z) &&
+			std::isfinite(profile.colliderRotation.x) &&
+			std::isfinite(profile.colliderRotation.y) &&
+			std::isfinite(profile.colliderRotation.z) &&
+			std::isfinite(profile.colliderSizeMultiplier.x) &&
+			std::isfinite(profile.colliderSizeMultiplier.y) &&
+			std::isfinite(profile.colliderSizeMultiplier.z) &&
+			std::isfinite(profile.colliderSphereRadius);
+		if (profile.modelPath.empty() || !hasFiniteValues ||
+			profile.colliderSizeMultiplier.x <= 0.0f ||
+			profile.colliderSizeMultiplier.y <= 0.0f ||
+			profile.colliderSizeMultiplier.z <= 0.0f ||
+			profile.colliderSphereRadius <= 0.0f) {
+			addIssue(
+				SceneValidationSeverity::Error,
+				0,
+				"Scene FishingObstacle settings contain an invalid model collider profile"
+			);
+		} else if (!obstacleProfileModelPaths.insert(profile.modelPath).second) {
+			addIssue(
+				SceneValidationSeverity::Error,
+				0,
+				"Scene FishingObstacle settings contain duplicate model collider profiles"
+			);
+		}
+	}
 	if (fishingDirectorCount > 1) {
 		addIssue(
 			SceneValidationSeverity::Error,

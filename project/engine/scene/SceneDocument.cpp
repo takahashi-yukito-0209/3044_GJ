@@ -728,6 +728,71 @@ namespace {
 		return settings;
 	}
 
+	json FishingObstacleSettingsToJson(
+		const SceneFishingObstacleSettings& settings
+	) {
+		json profiles = json::array();
+		for (const SceneFishingObstacleColliderProfile& profile :
+			settings.colliderProfiles) {
+			profiles.push_back({
+				{ "modelPath", profile.modelPath },
+				{ "enabled", profile.enabled },
+				{ "offset", VectorToJson(profile.colliderOffset) },
+				{ "rotation", VectorToJson(profile.colliderRotation) },
+				{ "sizeMultiplier", VectorToJson(profile.colliderSizeMultiplier) },
+				{ "sphereRadius", profile.colliderSphereRadius }
+			});
+		}
+		return { { "colliderProfiles", std::move(profiles) } };
+	}
+
+	SceneFishingObstacleSettings FishingObstacleSettingsFromJson(
+		const json& source,
+		const SceneFishingObstacleSettings& fallback
+	) {
+		if (!source.is_object()) {
+			return fallback;
+		}
+		SceneFishingObstacleSettings settings{};
+		const auto profiles = source.find("colliderProfiles");
+		if (profiles == source.end() || !profiles->is_array()) {
+			return settings;
+		}
+		for (const json& sourceProfile : *profiles) {
+			if (!sourceProfile.is_object()) {
+				continue;
+			}
+			SceneFishingObstacleColliderProfile profile{};
+			profile.modelPath = sourceProfile.value("modelPath", std::string{});
+			if (profile.modelPath.empty()) {
+				continue;
+			}
+			profile.enabled = sourceProfile.value("enabled", profile.enabled);
+			if (const auto offset = sourceProfile.find("offset");
+				offset != sourceProfile.end()) {
+				profile.colliderOffset = JsonToVector(*offset, profile.colliderOffset);
+			}
+			if (const auto rotation = sourceProfile.find("rotation");
+				rotation != sourceProfile.end()) {
+				profile.colliderRotation = JsonToVector(
+					*rotation, profile.colliderRotation
+				);
+			}
+			if (const auto size = sourceProfile.find("sizeMultiplier");
+				size != sourceProfile.end()) {
+				profile.colliderSizeMultiplier = JsonToVector(
+					*size, profile.colliderSizeMultiplier
+				);
+			}
+			profile.colliderSphereRadius = (std::max)(
+				sourceProfile.value("sphereRadius", profile.colliderSphereRadius),
+				0.001f
+			);
+			settings.colliderProfiles.push_back(std::move(profile));
+		}
+		return settings;
+	}
+
 	Quaternion JsonToQuaternion(
 		const json& value,
 		const Quaternion& fallback
@@ -1612,6 +1677,7 @@ namespace {
 		if (component.type == "MeshRenderer") {
 			result["modelPath"] = component.modelPath;
 			result["cullMode"] = component.meshCullMode;
+			result["castsShadow"] = component.meshCastsShadow;
 			result["visualRotation"] = VectorToJson(component.meshVisualRotation);
 			result["environmentReflectionOverride"] =
 				component.meshEnvironmentReflectionOverride;
@@ -3053,6 +3119,10 @@ namespace {
 				component.meshCullMode = value.value(
 					"cullMode",
 					component.meshCullMode
+				);
+				component.meshCastsShadow = value.value(
+					"castsShadow",
+					component.meshCastsShadow
 				);
 				if (component.type == "MeshRenderer" && value.contains("visualRotation")) {
 					component.meshVisualRotation = JsonToVector(
@@ -6009,6 +6079,7 @@ void SceneDocument::Clear(const std::string& sceneName) {
 	lightingSettings_ = {};
 	postProcessSettings_ = {};
 	debugSettings_ = {};
+	fishingObstacleSettings_ = {};
 	nextId_ = 1;
 	dirty_ = false;
 	revision_ = 0;
@@ -6058,6 +6129,9 @@ bool SceneDocument::Save(const std::string& filePath) {
 	root["lighting"] = LightingSettingsToJson(lightingSettings_);
 	root["postProcess"] = PostProcessToJson(postProcessSettings_);
 	root["debug"] = DebugSettingsToJson(debugSettings_);
+	root["fishingObstacle"] = FishingObstacleSettingsToJson(
+		fishingObstacleSettings_
+	);
 	root["teams"] = json::array();
 	for (const SceneTeamSettings& team : teams_) {
 		root["teams"].push_back(TeamToJson(team));
@@ -9411,6 +9485,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 	if (type == "MeshRenderer") {
 		component.modelPath = entity->modelPath;
 		component.meshCullMode = "Back";
+		component.meshCastsShadow = true;
 		component.meshEnvironmentReflectionOverride = false;
 		component.meshEnvironmentReflectionIntensity = 0.3f;
 	} else if (type == "PauseController") {
@@ -10062,6 +10137,7 @@ bool SceneDocument::LoadInternal(const std::string& filePath) {
 				{ "lighting", LightingSettingsToJson(lightingSettings_) },
 				{ "postProcess", PostProcessToJson(postProcessSettings_) },
 				{ "debug", DebugSettingsToJson(debugSettings_) },
+				{ "fishingObstacle", FishingObstacleSettingsToJson(fishingObstacleSettings_) },
 				{ "teams", json::array() }
 			};
 			for (const SceneTeamSettings& team : teams_) {
@@ -10089,6 +10165,10 @@ bool SceneDocument::LoadInternal(const std::string& filePath) {
 			debugSettings_ = DebugSettingsFromJson(
 				rootSettings.value("debug", json::object()),
 				debugSettings_
+			);
+			fishingObstacleSettings_ = FishingObstacleSettingsFromJson(
+				rootSettings.value("fishingObstacle", json::object()),
+				fishingObstacleSettings_
 			);
 			if (!rootSettings.contains("teams") ||
 				!rootSettings.at("teams").is_array()) {
@@ -10391,6 +10471,10 @@ bool SceneDocument::LoadInternal(const std::string& filePath) {
 		debugSettings_ = DebugSettingsFromJson(
 			root.value("debug", json::object()),
 			SceneDebugSettings{}
+		);
+		fishingObstacleSettings_ = FishingObstacleSettingsFromJson(
+			root.value("fishingObstacle", json::object()),
+			SceneFishingObstacleSettings{}
 		);
 		if (root.contains("teams") && root.at("teams").is_array()) {
 			for (const json& source : root.at("teams")) {

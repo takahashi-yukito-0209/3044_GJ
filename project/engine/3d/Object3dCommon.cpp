@@ -75,15 +75,19 @@ void Object3dCommon::SetSkinningRenderState(CullMode cullMode) {
 	dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void Object3dCommon::SetShadowRenderState() {
+void Object3dCommon::SetShadowRenderState(CullMode cullMode) {
 	dxCommon_->GetCommandList()->SetGraphicsRootSignature(shadowRootSignature_.Get());
-	dxCommon_->GetCommandList()->SetPipelineState(shadowPipelineState_.Get());
+	dxCommon_->GetCommandList()->SetPipelineState(
+		shadowPipelineStates_[ToCullIndex(cullMode)].Get()
+	);
 	dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void Object3dCommon::SetSkinningShadowRenderState() {
+void Object3dCommon::SetSkinningShadowRenderState(CullMode cullMode) {
 	dxCommon_->GetCommandList()->SetGraphicsRootSignature(shadowRootSignature_.Get());
-	dxCommon_->GetCommandList()->SetPipelineState(skinningShadowPipelineState_.Get());
+	dxCommon_->GetCommandList()->SetPipelineState(
+		skinningShadowPipelineStates_[ToCullIndex(cullMode)].Get()
+	);
 	dxCommon_->GetCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
@@ -604,7 +608,6 @@ void Object3dCommon::GenerateShadowGraphicsPipeline() {
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	rasterizerDesc.DepthClipEnable = TRUE;
 	rasterizerDesc.DepthBias = 1500;
@@ -623,7 +626,6 @@ void Object3dCommon::GenerateShadowGraphicsPipeline() {
 		vertexShaderBlob->GetBufferSize()
 	};
 	graphicsPipelineStateDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;
-	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
 	graphicsPipelineStateDesc.NumRenderTargets = 0;
 	graphicsPipelineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
@@ -631,11 +633,20 @@ void Object3dCommon::GenerateShadowGraphicsPipeline() {
 	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 
-	hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(
-		&graphicsPipelineStateDesc,
-		IID_PPV_ARGS(&shadowPipelineState_)
-	);
-	assert(SUCCEEDED(hr));
+	for (
+		uint32_t cullIndex = 0;
+		cullIndex < static_cast<uint32_t>(CullMode::kCount);
+		++cullIndex
+	) {
+		rasterizerDesc.CullMode =
+			ToD3D12CullMode(static_cast<CullMode>(cullIndex));
+		graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;
+		hr = dxCommon_->GetDevice()->CreateGraphicsPipelineState(
+			&graphicsPipelineStateDesc,
+			IID_PPV_ARGS(&shadowPipelineStates_[cullIndex])
+		);
+		assert(SUCCEEDED(hr));
+	}
 }
 
 void Object3dCommon::GenerateSkinningShadowGraphicsPipeline() {
@@ -671,7 +682,6 @@ void Object3dCommon::GenerateSkinningShadowGraphicsPipeline() {
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
-	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 	rasterizerDesc.DepthClipEnable = TRUE;
 	rasterizerDesc.DepthBias = 1500;
@@ -692,7 +702,6 @@ void Object3dCommon::GenerateSkinningShadowGraphicsPipeline() {
 		vertexShaderBlob->GetBufferSize()
 	};
 	pipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;
-	pipelineDesc.RasterizerState = rasterizerDesc;
 	pipelineDesc.DepthStencilState = depthStencilDesc;
 	pipelineDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 	pipelineDesc.PrimitiveTopologyType =
@@ -701,12 +710,21 @@ void Object3dCommon::GenerateSkinningShadowGraphicsPipeline() {
 	pipelineDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
 	pipelineDesc.SampleDesc.Count = 1;
 
-	const HRESULT hr =
-		dxCommon_->GetDevice()->CreateGraphicsPipelineState(
-			&pipelineDesc,
-			IID_PPV_ARGS(&skinningShadowPipelineState_)
-		);
-	assert(SUCCEEDED(hr));
+	for (
+		uint32_t cullIndex = 0;
+		cullIndex < static_cast<uint32_t>(CullMode::kCount);
+		++cullIndex
+	) {
+		rasterizerDesc.CullMode =
+			ToD3D12CullMode(static_cast<CullMode>(cullIndex));
+		pipelineDesc.RasterizerState = rasterizerDesc;
+		const HRESULT hr =
+			dxCommon_->GetDevice()->CreateGraphicsPipelineState(
+				&pipelineDesc,
+				IID_PPV_ARGS(&skinningShadowPipelineStates_[cullIndex])
+			);
+		assert(SUCCEEDED(hr));
+	}
 }
 
 void Object3dCommon::GenerateSkyboxGraphicsPipeline() {

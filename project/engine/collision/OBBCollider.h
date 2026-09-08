@@ -19,9 +19,13 @@ public:
 
 	void SetHalfSize(const Vector3& halfSize) { halfSize_ = halfSize; }
 	const Vector3& GetHalfSize() const { return halfSize_; }
+	// EntityのTransformとは別に、Collider形状だけへ適用するローカルEuler回転。
+	void SetLocalRotation(const Vector3& rotation) { localRotation_ = rotation; }
+	const Vector3& GetLocalRotation() const { return localRotation_; }
 
 	OBB GetOBB() const;
 
 private:
 	Vector3 halfSize_ = { 0.5f, 0.5f, 0.5f };
+	Vector3 localRotation_{};
 };

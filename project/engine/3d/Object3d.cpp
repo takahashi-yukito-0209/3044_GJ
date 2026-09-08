@@ -268,11 +268,11 @@ void Object3d::DrawShadow(const Matrix4x4& lightViewProjection) {
 	auto* commandList = object3dCommon->GetDxCommon()->GetCommandList();
 	if (skinCluster_ && skinCluster_->IsValid()) {
 		DispatchSkinningIfNeeded();
-		object3dCommon->SetShadowRenderState();
 	}
-	else {
-		object3dCommon->SetShadowRenderState();
-	}
+	// スキニング済み頂点Bufferを渡すため、ShadowMap.VS と同じ入力レイアウトを使う。
+	// SkinningShadowMap.VS は未スキニング頂点/Influence/Paletteを前提にしており、
+	// ここで選ぶと未バインドの入力を参照して巨大な三角形をShadowMapへ書き込む。
+	object3dCommon->SetShadowRenderState(cullMode_);
 	commandList->SetGraphicsRootConstantBufferView(
 		0,
 		shadowTransformationMatrixResource->GetGPUVirtualAddress()

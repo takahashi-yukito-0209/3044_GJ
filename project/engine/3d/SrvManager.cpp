@@ -19,20 +19,29 @@ void SrvManager::Initialize(DirectXCommon* dxCommon){
 }
 
 uint32_t SrvManager::Allocate(){
-	assert(useIndex < kMaxSRVCount);
-
-	//returnする番号を記録しておく
-	int index = useIndex;
-	//次回のために番号を1進める
-	useIndex++;
-	//上で記録した番号をreturn
+	uint32_t index = 0;
+	if (!freeIndices_.empty()) {
+		index = freeIndices_.back();
+		freeIndices_.pop_back();
+	} else {
+		assert(useIndex < kMaxSRVCount);
+		index = useIndex++;
+	}
+	assert(index < kMaxSRVCount && !allocatedIndices_[index]);
+	allocatedIndices_[index] = true;
 	return index;
+}
 
-	return 0;
+void SrvManager::Free(uint32_t index) {
+	if (index >= kMaxSRVCount || !allocatedIndices_[index]) {
+		return;
+	}
+	allocatedIndices_[index] = false;
+	freeIndices_.push_back(index);
 }
 
 bool SrvManager::CanAllocate() const{
-	return useIndex < kMaxSRVCount;
+	return !freeIndices_.empty() || useIndex < kMaxSRVCount;
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE SrvManager::GetCPUDescriptorHandle(uint32_t index){

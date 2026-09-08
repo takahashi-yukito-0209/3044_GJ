@@ -54,6 +54,12 @@ namespace {
 	}
 }
 
+ShadowManager::~ShadowManager() {
+	if (srvManager_ && srvIndex_ != UINT32_MAX) {
+		srvManager_->Free(srvIndex_);
+	}
+}
+
 void ShadowManager::Initialize(DirectXCommon* dxCommon, SrvManager* srvManager) {
 	Initialize(dxCommon, srvManager, kDefaultShadowMapSize);
 }

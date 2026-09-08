@@ -15,8 +15,10 @@
 #include "../../../engine/scene/SceneTransformResolver.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <functional>
+#include <random>
 #include <sstream>
 #include <unordered_set>
 
@@ -26,6 +28,15 @@ namespace {
 	using SceneEntityQuery::HasComponent;
 	using SceneEntityQuery::IsEntityActiveInHierarchy;
 	using SceneTransformResolver::ResolveScene2DTransform;
+
+	constexpr std::array<const char*, 6> kFishingObstacleRockModelPaths = {
+		"rock/Rock_Chunky.obj",
+		"rock/Rock_Flat.obj",
+		"rock/Rock_Round.obj",
+		"rock/Rock_Spire.obj",
+		"rock/Rock_Tall.obj",
+		"rock/Rock_Wide.obj"
+	};
 
 	std::string BuildMaterialOverrideSignature(
 		const std::vector<SceneMeshMaterialOverride>& overrides
@@ -51,6 +62,176 @@ namespace {
 		}
 		return Object3dCommon::CullMode::kBack;
 	}
+
+	const SceneFishingObstacleColliderProfile*
+	FindFishingObstacleColliderProfile(
+		const SceneFishingObstacleSettings& settings,
+		const std::string& modelPath
+	) {
+		const auto found = std::find_if(
+			settings.colliderProfiles.begin(),
+			settings.colliderProfiles.end(),
+			[&modelPath](const SceneFishingObstacleColliderProfile& profile) {
+				return profile.enabled && profile.modelPath == modelPath;
+			}
+		);
+		return found == settings.colliderProfiles.end()
+			? nullptr
+			: &(*found);
+	}
+
+	// Play用Documentだけを書き換えるため、Editorで保存している岩配置には影響しない。
+	// WaterVolumeの範囲内で、十分な間隔を空けながらXZ座標を抽選する。
+	void RandomizeFishingObstacleLayout(
+		SceneDocument& document,
+		std::mt19937& randomEngine
+	) {
+		std::vector<SceneEntity*> obstacles;
+		const SceneEntity* waterEntity = nullptr;
+		const SceneComponent* waterVolume = nullptr;
+		const SceneEntity* playerEntity = nullptr;
+		for (SceneEntity& entity : document.GetEntities()) {
+			if (FindEnabledComponent(entity, "FishingObstacle")) {
+				obstacles.push_back(&entity);
+			}
+			if (!playerEntity && FindEnabledComponent(entity, "PlayerBehavior")) {
+				playerEntity = &entity;
+			}
+			// 水域は描画を止めるためEntity自体をinactiveにする場合がある。
+			// WaterVolume Componentが有効なら、配置範囲としては使用する。
+			if (!waterEntity) {
+				if (const SceneComponent* candidate =
+					FindEnabledComponent(entity, "WaterVolume")) {
+					waterEntity = &entity;
+					waterVolume = candidate;
+				}
+			}
+		}
+		if (obstacles.size() < 2 || !waterEntity || !waterVolume) {
+			return;
+		}
+
+		const Transform waterTransform =
+			SceneTransformResolver::ResolveScene3DTransform(document, *waterEntity);
+		const float halfSizeX = waterVolume->waterHalfSize.x *
+			(std::max)(std::abs(waterTransform.scale.x), 0.001f);
+		const float halfSizeZ = waterVolume->waterHalfSize.z *
+			(std::max)(std::abs(waterTransform.scale.z), 0.001f);
+		if (halfSizeX < 0.001f || halfSizeZ < 0.001f) {
+			return;
+		}
+
+		const float yaw = waterTransform.rotate.y;
+		const float cosine = std::cos(yaw);
+		const float sine = std::sin(yaw);
+		const Vector3 playerSpawnPosition = playerEntity
+			? SceneTransformResolver::ResolveScene3DTransform(
+				document, *playerEntity
+			).translate
+			: Vector3{};
+		const Vector3 waterCenter = {
+			waterTransform.translate.x +
+				waterVolume->waterOffset.x * cosine +
+				waterVolume->waterOffset.z * sine,
+			waterTransform.translate.y + waterVolume->waterOffset.y,
+			waterTransform.translate.z -
+				waterVolume->waterOffset.x * sine +
+				waterVolume->waterOffset.z * cosine
+		};
+		// 岩Colliderが水域外にはみ出さないための余白。
+		const float edgePadding = (std::min)(
+			24.0f, (std::min)(halfSizeX, halfSizeZ) * 0.25f
+		);
+		std::uniform_real_distribution<float> xDistribution(
+			-halfSizeX + edgePadding, halfSizeX - edgePadding
+		);
+		std::uniform_real_distribution<float> zDistribution(
+			-halfSizeZ + edgePadding, halfSizeZ - edgePadding
+		);
+		std::uniform_real_distribution<float> yawDistribution(
+			0.0f, 6.28318530717958647692f
+		);
+		std::uniform_real_distribution<float> scaleDistribution(0.8f, 1.2f);
+		std::vector<Vector3> placedPositions;
+		placedPositions.reserve(obstacles.size());
+		constexpr int kPlacementAttempts = 128;
+		// 最大スケール時でも現在の岩Collider同士が重なりにくい距離を確保する。
+		constexpr float kInitialMinimumDistance = 56.0f;
+		// スポーン直後の移動不能を防ぐため、プレイヤー開始地点の周囲を空ける。
+		constexpr float kPlayerSpawnExclusionRadius = 50.0f;
+		for (SceneEntity* obstacle : obstacles) {
+			const Transform obstacleWorld =
+				SceneTransformResolver::ResolveScene3DTransform(document, *obstacle);
+			Vector3 selectedPosition = obstacleWorld.translate;
+			bool placed = false;
+			for (const float minimumDistance : {
+				kInitialMinimumDistance,
+				kInitialMinimumDistance * 0.8f,
+				kInitialMinimumDistance * 0.6f
+			}) {
+				const float minimumDistanceSquared =
+					minimumDistance * minimumDistance;
+				for (int attempt = 0; attempt < kPlacementAttempts; ++attempt) {
+					const float localX = xDistribution(randomEngine);
+					const float localZ = zDistribution(randomEngine);
+					const Vector3 candidate = {
+						waterCenter.x + localX * cosine + localZ * sine,
+						obstacleWorld.translate.y,
+						waterCenter.z - localX * sine + localZ * cosine
+					};
+					const float playerDeltaX = candidate.x - playerSpawnPosition.x;
+					const float playerDeltaZ = candidate.z - playerSpawnPosition.z;
+					const bool overlapsPlayerSpawn = playerEntity &&
+						playerDeltaX * playerDeltaX + playerDeltaZ * playerDeltaZ <
+							kPlayerSpawnExclusionRadius * kPlayerSpawnExclusionRadius;
+					const bool overlapsObstacle = std::any_of(
+						placedPositions.begin(),
+						placedPositions.end(),
+						[&candidate, minimumDistanceSquared](const Vector3& placedPosition) {
+							const float deltaX = candidate.x - placedPosition.x;
+							const float deltaZ = candidate.z - placedPosition.z;
+							return deltaX * deltaX + deltaZ * deltaZ <
+								minimumDistanceSquared;
+						}
+					);
+					if (!overlapsPlayerSpawn && !overlapsObstacle) {
+						selectedPosition = candidate;
+						placed = true;
+						break;
+					}
+				}
+				if (placed) {
+					break;
+				}
+			}
+			Transform targetWorld = obstacleWorld;
+			targetWorld.translate = selectedPosition;
+			Vector3 randomRotation = MakeEulerFromQuaternion(
+				obstacleWorld.quaternionRotate
+			);
+			randomRotation.y = yawDistribution(randomEngine);
+			targetWorld.rotate = randomRotation;
+			targetWorld.useQuaternionRotation = true;
+			targetWorld.quaternionRotate = MakeQuaternionFromEuler(
+				randomRotation
+			);
+			const float scaleMultiplier = scaleDistribution(randomEngine);
+			targetWorld.scale = {
+				obstacleWorld.scale.x * scaleMultiplier,
+				obstacleWorld.scale.y * scaleMultiplier,
+				obstacleWorld.scale.z * scaleMultiplier
+			};
+			Transform targetLocal{};
+			if (SceneTransformResolver::TryConvertSceneWorldTransformToLocal(
+				document, *obstacle, targetWorld, targetLocal
+			)) {
+				obstacle->transform.scale = targetLocal.scale;
+				obstacle->transform.rotate = targetLocal.quaternionRotate;
+				obstacle->transform.translate = targetLocal.translate;
+			}
+			placedPositions.push_back(selectedPosition);
+		}
+	}
 }
 
 SceneObjectSystem::SceneObjectSystem() = default;
@@ -71,14 +252,43 @@ void SceneObjectSystem::SyncModels(
 		ClearModels();
 		return;
 	}
+	// 編集中はSceneに保存されたModel/配置をそのまま表示する。Playへ切り替わった
+	// 最初の同期でだけ岩を抽選し、その実行中は同じ結果を維持する。
+	if (editing) {
+		fishingObstacleModelPaths_.clear();
+		fishingObstacleModelDocument_ = document;
+		fishingObstacleLayoutRandomizedForCurrentPlay_ = false;
+	} else if (
+		fishingObstacleModelDocument_ != document ||
+		!fishingObstacleLayoutRandomizedForCurrentPlay_
+	) {
+		fishingObstacleModelPaths_.clear();
+		fishingObstacleModelDocument_ = document;
+		RandomizeFishingObstacleLayout(*document, fishingObstacleRandomEngine_);
+		fishingObstacleLayoutRandomizedForCurrentPlay_ = true;
+	}
 
 	std::unordered_set<uint64_t> requiredIds;
 	for (const SceneEntity& entity : document->GetEntities()) {
 		const SceneComponent* meshRenderer =
 			FindEnabledComponent(entity, "MeshRenderer");
-		const std::string modelPath = meshRenderer
+		std::string modelPath = meshRenderer
 			? meshRenderer->modelPath
 			: std::string{};
+		if (!editing && FindEnabledComponent(entity, "FishingObstacle")) {
+			auto [assignment, inserted] = fishingObstacleModelPaths_.try_emplace(
+				entity.id
+			);
+			if (inserted) {
+				std::uniform_int_distribution<size_t> distribution(
+					0, kFishingObstacleRockModelPaths.size() - 1
+				);
+				assignment->second = kFishingObstacleRockModelPaths[
+					distribution(fishingObstacleRandomEngine_)
+				];
+			}
+			modelPath = assignment->second;
+		}
 		const bool hasRenderer = !modelPath.empty();
 		requiredIds.insert(entity.id);
 		auto found = models_.find(entity.id);
@@ -274,31 +484,50 @@ void SceneObjectSystem::SyncModels(
 			FindEnabledComponent(entity, "OBBCollider");
 		runtime.hasCollider = obbCollider != nullptr;
 		if (obbCollider) {
+			const SceneFishingObstacleColliderProfile* obstacleProfile =
+				FindEnabledComponent(entity, "FishingObstacle")
+				? FindFishingObstacleColliderProfile(
+					document->GetFishingObstacleSettings(), modelPath
+				)
+				: nullptr;
+			const Vector3 colliderOffset = obstacleProfile
+				? obstacleProfile->colliderOffset
+				: obbCollider->colliderOffset;
+			const Vector3 colliderSizeMultiplier = obstacleProfile
+				? obstacleProfile->colliderSizeMultiplier
+				: obbCollider->colliderSizeMultiplier;
+			const Vector3 colliderRotation = obstacleProfile
+				? obstacleProfile->colliderRotation
+				: Vector3{};
+			const float colliderSphereRadius = obstacleProfile
+				? obstacleProfile->colliderSphereRadius
+				: obbCollider->colliderSphereRadius;
 			Collider* runtimeCollider = obbCollider->colliderShape == "Sphere"
 				? static_cast<Collider*>(&runtime.sphereCollider)
 				: static_cast<Collider*>(&runtime.boxCollider);
 			runtimeCollider->SetWorldMatrix(&runtime.object->GetWorldMatrix());
-			runtimeCollider->SetOffset(obbCollider->colliderOffset);
+			runtimeCollider->SetOffset(colliderOffset);
 			runtimeCollider->SetTrigger(obbCollider->colliderIsTrigger);
 			runtimeCollider->SetActive(obbCollider->colliderActive);
 			runtimeCollider->SetCollisionAttribute(obbCollider->colliderLayer);
 			runtimeCollider->SetCollisionMask(obbCollider->colliderMask);
 			if (obbCollider->colliderShape == "Sphere") {
 				runtime.sphereCollider.SetRadius(
-					(std::max)(obbCollider->colliderSphereRadius, 0.001f)
+					(std::max)(colliderSphereRadius, 0.001f)
 				);
 			} else {
+				runtime.boxCollider.SetLocalRotation(colliderRotation);
 				runtime.boxCollider.SetHalfSize({
 					(std::max)(
-						std::abs(obbCollider->colliderSizeMultiplier.x),
+						std::abs(colliderSizeMultiplier.x),
 						0.001f
 					),
 					(std::max)(
-						std::abs(obbCollider->colliderSizeMultiplier.y),
+						std::abs(colliderSizeMultiplier.y),
 						0.001f
 					),
 					(std::max)(
-						std::abs(obbCollider->colliderSizeMultiplier.z),
+						std::abs(colliderSizeMultiplier.z),
 						0.001f
 					)
 				});
@@ -645,9 +874,12 @@ void SceneObjectSystem::CollectShadowCasters(
 	shadowCasters.clear();
 	shadowCasters.reserve(models_.size());
 	for (const SceneEntity& entity : document.GetEntities()) {
+		const SceneComponent* meshRenderer =
+			FindEnabledComponent(entity, "MeshRenderer");
 		if (
 			!IsEntityActiveInHierarchy(document, entity) ||
 			HasComponent(entity, "WaterVolume") ||
+			(meshRenderer && !meshRenderer->meshCastsShadow) ||
 			(hidePlayerModel && HasComponent(entity, "PlayerBehavior"))
 		) {
 			continue;
@@ -690,6 +922,9 @@ const SceneObjectSystem::ModelRuntime* SceneObjectSystem::FindModelRuntime(
 
 void SceneObjectSystem::ClearModels() {
 	models_.clear();
+	fishingObstacleModelPaths_.clear();
+	fishingObstacleModelDocument_ = nullptr;
+	fishingObstacleLayoutRandomizedForCurrentPlay_ = false;
 }
 
 void SceneObjectSystem::ClearSprites() {
