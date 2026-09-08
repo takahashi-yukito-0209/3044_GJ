@@ -69,6 +69,8 @@ public:
 		DrawShadow();
 	}
 	virtual void DrawOffscreenViews() {}
+	// 描画先の比率が決まった時点でCameraへ反映する。
+	virtual void SetRenderAspectRatio(float aspectRatio) { (void)aspectRatio; }
 	virtual void SetDeferForegroundEffects(bool defer) { (void)defer; }
 	// Runtime-only Profileなど、Scene更新後に有効になる描画設定を返す任意口。
 	// 非Runtime Sceneはfalseのままで既存のDocument Baselineを使う。

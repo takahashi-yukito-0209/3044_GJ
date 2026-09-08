@@ -34,3 +34,19 @@ bool RuntimeSession::LoadRuntimeScene(
 	lastLoadError_.clear();
 	return true;
 }
+
+bool RuntimeSession::AdoptPreloadedRuntimeScene(
+	const std::string& sceneId,
+	const std::string& sceneFilePath,
+	SceneDocument&& document
+) {
+	if (sceneId.empty() || sceneFilePath.empty()) {
+		return false;
+	}
+
+	document_ = std::move(document);
+	sceneId_ = sceneId;
+	sceneFilePath_ = sceneFilePath;
+	lastLoadError_.clear();
+	return true;
+}

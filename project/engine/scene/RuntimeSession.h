@@ -14,6 +14,11 @@ public:
 		const std::string& sceneId,
 		const std::string& sceneFilePath
 	) override;
+	bool AdoptPreloadedRuntimeScene(
+		const std::string& sceneId,
+		const std::string& sceneFilePath,
+		SceneDocument&& document
+	) override;
 
 	SceneDocument& GetActiveDocument() override { return document_; }
 	const SceneDocument& GetActiveDocument() const override { return document_; }

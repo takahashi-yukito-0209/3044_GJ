@@ -24,4 +24,10 @@ public:
 		const std::string& sceneId,
 		const std::string& sceneFilePath
 	) = 0;
+	// 先行ロード済みDocumentをRuntime Sceneとして確定する。
+	virtual bool AdoptPreloadedRuntimeScene(
+		const std::string& sceneId,
+		const std::string& sceneFilePath,
+		SceneDocument&& document
+	) = 0;
 };

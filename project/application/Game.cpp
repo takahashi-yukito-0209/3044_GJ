@@ -1438,9 +1438,6 @@ void Game::Draw() {
 	// ShadowMapを含む描画用SRVヒープを、影パスより先に設定する。
 	srvManager_->PreDraw();
 
-	sceneManager_->DrawShadow();
-	sceneManager_->DrawOffscreenViews();
-
 	uint32_t renderWidth = dxCommon_->GetClientWidth();
 	uint32_t renderHeight = dxCommon_->GetClientHeight();
 #if defined(_DEBUG) || defined(DEVELOPMENT)
@@ -1449,6 +1446,16 @@ void Game::Draw() {
 		renderHeight = imguiManager_->GetSceneViewHeight();
 	}
 #endif
+	if (renderHeight > 0) {
+		sceneManager_->SetRenderAspectRatio(
+			static_cast<float>(renderWidth) /
+			static_cast<float>(renderHeight)
+		);
+	}
+
+	sceneManager_->DrawShadow();
+	sceneManager_->DrawOffscreenViews();
+
 	sceneRenderTarget_->Resize(renderWidth, renderHeight);
 	if (
 		motionBlurHistoryRenderTarget_->GetWidth() != renderWidth ||

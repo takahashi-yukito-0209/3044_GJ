@@ -258,14 +258,15 @@ void SceneObjectSystem::SyncModels(
 		fishingObstacleModelPaths_.clear();
 		fishingObstacleModelDocument_ = document;
 		fishingObstacleLayoutRandomizedForCurrentPlay_ = false;
-	} else if (
-		fishingObstacleModelDocument_ != document ||
-		!fishingObstacleLayoutRandomizedForCurrentPlay_
-	) {
+	} else if (!fishingObstacleLayoutRandomizedForCurrentPlay_) {
 		fishingObstacleModelPaths_.clear();
 		fishingObstacleModelDocument_ = document;
 		RandomizeFishingObstacleLayout(*document, fishingObstacleRandomEngine_);
 		fishingObstacleLayoutRandomizedForCurrentPlay_ = true;
+	} else {
+		// 先行初期化したDocumentをRuntime Sessionへ移送すると格納先だけが
+		// 変わる。Play中に同じ岩配置を再抽選しないよう参照先だけ更新する。
+		fishingObstacleModelDocument_ = document;
 	}
 
 	std::unordered_set<uint64_t> requiredIds;

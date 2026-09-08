@@ -30,6 +30,14 @@ void SceneManager::RequestSceneTransition(const std::string& sceneId, bool useEf
 		LoadScene(sceneId, SceneLoadMode::Single);
 		return;
 	}
+	if (
+		LoadScene(sceneId, SceneLoadMode::Single) ==
+		kInvalidSceneInstanceId ||
+		!PreloadPendingSceneForTransition()
+	) {
+		DiscardPendingScene();
+		return;
+	}
 	sceneTransitionTargetId_ = sceneId;
 	sceneTransitionElapsedSeconds_ = 0.0f;
 	sceneTransitionFadeAmount_ = 0.0f;
@@ -365,7 +373,11 @@ void SceneManager::Update(float deltaTime)
 {
 	AdvanceSceneTransition(deltaTime);
 	ProcessPendingSceneUnloads();
-	ActivatePendingScene();
+	// 遷移先はRequestSceneTransition時に初期化済みだが、旧Sceneを
+	// フェードアウトの完了まで描画し続けるため、ここではまだ有効化しない。
+	if (sceneTransitionPhase_ != SceneTransitionPhase::FadeOut) {
+		ActivatePendingScene();
+	}
 	if (IsSceneTransitioning()) {
 		return;
 	}
@@ -383,6 +395,48 @@ void SceneManager::Update(float deltaTime)
 		}
 		ParticleManager::GetInstance()->Update();
 	}
+}
+
+bool SceneManager::PreloadPendingSceneForTransition()
+{
+	if (!pendingSceneInstance_) {
+		return false;
+	}
+
+	const SceneDescriptor* descriptor = sceneCatalog_
+		? sceneCatalog_->Find(pendingSceneInstance_->GetSceneId())
+		: nullptr;
+	if (descriptor && (!executionContext_ || !executionContext_->IsEditing())) {
+		auto document = std::make_unique<SceneDocument>();
+		if (!document->Load(descriptor->filePath)) {
+			Logger::Log(
+				"Preload SceneDocument could not be loaded: " +
+				descriptor->filePath + "\n" + document->GetLastLoadError() + "\n"
+			);
+			return false;
+		}
+		document->MarkClean();
+		pendingSceneInstance_->OwnDocument(std::move(document));
+	} else if (executionContext_) {
+		// EditorではActive Documentを差し替えないまま先行初期化する。
+		pendingSceneInstance_->BindDocument(
+			&executionContext_->GetActiveDocument()
+		);
+	} else if (descriptor) {
+		auto document = std::make_unique<SceneDocument>();
+		if (!document->Load(descriptor->filePath)) {
+			Logger::Log(
+				"Preload SceneDocument could not be loaded: " +
+				descriptor->filePath + "\n" + document->GetLastLoadError() + "\n"
+			);
+			return false;
+		}
+		document->MarkClean();
+		pendingSceneInstance_->OwnDocument(std::move(document));
+	}
+
+	pendingSceneInstance_->Initialize(this);
+	return true;
 }
 
 void SceneManager::AdvanceSceneTransition(float deltaTime)
@@ -407,11 +461,9 @@ void SceneManager::AdvanceSceneTransition(float deltaTime)
 			return;
 		}
 
-		const std::string targetSceneId = sceneTransitionTargetId_;
 		sceneTransitionTargetId_.clear();
 		sceneTransitionElapsedSeconds_ = 0.0f;
-		if (LoadScene(targetSceneId, SceneLoadMode::Single) ==
-			kInvalidSceneInstanceId) {
+		if (!pendingSceneInstance_) {
 			sceneTransitionFadeAmount_ = 0.0f;
 			sceneTransitionPhase_ = SceneTransitionPhase::None;
 			return;
@@ -455,19 +507,31 @@ void SceneManager::ActivatePendingScene()
 		pendingSceneLoadMode_ == SceneLoadMode::Single &&
 		descriptor &&
 		executionContext_ &&
-		!executionContext_->IsEditing() &&
-		executionContext_->GetActiveSceneId() != descriptor->id &&
-		!executionContext_->LoadRuntimeScene(
-			descriptor->id,
-			descriptor->filePath
-		)
+		!executionContext_->IsEditing()
 	) {
-		Logger::Log(
-			"Runtime SceneDocument could not be loaded: " +
-			descriptor->filePath + "\n"
-		);
-		DiscardPendingScene();
-		return;
+		std::unique_ptr<SceneDocument> preloadedDocument =
+			pendingSceneInstance_->ReleaseOwnedDocument();
+		const bool adoptedPreloadedDocument = preloadedDocument &&
+			executionContext_->AdoptPreloadedRuntimeScene(
+				descriptor->id,
+				descriptor->filePath,
+				std::move(*preloadedDocument)
+			);
+		if (
+			!adoptedPreloadedDocument &&
+			executionContext_->GetActiveSceneId() != descriptor->id &&
+			!executionContext_->LoadRuntimeScene(
+				descriptor->id,
+				descriptor->filePath
+			)
+		) {
+			Logger::Log(
+				"Runtime SceneDocument could not be loaded: " +
+				descriptor->filePath + "\n"
+			);
+			DiscardPendingScene();
+			return;
+		}
 	}
 	if (pendingSceneLoadMode_ == SceneLoadMode::Additive) {
 		if (!descriptor) {
@@ -687,6 +751,15 @@ void SceneManager::DrawOffscreenViews()
 	for (const std::unique_ptr<SceneInstance>& instance : sceneInstances_) {
 		if (BaseScene* scene = instance->GetScene()) {
 			scene->DrawOffscreenViews();
+		}
+	}
+}
+
+void SceneManager::SetRenderAspectRatio(float aspectRatio)
+{
+	for (const std::unique_ptr<SceneInstance>& instance : sceneInstances_) {
+		if (BaseScene* scene = instance->GetScene()) {
+			scene->SetRenderAspectRatio(aspectRatio);
 		}
 	}
 }

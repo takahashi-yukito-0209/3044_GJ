@@ -52,6 +52,11 @@ void SceneInstance::OwnDocument(std::unique_ptr<SceneDocument> document) {
 	document_ = ownedDocument_.get();
 }
 
+std::unique_ptr<SceneDocument> SceneInstance::ReleaseOwnedDocument() {
+	document_ = nullptr;
+	return std::move(ownedDocument_);
+}
+
 void SceneInstance::SetPersistent(bool persistent) {
 	persistent_ = persistent;
 	if (persistent_) {
