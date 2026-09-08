@@ -27,6 +27,9 @@ struct SceneSpriteRuntimeOverride {
 	Vector2 size = { 0.0f, 0.0f };
 	Vector4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	bool visible = false;
+	bool hasViewportPositionOverride = false;
+	Vector2 viewportPosition = { 0.0f, 0.0f };
+	Vector2 positionOffsetPixels = { 0.0f, 0.0f };
 };
 
 // Scene由来のObject3dとSpriteを一意に所有する。

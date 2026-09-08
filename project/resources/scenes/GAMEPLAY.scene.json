@@ -62,8 +62,10 @@
         },
         {
           "baseScore": 100,
+          "bubbleSpriteEntityId": 105,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 120,
           "type": "FishingHook"
         }
       ],
@@ -164,8 +166,10 @@
         },
         {
           "baseScore": 100,
+          "bubbleSpriteEntityId": 106,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 121,
           "type": "FishingHook"
         }
       ],
@@ -266,8 +270,10 @@
         },
         {
           "baseScore": 100,
+          "bubbleSpriteEntityId": 107,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 122,
           "type": "FishingHook"
         }
       ],
@@ -368,8 +374,10 @@
         },
         {
           "baseScore": 250,
+          "bubbleSpriteEntityId": 108,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 123,
           "type": "FishingHook"
         }
       ],
@@ -470,8 +478,10 @@
         },
         {
           "baseScore": 250,
+          "bubbleSpriteEntityId": 109,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 124,
           "type": "FishingHook"
         }
       ],
@@ -572,8 +582,10 @@
         },
         {
           "baseScore": 250,
+          "bubbleSpriteEntityId": 110,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 125,
           "type": "FishingHook"
         }
       ],
@@ -674,8 +686,10 @@
         },
         {
           "baseScore": 250,
+          "bubbleSpriteEntityId": 111,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 126,
           "type": "FishingHook"
         }
       ],
@@ -776,8 +790,10 @@
         },
         {
           "baseScore": 500,
+          "bubbleSpriteEntityId": 112,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 127,
           "type": "FishingHook"
         }
       ],
@@ -878,8 +894,10 @@
         },
         {
           "baseScore": 500,
+          "bubbleSpriteEntityId": 113,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 128,
           "type": "FishingHook"
         }
       ],
@@ -980,8 +998,10 @@
         },
         {
           "baseScore": 500,
+          "bubbleSpriteEntityId": 114,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 129,
           "type": "FishingHook"
         }
       ],
@@ -1082,8 +1102,10 @@
         },
         {
           "baseScore": 500,
+          "bubbleSpriteEntityId": 115,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 130,
           "type": "FishingHook"
         }
       ],
@@ -1184,8 +1206,10 @@
         },
         {
           "baseScore": 500,
+          "bubbleSpriteEntityId": 116,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 131,
           "type": "FishingHook"
         }
       ],
@@ -1531,8 +1555,8 @@
           1.0
         ],
         "translate": [
-          -112.0,
-          -160.0,
+          -68.0,
+          -144.0,
           0.0
         ]
       }
@@ -1682,8 +1706,8 @@
           1.0
         ],
         "translate": [
+          -68.0,
           -112.0,
-          -128.0,
           0.0
         ]
       }
@@ -1833,8 +1857,8 @@
           1.0
         ],
         "translate": [
-          -112.0,
-          -96.0,
+          -68.0,
+          -80.0,
           0.0
         ]
       }
@@ -1984,8 +2008,8 @@
           1.0
         ],
         "translate": [
-          -112.0,
-          -64.0,
+          -68.0,
+          -48.0,
           0.0
         ]
       }
@@ -5752,8 +5776,8 @@
             99
           ],
           "hookLegendIconOffset": [
-            -33.0,
-            -11.0
+            -96.0,
+            -33.0
           ],
           "hookLegendIconSize": [
             24.0,
@@ -5843,9 +5867,40 @@
             ]
           ],
           "hookPoolEntityId": 13,
-          "hookRankCount": 10,
+          "hookRankBubbleIconBaseOffset": [
+            4.0,
+            0.0
+          ],
+          "hookRankBubbleIconBaseSize": [
+            32.0,
+            32.0
+          ],
+          "hookRankBubbleScreenOffset": [
+            48.0,
+            -40.0
+          ],
+          "hookRankBubbleSize": [
+            64.0,
+            64.0
+          ],
+          "hookRankBubbleTexturePath": "resources/Hukidashi.png",
+          "hookRankBubbleVisible": true,
+          "hookRankBubbleWorldOffset": [
+            0.0,
+            1.5,
+            0.0
+          ],
+          "hookRankCount": 4,
           "hookRanks": [
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 0.25,
                 0.550000011920929,
@@ -5853,12 +5908,20 @@
                 1.0
               ],
               "displayName": "Rank 1",
-              "iconTexturePath": "",
+              "iconTexturePath": "resources/sashimi.png",
               "id": "rank_1",
               "modelPath": "",
               "scoreMultiplier": 1.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 0.15000000596046448,
                 0.8500000238418579,
@@ -5866,12 +5929,20 @@
                 1.0
               ],
               "displayName": "Rank 2",
-              "iconTexturePath": "",
+              "iconTexturePath": "resources/yukke.png",
               "id": "rank_2",
               "modelPath": "",
               "scoreMultiplier": 2.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 0.20000000298023224,
                 0.949999988079071,
@@ -5879,12 +5950,20 @@
                 1.0
               ],
               "displayName": "Rank 3",
-              "iconTexturePath": "",
+              "iconTexturePath": "resources/negitoro.png",
               "id": "rank_3",
               "modelPath": "",
               "scoreMultiplier": 3.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 0.550000011920929,
                 0.949999988079071,
@@ -5892,12 +5971,20 @@
                 1.0
               ],
               "displayName": "Rank 4",
-              "iconTexturePath": "",
+              "iconTexturePath": "resources/tunacanTex.png",
               "id": "rank_4",
               "modelPath": "",
               "scoreMultiplier": 4.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 0.949999988079071,
                 0.8500000238418579,
@@ -5911,6 +5998,14 @@
               "scoreMultiplier": 5.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 1.0,
                 0.5799999833106995,
@@ -5924,6 +6019,14 @@
               "scoreMultiplier": 6.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 1.0,
                 0.30000001192092896,
@@ -5937,6 +6040,14 @@
               "scoreMultiplier": 7.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 1.0,
                 0.11999999731779099,
@@ -5950,6 +6061,14 @@
               "scoreMultiplier": 8.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 0.8500000238418579,
                 0.18000000715255737,
@@ -5963,6 +6082,14 @@
               "scoreMultiplier": 9.0
             },
             {
+              "bubbleIconOffset": [
+                0.0,
+                0.0
+              ],
+              "bubbleIconScale": [
+                1.0,
+                1.0
+              ],
               "color": [
                 1.0,
                 0.8999999761581421,
@@ -6505,8 +6632,10 @@
         },
         {
           "baseScore": 100,
+          "bubbleSpriteEntityId": 117,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 132,
           "type": "FishingHook"
         }
       ],
@@ -6607,8 +6736,10 @@
         },
         {
           "baseScore": 250,
+          "bubbleSpriteEntityId": 118,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 133,
           "type": "FishingHook"
         }
       ],
@@ -6709,8 +6840,10 @@
         },
         {
           "baseScore": 500,
+          "bubbleSpriteEntityId": 119,
           "enabled": true,
           "localId": 3,
+          "rankIconSpriteEntityId": 134,
           "type": "FishingHook"
         }
       ],
@@ -12645,8 +12778,8 @@
           1.0
         ],
         "translate": [
-          -145.0,
-          -171.0,
+          -164.0,
+          -177.0,
           0.0
         ]
       }
@@ -12722,8 +12855,8 @@
           1.0
         ],
         "translate": [
+          -164.0,
           -145.0,
-          -139.0,
           0.0
         ]
       }
@@ -12799,8 +12932,8 @@
           1.0
         ],
         "translate": [
-          -145.0,
-          -107.0,
+          -164.0,
+          -113.0,
           0.0
         ]
       }
@@ -12876,8 +13009,8 @@
           1.0
         ],
         "translate": [
-          -145.0,
-          -75.0,
+          -164.0,
+          -81.0,
           0.0
         ]
       }
@@ -13402,6 +13535,2316 @@
           159.08279418945313,
           0.9300000071525574,
           230.28135681152344
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 105,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 1",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 106,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 2",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 107,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 3",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 108,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 4",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 109,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 5",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 110,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 6",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 111,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 7",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 112,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 8",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 113,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 9",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 114,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 10",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 115,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 11",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 116,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 12",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 117,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 13",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 118,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 14",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            128.0,
+            128.0
+          ],
+          "texturePath": "resources/Hukidashi.png",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 119,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Bubble 15",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          128.0,
+          128.0
+        ],
+        "texturePath": "resources/Hukidashi.png"
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 120,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 1",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 121,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 2",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 122,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 3",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 123,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 4",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 124,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 5",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 125,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 6",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 126,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 7",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 127,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 8",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 128,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 9",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 129,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 10",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 130,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 11",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 131,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 12",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 132,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 13",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 133,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 14",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "anchor": [
+            0.5,
+            0.5
+          ],
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          "enabled": true,
+          "flipX": false,
+          "flipY": false,
+          "localId": 1,
+          "renderSpace": "ScreenOverlay",
+          "size": [
+            64.0,
+            64.0
+          ],
+          "texturePath": "",
+          "type": "SpriteRenderer",
+          "viewportAnchor": [
+            0.5,
+            0.5
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 134,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Hook Rank Icon 15",
+      "parentId": 84,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          64.0,
+          64.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
         ],
         "translate": [
           0.0,

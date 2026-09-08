@@ -1998,18 +1998,64 @@ void ImGuiManager::DrawEditorWorkspace(
 	);
 
 	const ImVec2 availableSize = ImGui::GetContentRegionAvail();
+	const ImVec2 contentMin = ImGui::GetCursorScreenPos();
+	const bool fixedSceneViewAspect = editorSession_ != nullptr;
+	ImVec2 imageSize = availableSize;
+	if (fixedSceneViewAspect) {
+		constexpr float kAspectWidth = 16.0f;
+		constexpr float kAspectHeight = 9.0f;
+		const float aspectUnit = (std::floor)(
+			(std::min)(
+				(std::max)(availableSize.x, 1.0f) / kAspectWidth,
+				(std::max)(availableSize.y, 1.0f) / kAspectHeight
+			)
+		);
+		if (aspectUnit >= 1.0f) {
+			imageSize = {
+				kAspectWidth * aspectUnit,
+				kAspectHeight * aspectUnit
+			};
+		} else {
+			imageSize.x = (std::max)(
+				(std::min)(
+					(std::max)(availableSize.x, 1.0f),
+					(std::max)(availableSize.y, 1.0f) * GetSceneViewAspectRatio()
+				),
+				1.0f
+			);
+			imageSize.y = imageSize.x / GetSceneViewAspectRatio();
+		}
+	}
+	if (fixedSceneViewAspect) {
+		ImGui::GetWindowDrawList()->AddRectFilled(
+			contentMin,
+			ImVec2(contentMin.x + availableSize.x, contentMin.y + availableSize.y),
+			IM_COL32(0, 0, 0, 255)
+		);
+	}
 	sceneViewWidth_ = static_cast<uint32_t>(
-		(std::max)(availableSize.x, 1.0f)
+		(std::max)(imageSize.x, 1.0f)
 	);
 	sceneViewHeight_ = static_cast<uint32_t>(
-		(std::max)(availableSize.y, 1.0f)
+		(std::max)(imageSize.y, 1.0f)
 	);
+	imageSize = ImVec2(
+		static_cast<float>(sceneViewWidth_),
+		static_cast<float>(sceneViewHeight_)
+	);
+	const ImVec2 imageMin = fixedSceneViewAspect
+		? ImVec2(
+			contentMin.x + (availableSize.x - imageSize.x) * 0.5f,
+			contentMin.y + (availableSize.y - imageSize.y) * 0.5f
+		)
+		: contentMin;
+	ImGui::SetCursorScreenPos(imageMin);
 
 	const ImTextureID textureId =
 		static_cast<ImTextureID>(sceneTexture.ptr);
 	ImGui::Image(
 		ImTextureRef(textureId),
-		availableSize,
+		imageSize,
 		ImVec2(0.0f, 0.0f),
 		ImVec2(1.0f, 1.0f)
 	);
@@ -11267,6 +11313,45 @@ void ImGuiManager::DrawInspectorWindow() {
 					document.MarkDirty();
 				}
 				ImGui::EndDisabled();
+				if (
+					component.colliderShape == "Sphere" &&
+					FindEnabledComponent(*entity, "FishingObstacle")
+				) {
+					const Matrix4x4 world = ResolveSceneWorldMatrix(document, *entity);
+					const float scaleX = Math::Length({
+						world.m[0][0], world.m[0][1], world.m[0][2]
+					});
+					const float scaleY = Math::Length({
+						world.m[1][0], world.m[1][1], world.m[1][2]
+					});
+					const float scaleZ = Math::Length({
+						world.m[2][0], world.m[2][1], world.m[2][2]
+					});
+					const float maxScale = (std::max)(
+						scaleX, (std::max)(scaleY, scaleZ)
+					);
+					const float minScale = (std::min)(
+						scaleX, (std::min)(scaleY, scaleZ)
+					);
+					ImGui::Text(
+						"World Axis Scale: %.3f / %.3f / %.3f",
+						scaleX, scaleY, scaleZ
+					);
+					ImGui::Text(
+						"Effective World Radius: %.3f",
+						component.colliderSphereRadius * maxScale
+					);
+					if (maxScale - minScale > maxScale * 0.01f) {
+						ImGui::TextColored(
+							ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+							SelectEditorText(
+								editorLanguage_,
+								"非均一World Scale: Sphereは最大軸Scaleで拡大されます。",
+								"Non-uniform World Scale: Sphere uses the largest axis scale."
+							)
+						);
+					}
+				}
 			} else if (component.type == "StatSet") {
 				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
 				bool statsChanged = false;
@@ -13801,14 +13886,28 @@ void ImGuiManager::DrawInspectorWindow() {
 							}
 							ImGui::EndDragDropTarget();
 						}
-						fishingChanged |= ImGui::DragFloat(
-							LocalizedComponentWidgetLabel(editorLanguage_, "Score Multiplier"),
-							&rank.scoreMultiplier,
-							0.05f, 0.0f, 100000.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp
-						);
+		fishingChanged |= ImGui::DragFloat(
+			LocalizedComponentWidgetLabel(editorLanguage_, "Score Multiplier"),
+			&rank.scoreMultiplier,
+			0.05f, -100000.0f, 100000.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp
+		);
 						fishingChanged |= ImGui::ColorEdit4(
 							LocalizedComponentWidgetLabel(editorLanguage_, "Color"),
 							&rank.color.x
+						);
+						fishingChanged |= ImGui::DragFloat2(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Icon Scale"),
+							&rank.bubbleIconScale.x,
+							0.01f,
+							0.01f,
+							16.0f
+						);
+						fishingChanged |= ImGui::DragFloat2(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Icon Offset"),
+							&rank.bubbleIconOffset.x,
+							1.0f,
+							-8192.0f,
+							8192.0f
 						);
 						ImGui::Separator();
 						ImGui::PopID();
@@ -13868,6 +13967,84 @@ void ImGuiManager::DrawInspectorWindow() {
 						ImGui::PopID();
 					}
 				}
+				ImGui::SeparatorText(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Hook Rank Bubble")
+				);
+				fishingChanged |= ImGui::Checkbox(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Visible"),
+					&component.fishingHookRankBubbleVisible
+				);
+				const char* currentBubbleTexture = component.fishingHookRankBubbleTexturePath.empty()
+					? "None" : component.fishingHookRankBubbleTexturePath.c_str();
+				if (ImGui::BeginCombo(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Texture"),
+					currentBubbleTexture
+				)) {
+					if (ImGui::Selectable(
+						"None", component.fishingHookRankBubbleTexturePath.empty()
+					)) {
+						component.fishingHookRankBubbleTexturePath.clear();
+						fishingChanged = true;
+					}
+					for (const std::string& texturePath : GetCachedTextureAssetPaths()) {
+						if (ImGui::Selectable(
+							texturePath.c_str(),
+							component.fishingHookRankBubbleTexturePath == texturePath
+						)) {
+							component.fishingHookRankBubbleTexturePath = texturePath;
+							fishingChanged = true;
+						}
+					}
+					ImGui::EndCombo();
+				}
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+						"PROJECT_TEXTURE_PATH"
+					)) {
+						const char* droppedPath = static_cast<const char*>(payload->Data);
+						if (droppedPath && droppedPath[0] != '\0') {
+							component.fishingHookRankBubbleTexturePath =
+								GetProjectResourcePath(droppedPath);
+							fishingChanged = true;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+				fishingChanged |= ImGui::DragFloat3(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble World Offset"),
+					&component.fishingHookRankBubbleWorldOffset.x,
+					0.01f,
+					-8192.0f,
+					8192.0f
+				);
+				fishingChanged |= ImGui::DragFloat2(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Screen Offset"),
+					&component.fishingHookRankBubbleScreenOffset.x,
+					1.0f,
+					-8192.0f,
+					8192.0f
+				);
+				fishingChanged |= ImGui::DragFloat2(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Size"),
+					&component.fishingHookRankBubbleSize.x,
+					1.0f,
+					1.0f,
+					8192.0f
+				);
+				fishingChanged |= ImGui::DragFloat2(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Icon Base Size"),
+					&component.fishingHookRankBubbleIconBaseSize.x,
+					1.0f,
+					1.0f,
+					8192.0f
+				);
+				fishingChanged |= ImGui::DragFloat2(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Icon Base Offset"),
+					&component.fishingHookRankBubbleIconBaseOffset.x,
+					1.0f,
+					-8192.0f,
+					8192.0f
+				);
 				fishingChanged |= ImGui::Checkbox(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Randomize Seed On Play"),
 					&component.fishingRandomizeSeedOnPlay
@@ -14341,9 +14518,51 @@ void ImGuiManager::DrawInspectorWindow() {
 			} else if (component.type == "FishingHook") {
 				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
 				bool fishingHookChanged = false;
+				auto drawFishingHookSpriteReference = [
+					&document,
+					&fishingHookChanged
+				](const char* label, uint64_t& entityId) {
+					const SceneEntity* selected = entityId != 0
+						? document.FindEntity(entityId)
+						: nullptr;
+					const std::string preview = selected
+						? BuildEntityHierarchyLabel(document, *selected)
+						: "None";
+					if (ImGui::BeginCombo(label, preview.c_str())) {
+						if (ImGui::Selectable("None", entityId == 0)) {
+							entityId = 0;
+							fishingHookChanged = true;
+						}
+						for (const SceneEntity& candidate : document.GetEntities()) {
+							const SceneComponent* sprite = FindEnabledComponent(
+								candidate, "SpriteRenderer"
+							);
+							if (!sprite || sprite->spriteRenderSpace != "ScreenOverlay") {
+								continue;
+							}
+							const std::string candidateLabel =
+								BuildEntityHierarchyLabel(document, candidate);
+							if (ImGui::Selectable(
+								candidateLabel.c_str(), entityId == candidate.id
+							)) {
+								entityId = candidate.id;
+								fishingHookChanged = true;
+							}
+						}
+						ImGui::EndCombo();
+					}
+				};
 				fishingHookChanged |= ImGui::DragInt(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Base Score"),
 					&component.fishingHookBaseScore, 10.0f, 0, 1000000000
+				);
+				drawFishingHookSpriteReference(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Bubble Sprite Entity"),
+					component.fishingHookBubbleSpriteEntityId
+				);
+				drawFishingHookSpriteReference(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Rank Icon Sprite Entity"),
+					component.fishingHookRankIconSpriteEntityId
 				);
 				if (fishingHookChanged) {
 					document.MarkDirty();
@@ -14442,8 +14661,8 @@ void ImGuiManager::DrawInspectorWindow() {
 				ImGui::TextDisabled(
 					SelectEditorText(
 						editorLanguage_,
-						"MeshRendererと非Trigger Colliderを使用するStatic障害物です。モデル別Colliderは「岩レイアウト」でScene共通設定します。",
-						"A static obstacle using MeshRenderer and a non-trigger collider. Configure model-specific colliders globally in Rock Layouts."
+							"MeshRendererとActiveな非Trigger Box／Sphere Colliderを使用するStatic障害物です。モデル別Colliderは「岩レイアウト」でScene共通設定し、Sphereは最大World軸Scaleを使用します。",
+							"Uses MeshRenderer and an active non-trigger Box or Sphere Collider as a static obstacle. Configure model-specific colliders in Rock Layouts; spheres use the largest World axis scale."
 					)
 				);
 			} else if (component.type == "AgentTeamLeaderController") {
@@ -22044,6 +22263,8 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 
 	bool changed = false;
 	const bool directorCanEdit = canEditScene && !directorEntity->locked;
+	const bool runtimeBubbleEditing = editorSession_->IsPlaying() || editorSession_->IsPaused();
+	const bool bubbleCanEdit = !directorEntity->locked && (canEditScene || runtimeBubbleEditing);
 	ImGui::BeginDisabled(!directorCanEdit);
 		auto drawReference = [this, &document, &changed, &revealInspector, &text](
 		const char* label, uint64_t& entityId, const char* requiredType
@@ -22088,6 +22309,268 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 		director->fishingMaxSelectableFishCount = fishCountUpperBound;
 		changed = true;
 	}
+
+	ImGui::EndDisabled();
+	ImGui::BeginDisabled(!bubbleCanEdit);
+	bool bubbleChanged = false;
+	auto setBubbleSaveStatus = [this, &text](
+		const char* japanese, const char* english, bool isError
+	) {
+		fishingHookRankBubbleSaveStatus_ = text(japanese, english);
+		fishingHookRankBubbleSaveStatusIsError_ = isError;
+	};
+	auto saveHookRankBubble = [&]() {
+		if (!runtimeBubbleEditing) {
+			setBubbleSaveStatus(
+				"保存はプレイ／一時停止中だけ実行できます。",
+				"Saving is available only during Play or Pause.",
+				true
+			);
+			return;
+		}
+		if (editorSession_->GetRuntimeSceneId().empty() ||
+			editorSession_->GetRuntimeSceneId() != editorSession_->GetEditSceneId()) {
+			setBubbleSaveStatus(
+				"Runtime Sceneと編集SceneのIDが一致しません。",
+				"Runtime and edit Scene IDs do not match.",
+				true
+			);
+			return;
+		}
+		const SceneDocument& runtimeDocument = editorSession_->GetActiveDocument();
+		SceneDocument& editDocument = editorSession_->GetEditDocument();
+		const SceneComponent* runtimeDirector = nullptr;
+		SceneComponent* editDirector = nullptr;
+		int runtimeDirectorCount = 0;
+		int editDirectorCount = 0;
+		for (const SceneEntity& entity : runtimeDocument.GetEntities()) {
+			if (const SceneComponent* candidate = FindEnabledComponent(
+				entity, "FishingScoreAttackDirector"
+			)) {
+				runtimeDirector = candidate;
+				++runtimeDirectorCount;
+			}
+		}
+		for (SceneEntity& entity : editDocument.GetEntities()) {
+			SceneComponent* candidate = FindComponent(
+				entity, "FishingScoreAttackDirector"
+			);
+			if (candidate && candidate->enabled) {
+				editDirector = candidate;
+				++editDirectorCount;
+			}
+		}
+		if (runtimeDirectorCount != 1 || editDirectorCount != 1 ||
+			!runtimeDirector || !editDirector) {
+			setBubbleSaveStatus(
+				"Runtime／編集Sceneの有効なDirectorを一意に特定できません。",
+				"A unique enabled Director is required in both Runtime and edit Scenes.",
+				true
+			);
+			return;
+		}
+		if (runtimeDirector->fishingHookRanks.size() != 10 ||
+			editDirector->fishingHookRanks.size() != 10) {
+			setBubbleSaveStatus(
+				"Hook Rank定義が10個ではないため保存できません。",
+				"Both Scenes must contain exactly ten Hook Rank definitions.",
+				true
+			);
+			return;
+		}
+
+		const SceneDocument beforeSnapshot = editDocument;
+		editDirector->fishingHookRankBubbleVisible = runtimeDirector->fishingHookRankBubbleVisible;
+		editDirector->fishingHookRankBubbleTexturePath = runtimeDirector->fishingHookRankBubbleTexturePath;
+		editDirector->fishingHookRankBubbleWorldOffset = runtimeDirector->fishingHookRankBubbleWorldOffset;
+		editDirector->fishingHookRankBubbleScreenOffset = runtimeDirector->fishingHookRankBubbleScreenOffset;
+		editDirector->fishingHookRankBubbleSize = runtimeDirector->fishingHookRankBubbleSize;
+		editDirector->fishingHookRankBubbleIconBaseSize = runtimeDirector->fishingHookRankBubbleIconBaseSize;
+		editDirector->fishingHookRankBubbleIconBaseOffset = runtimeDirector->fishingHookRankBubbleIconBaseOffset;
+		for (size_t tier = 0; tier < 10; ++tier) {
+			editDirector->fishingHookRanks[tier].iconTexturePath =
+				runtimeDirector->fishingHookRanks[tier].iconTexturePath;
+			editDirector->fishingHookRanks[tier].bubbleIconScale =
+				runtimeDirector->fishingHookRanks[tier].bubbleIconScale;
+			editDirector->fishingHookRanks[tier].bubbleIconOffset =
+				runtimeDirector->fishingHookRanks[tier].bubbleIconOffset;
+		}
+		editDocument.MarkDirty();
+		if (!editorSession_->CommitRuntimeEditAndSave(beforeSnapshot)) {
+			editDocument = beforeSnapshot;
+			setBubbleSaveStatus(
+				"Scene保存に失敗しました。Runtime調整は保持されています。",
+				"Scene save failed. Runtime tuning is still active.",
+				true
+			);
+			return;
+		}
+		setBubbleSaveStatus(
+			"釣り針ランク吹き出し設定をSceneへ保存しました。",
+			"Hook Rank Bubble settings were saved to the Scene.",
+			false
+		);
+	};
+	if (ImGui::TreeNodeEx(
+		"HookRankBubble###FishingConsoleHookRankBubble",
+		ImGuiTreeNodeFlags_DefaultOpen,
+		text("釣り針ランク吹き出し", "Hook Rank Bubble")
+	)) {
+		bubbleChanged |= ImGui::Checkbox(
+			text("表示", "Visible"), &director->fishingHookRankBubbleVisible
+		);
+		const char* currentBubbleTexture = director->fishingHookRankBubbleTexturePath.empty()
+			? "None" : director->fishingHookRankBubbleTexturePath.c_str();
+		if (ImGui::BeginCombo(text("吹き出しテクスチャ", "Bubble Texture"), currentBubbleTexture)) {
+			if (ImGui::Selectable("None", director->fishingHookRankBubbleTexturePath.empty())) {
+				director->fishingHookRankBubbleTexturePath.clear();
+				bubbleChanged = true;
+			}
+			for (const std::string& texturePath : GetCachedTextureAssetPaths()) {
+				if (ImGui::Selectable(
+					texturePath.c_str(),
+						director->fishingHookRankBubbleTexturePath == texturePath
+					)) {
+					director->fishingHookRankBubbleTexturePath = texturePath;
+					bubbleChanged = true;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		if (ImGui::BeginDragDropTarget()) {
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+				"PROJECT_TEXTURE_PATH"
+			)) {
+				const char* droppedPath = static_cast<const char*>(payload->Data);
+				if (droppedPath && droppedPath[0] != '\0') {
+					director->fishingHookRankBubbleTexturePath =
+						GetProjectResourcePath(droppedPath);
+					bubbleChanged = true;
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+		bubbleChanged |= ImGui::DragFloat3(
+			text("ワールドオフセット", "World Offset"),
+			&director->fishingHookRankBubbleWorldOffset.x,
+			0.01f, -8192.0f, 8192.0f
+		);
+		bubbleChanged |= ImGui::DragFloat2(
+			text("画面オフセット", "Screen Offset"),
+			&director->fishingHookRankBubbleScreenOffset.x,
+			1.0f, -8192.0f, 8192.0f
+		);
+		bubbleChanged |= ImGui::DragFloat2(
+			text("吹き出しサイズ", "Bubble Size"),
+			&director->fishingHookRankBubbleSize.x,
+			1.0f, 1.0f, 8192.0f
+		);
+		bubbleChanged |= ImGui::DragFloat2(
+			text("アイコン共通サイズ", "Icon Base Size"),
+			&director->fishingHookRankBubbleIconBaseSize.x,
+			1.0f, 1.0f, 8192.0f
+		);
+		bubbleChanged |= ImGui::DragFloat2(
+			text("アイコン共通オフセット", "Icon Base Offset"),
+			&director->fishingHookRankBubbleIconBaseOffset.x,
+			1.0f, -8192.0f, 8192.0f
+		);
+		if (ImGui::TreeNodeEx(
+			"RankAdjustments###FishingConsoleHookRankBubbleRanks",
+			ImGuiTreeNodeFlags_DefaultOpen,
+			text("ランク別調整", "Per-Rank Adjustments")
+		)) {
+			const size_t rankCountBefore = director->fishingHookRanks.size();
+			if (directorCanEdit) {
+				EnsureFishingHookRanks(*director);
+			}
+			bubbleChanged |= rankCountBefore != director->fishingHookRanks.size();
+			const size_t activeRankCount = static_cast<size_t>(std::clamp(
+				director->fishingHookRankCount, 1, 10
+			));
+			for (size_t tier = 0;
+				tier < activeRankCount && tier < director->fishingHookRanks.size(); ++tier) {
+				SceneFishingHookRankDefinition& rank = director->fishingHookRanks[tier];
+				ImGui::PushID(static_cast<int>(tier));
+				ImGui::Text(text("ランク %zu", "Rank %zu"), tier + 1);
+				const char* currentRankIconTexture = rank.iconTexturePath.empty()
+					? "None" : rank.iconTexturePath.c_str();
+				if (ImGui::BeginCombo(
+					text("アイコンテクスチャ", "Icon Texture"),
+					currentRankIconTexture
+				)) {
+					if (ImGui::Selectable("None", rank.iconTexturePath.empty())) {
+						rank.iconTexturePath.clear();
+						bubbleChanged = true;
+					}
+					for (const std::string& texturePath : GetCachedTextureAssetPaths()) {
+						if (ImGui::Selectable(
+							texturePath.c_str(), rank.iconTexturePath == texturePath
+						)) {
+							rank.iconTexturePath = texturePath;
+							bubbleChanged = true;
+						}
+					}
+					ImGui::EndCombo();
+				}
+				if (ImGui::BeginDragDropTarget()) {
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+						"PROJECT_TEXTURE_PATH"
+					)) {
+						const char* droppedPath = static_cast<const char*>(payload->Data);
+						if (droppedPath && droppedPath[0] != '\0') {
+							rank.iconTexturePath = GetProjectResourcePath(droppedPath);
+							bubbleChanged = true;
+						}
+					}
+					ImGui::EndDragDropTarget();
+				}
+				bubbleChanged |= ImGui::DragFloat2(
+					text("アイコン倍率", "Icon Scale"),
+					&rank.bubbleIconScale.x,
+					0.01f, 0.01f, 16.0f
+				);
+				bubbleChanged |= ImGui::DragFloat2(
+					text("アイコンオフセット", "Icon Offset"),
+					&rank.bubbleIconOffset.x,
+					1.0f, -8192.0f, 8192.0f
+				);
+				ImGui::PopID();
+			}
+			if (ImGui::Button(text(
+				"ランク別調整を初期化###ResetFishingHookBubbleRankAdjustments",
+				"Reset Rank Bubble Adjustments###ResetFishingHookBubbleRankAdjustments"
+			))) {
+				for (SceneFishingHookRankDefinition& rank : director->fishingHookRanks) {
+					rank.bubbleIconScale = { 1.0f, 1.0f };
+					rank.bubbleIconOffset = { 0.0f, 0.0f };
+				}
+				bubbleChanged = true;
+			}
+			ImGui::TreePop();
+		}
+		if (runtimeBubbleEditing) {
+			if (ImGui::Button(text(
+				"Hook Rank BubbleをSceneへ保存###SaveFishingHookRankBubble",
+				"Save Hook Rank Bubble to Scene###SaveFishingHookRankBubble"
+			))) {
+				saveHookRankBubble();
+			}
+			if (!fishingHookRankBubbleSaveStatus_.empty()) {
+				ImGui::TextColored(
+					fishingHookRankBubbleSaveStatusIsError_
+						? ImVec4(1.0f, 0.35f, 0.25f, 1.0f)
+						: ImVec4(0.35f, 0.85f, 0.4f, 1.0f),
+					"%s",
+					fishingHookRankBubbleSaveStatus_.c_str()
+				);
+			}
+		}
+		ImGui::TreePop();
+	}
+	changed |= bubbleChanged;
+	ImGui::EndDisabled();
+	ImGui::BeginDisabled(!directorCanEdit);
 
 	if (ImGui::TreeNodeEx("Game###FishingConsoleGame", ImGuiTreeNodeFlags_DefaultOpen, text("ゲーム", "Game"))) {
 		changed |= ImGui::DragFloat(text("制限時間（秒）", "Duration Seconds"), &director->fishingDurationSeconds, 0.1f, 0.1f, 3600.0f);
@@ -22230,7 +22713,7 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 				}
 				changed |= ImGui::DragFloat(
 					text("得点倍率", "Score Multiplier"), &rank.scoreMultiplier,
-					0.05f, 0.0f, 100000.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp
+					0.05f, -100000.0f, 100000.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp
 				);
 				changed |= ImGui::ColorEdit4(text("色", "Color"), &rank.color.x);
 				ImGui::PopID();
@@ -22443,7 +22926,7 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 		ImGui::TreePop();
 	}
 	ImGui::EndDisabled();
-	if (changed) document.MarkDirty();
+	if (changed && canEditScene) document.MarkDirty();
 	ImGui::End();
 }
 

@@ -5,6 +5,7 @@
 #include "SceneDocument.h"
 #include "SceneEntityQuery.h"
 #include "SceneInputKey.h"
+#include "SceneTransformResolver.h"
 #include "../Audio/Audio.h"
 #include "../utility/EditableResourcePath.h"
 #include "../utility/StringUtility.h"
@@ -27,6 +28,14 @@ namespace {
 			}
 		}
 		return false;
+	}
+
+	float WorldAxisScale(const Matrix4x4& matrix, uint32_t axis) {
+		return std::sqrt(
+			matrix.m[axis][0] * matrix.m[axis][0] +
+			matrix.m[axis][1] * matrix.m[axis][1] +
+			matrix.m[axis][2] * matrix.m[axis][2]
+		);
 	}
 
 	bool IsValidAudioSpatialMode(const std::string& mode) {
@@ -224,7 +233,10 @@ bool SceneValidator::ValidateDocument(
 	};
 
 	std::unordered_map<uint64_t, const SceneEntity*> entitiesById;
-	for (const SceneEntity& entity : document.GetEntities()) {
+	std::unordered_map<uint64_t, size_t> entityOrderById;
+	for (size_t entityIndex = 0; entityIndex < document.GetEntities().size(); ++entityIndex) {
+		const SceneEntity& entity = document.GetEntities()[entityIndex];
+		entityOrderById.emplace(entity.id, entityIndex);
 		if (entity.id == 0) {
 			addIssue(
 				SceneValidationSeverity::Error,
@@ -2480,7 +2492,7 @@ bool SceneValidator::ValidateDocument(
 					std::unordered_set<std::string> rankIds;
 					for (const SceneFishingHookRankDefinition& rank : component.fishingHookRanks) {
 						if (rank.id.empty() || !rankIds.insert(rank.id).second ||
-							!std::isfinite(rank.scoreMultiplier) || rank.scoreMultiplier < 0.0f ||
+							!std::isfinite(rank.scoreMultiplier) ||
 							!IsResourceRelativeModelPath(rank.modelPath) ||
 							!IsResourceRelativeModelPath(rank.iconTexturePath)) {
 							addIssue(
@@ -2653,6 +2665,133 @@ bool SceneValidator::ValidateDocument(
 									"FishingHookPool has fewer unique valid entries than the new hook band settings require"
 								);
 							}
+						}
+					}
+				}
+				const auto hasFiniteVector2 = [](const Vector2& value) {
+					return std::isfinite(value.x) && std::isfinite(value.y);
+				};
+				const auto hasFiniteVector3 = [](const Vector3& value) {
+					return std::isfinite(value.x) &&
+						std::isfinite(value.y) &&
+						std::isfinite(value.z);
+				};
+				if (!hasFiniteVector3(component.fishingHookRankBubbleWorldOffset) ||
+					!hasFiniteVector2(component.fishingHookRankBubbleScreenOffset) ||
+					!hasFiniteVector2(component.fishingHookRankBubbleSize) ||
+					component.fishingHookRankBubbleSize.x <= 0.0f ||
+					component.fishingHookRankBubbleSize.y <= 0.0f ||
+					!hasFiniteVector2(component.fishingHookRankBubbleIconBaseSize) ||
+					component.fishingHookRankBubbleIconBaseSize.x <= 0.0f ||
+					component.fishingHookRankBubbleIconBaseSize.y <= 0.0f ||
+					!hasFiniteVector2(component.fishingHookRankBubbleIconBaseOffset) ||
+					(!component.fishingHookRankBubbleTexturePath.empty() &&
+						!IsResourceRelativeModelPath(component.fishingHookRankBubbleTexturePath))) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingScoreAttackDirector contains invalid hook rank bubble settings"
+					);
+				}
+				for (const SceneFishingHookRankDefinition& rank : component.fishingHookRanks) {
+					if (!hasFiniteVector2(rank.bubbleIconScale) ||
+						rank.bubbleIconScale.x <= 0.0f ||
+						rank.bubbleIconScale.y <= 0.0f ||
+						!hasFiniteVector2(rank.bubbleIconOffset) ||
+						(!rank.iconTexturePath.empty() &&
+							!IsResourceRelativeModelPath(rank.iconTexturePath))) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingScoreAttackDirector contains invalid hook rank bubble icon settings"
+						);
+						break;
+					}
+				}
+				if (component.fishingHookRankBubbleVisible) {
+					if (component.fishingHookRankBubbleTexturePath.empty()) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingScoreAttackDirector requires a hook rank bubble texture when visible"
+						);
+					}
+					const SceneEntity* poolEntity = document.FindEntity(
+						component.fishingHookPoolEntityId
+					);
+					const SceneComponent* pool = poolEntity
+						? SceneEntityQuery::FindEnabledComponent(*poolEntity, "FishingHookPool")
+						: nullptr;
+					if (!pool) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingScoreAttackDirector requires a valid FishingHookPool for hook rank bubbles"
+						);
+					} else {
+						std::unordered_set<uint64_t> bubbleSpriteIds;
+						size_t firstRankIconOrder = (std::numeric_limits<size_t>::max)();
+						size_t lastBubbleOrder = 0;
+						bool hasBubbleOrder = false;
+						bool hasRankIconOrder = false;
+						for (const SceneFishingHookPoolEntry& entry : pool->fishingHookPoolEntries) {
+							const SceneEntity* hookEntity = document.FindEntity(entry.hookEntityId);
+							const SceneComponent* hook = hookEntity
+								? SceneEntityQuery::FindEnabledComponent(*hookEntity, "FishingHook")
+								: nullptr;
+							if (!hook) {
+								continue;
+							}
+							const uint64_t bubbleId = hook->fishingHookBubbleSpriteEntityId;
+							const uint64_t rankIconId = hook->fishingHookRankIconSpriteEntityId;
+							const auto validateBubbleSprite = [
+								&addIssue, &document, entityId = entity.id
+							](uint64_t spriteId, const char* label) {
+								const SceneEntity* spriteEntity = spriteId != 0
+									? document.FindEntity(spriteId) : nullptr;
+								const SceneComponent* sprite = spriteEntity
+									? SceneEntityQuery::FindEnabledComponent(*spriteEntity, "SpriteRenderer")
+									: nullptr;
+								if (!sprite || sprite->spriteRenderSpace != "ScreenOverlay") {
+									addIssue(
+										SceneValidationSeverity::Error,
+										entityId,
+										std::string("FishingScoreAttackDirector hook rank bubble requires a valid ScreenOverlay ") + label
+									);
+									return false;
+								}
+								return true;
+							};
+							if (!validateBubbleSprite(bubbleId, "bubble Sprite Entity") ||
+								!validateBubbleSprite(rankIconId, "rank icon Sprite Entity")) {
+								continue;
+							}
+							if (bubbleId == rankIconId ||
+								!bubbleSpriteIds.insert(bubbleId).second ||
+								!bubbleSpriteIds.insert(rankIconId).second) {
+								addIssue(
+									SceneValidationSeverity::Error,
+									entity.id,
+									"FishingScoreAttackDirector hook rank bubble Sprite Entity is duplicated"
+								);
+							}
+							const auto bubbleOrder = entityOrderById.find(bubbleId);
+							const auto rankIconOrder = entityOrderById.find(rankIconId);
+							if (bubbleOrder != entityOrderById.end()) {
+								lastBubbleOrder = (std::max)(lastBubbleOrder, bubbleOrder->second);
+								hasBubbleOrder = true;
+							}
+							if (rankIconOrder != entityOrderById.end()) {
+								firstRankIconOrder = (std::min)(firstRankIconOrder, rankIconOrder->second);
+								hasRankIconOrder = true;
+							}
+						}
+						if (hasBubbleOrder && hasRankIconOrder && lastBubbleOrder >= firstRankIconOrder) {
+							addIssue(
+								SceneValidationSeverity::Error,
+								entity.id,
+								"FishingScoreAttackDirector requires all hook rank bubble Sprites before rank icon Sprites"
+							);
 						}
 					}
 				}
@@ -2932,12 +3071,65 @@ bool SceneValidator::ValidateDocument(
 						"FishingObstacle requires an enabled MeshRenderer with a model"
 					);
 				}
-				if (!collider || collider->colliderIsTrigger) {
+				if (!collider || !collider->colliderActive || collider->colliderIsTrigger) {
 					addIssue(
 						SceneValidationSeverity::Error,
 						entity.id,
-						"FishingObstacle requires an enabled non-trigger OBB Collider"
+						"FishingObstacle requires an active non-trigger Box or Sphere Collider"
 					);
+					continue;
+				}
+				if (collider->colliderShape != "Box" &&
+					collider->colliderShape != "Sphere") {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingObstacle collider shape must be Box or Sphere"
+					);
+					continue;
+				}
+				if (collider->colliderShape == "Sphere") {
+					if (!std::isfinite(collider->colliderSphereRadius) ||
+						collider->colliderSphereRadius <= 0.0f) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingObstacle Sphere radius must be finite and greater than zero"
+						);
+						continue;
+					}
+					const Matrix4x4 world =
+						SceneTransformResolver::ResolveSceneWorldMatrix(document, entity);
+					const float scaleX = WorldAxisScale(world, 0);
+					const float scaleY = WorldAxisScale(world, 1);
+					const float scaleZ = WorldAxisScale(world, 2);
+					const float maxScale = (std::max)(
+						scaleX, (std::max)(scaleY, scaleZ)
+					);
+					const float minScale = (std::min)(
+						scaleX, (std::min)(scaleY, scaleZ)
+					);
+					const float effectiveRadius =
+						collider->colliderSphereRadius * maxScale;
+					if (!std::isfinite(maxScale) || maxScale <= 0.0f ||
+						!std::isfinite(effectiveRadius) || effectiveRadius <= 0.0f) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingObstacle Sphere world radius is invalid"
+						);
+						continue;
+					}
+					if (maxScale - minScale > maxScale * 0.01f) {
+						std::ostringstream message;
+						message << "FishingObstacle Sphere uses the largest World axis scale; effective radius is "
+							<< effectiveRadius << ".";
+						addIssue(
+							SceneValidationSeverity::Warning,
+							entity.id,
+							message.str()
+						);
+					}
 				}
 			}
 		}

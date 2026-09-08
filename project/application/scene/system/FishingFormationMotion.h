@@ -8,9 +8,17 @@
 
 namespace FishingFormationMotion {
 
+enum class ObstacleShape {
+	ConvexHull,
+	Circle
+};
+
 struct Obstacle {
 	uint64_t entityId = 0;
+	ObstacleShape shape = ObstacleShape::ConvexHull;
 	std::vector<Vector2> hull;
+	Vector2 center{};
+	float radius = 0.0f;
 };
 
 struct CenterBounds {

@@ -27,6 +27,13 @@ struct DistanceInfo {
 	Vec2 segmentPoint{};
 };
 
+struct ObstacleGeometry {
+	ObstacleShape shape = ObstacleShape::ConvexHull;
+	std::vector<Vec2> hull;
+	Vec2 center{};
+	double radius = 0.0;
+};
+
 struct Contact {
 	Vec2 normal{};
 };
@@ -224,6 +231,55 @@ DistanceInfo CapsulePolygonDistance(
 	return SegmentPolygonDistance(start, end, polygon);
 }
 
+DistanceInfo CapsuleCircleDistance(
+	Vec2 center,
+	double yaw,
+	double halfSegmentLength,
+	Vec2 circleCenter,
+	double circleRadius
+) {
+	const Vec2 segmentStart = CapsuleEndpoint(
+		center, static_cast<float>(yaw), halfSegmentLength, -1.0
+	);
+	const Vec2 segmentEnd = CapsuleEndpoint(
+		center, static_cast<float>(yaw), halfSegmentLength, 1.0
+	);
+	const Vec2 segmentPoint = ClosestPointOnSegment(
+		circleCenter, segmentStart, segmentEnd
+	);
+	const Vec2 offset = Subtract(segmentPoint, circleCenter);
+	const double centerDistance = std::sqrt(LengthSquared(offset));
+	DistanceInfo result{};
+	result.distance = (std::max)(centerDistance - circleRadius, 0.0);
+	result.segmentPoint = segmentPoint;
+	if (centerDistance > kSegmentEpsilon) {
+		result.polygonPoint = Add(
+			circleCenter,
+			Multiply(offset, circleRadius / centerDistance)
+		);
+	} else {
+		result.polygonPoint = circleCenter;
+	}
+	return result;
+}
+
+DistanceInfo ObstacleDistance(
+	Vec2 center,
+	double yaw,
+	double halfSegmentLength,
+	const ObstacleGeometry& obstacle
+) {
+	if (obstacle.shape == ObstacleShape::Circle) {
+		return CapsuleCircleDistance(
+			center, yaw, halfSegmentLength,
+			obstacle.center, obstacle.radius
+		);
+	}
+	return CapsulePolygonDistance(
+		center, yaw, halfSegmentLength, obstacle.hull
+	);
+}
+
 bool ValidatePolygon(const Obstacle& obstacle, std::vector<Vec2>& polygon) {
 	if (obstacle.hull.size() < 3) {
 		return false;
@@ -282,7 +338,7 @@ bool IsSafePose(
 	double yaw,
 	double radius,
 	double halfSegmentLength,
-	const std::vector<std::vector<Vec2>>& polygons,
+	const std::vector<ObstacleGeometry>& obstacles,
 	const CenterBounds& bounds,
 	double epsilon
 ) {
@@ -299,9 +355,9 @@ bool IsSafePose(
 			return false;
 		}
 	}
-	for (const std::vector<Vec2>& polygon : polygons) {
-		const DistanceInfo distance = CapsulePolygonDistance(
-			center, yaw, halfSegmentLength, polygon
+	for (const ObstacleGeometry& obstacle : obstacles) {
+		const DistanceInfo distance = ObstacleDistance(
+			center, yaw, halfSegmentLength, obstacle
 		);
 		if (distance.distance < radius - epsilon) {
 			return false;
@@ -380,7 +436,7 @@ bool CastObstacle(
 	double yaw,
 	double radius,
 	double halfSegmentLength,
-	const std::vector<Vec2>& polygon,
+	const ObstacleGeometry& obstacle,
 	double epsilon,
 	CastHit& hit
 ) {
@@ -390,8 +446,8 @@ bool CastObstacle(
 	bool hasLastNormal = false;
 	for (int iteration = 0; iteration < kCastIterations; ++iteration) {
 		const Vec2 current = Add(center, Multiply(delta, parameter));
-		const DistanceInfo distance = CapsulePolygonDistance(
-			current, yaw, halfSegmentLength, polygon
+		const DistanceInfo distance = ObstacleDistance(
+			current, yaw, halfSegmentLength, obstacle
 		);
 		if (distance.distance < radius - epsilon) {
 			if (parameter <= kEpsilon || !hasLastNormal) {
@@ -404,7 +460,14 @@ bool CastObstacle(
 		if (!Normalize(
 			Subtract(distance.segmentPoint, distance.polygonPoint), normal
 		)) {
-			return false;
+			if (obstacle.shape != ObstacleShape::Circle) {
+				return false;
+			}
+			if (hasLastNormal) {
+				normal = lastNormal;
+			} else if (!Normalize(Multiply(delta, -1.0), normal)) {
+				return false;
+			}
 		}
 		lastNormal = normal;
 		hasLastNormal = true;
@@ -452,7 +515,7 @@ CastHit Cast(
 	double yaw,
 	double radius,
 	double halfSegmentLength,
-	const std::vector<std::vector<Vec2>>& polygons,
+	const std::vector<ObstacleGeometry>& obstacles,
 	const std::vector<size_t>& obstacleOrder,
 	const CenterBounds& bounds,
 	double epsilon
@@ -463,7 +526,7 @@ CastHit Cast(
 		CastHit candidate{};
 		if (!CastObstacle(
 			center, delta, yaw, radius, halfSegmentLength,
-			polygons[index], epsilon, candidate
+			obstacles[index], epsilon, candidate
 		)) {
 			continue;
 		}
@@ -518,7 +581,7 @@ bool SweepRotation(
 	double desiredYaw,
 	double radius,
 	double halfSegmentLength,
-	const std::vector<std::vector<Vec2>>& polygons,
+	const std::vector<ObstacleGeometry>& obstacles,
 	double epsilon,
 	double& outputYaw,
 	bool& iterationLimited
@@ -537,9 +600,9 @@ bool SweepRotation(
 		}
 		const double currentYaw = startYaw + deltaYaw * progress;
 		double minimumGap = std::numeric_limits<double>::max();
-		for (const std::vector<Vec2>& polygon : polygons) {
-			const DistanceInfo distance = CapsulePolygonDistance(
-				center, currentYaw, halfSegmentLength, polygon
+		for (const ObstacleGeometry& obstacle : obstacles) {
+			const DistanceInfo distance = ObstacleDistance(
+				center, currentYaw, halfSegmentLength, obstacle
 			);
 			minimumGap = (std::min)(minimumGap, distance.distance - radius);
 		}
@@ -557,9 +620,9 @@ bool SweepRotation(
 		const double nextProgress = progress + step;
 		const double nextYaw = startYaw + deltaYaw * nextProgress;
 		bool safe = true;
-		for (const std::vector<Vec2>& polygon : polygons) {
-			const DistanceInfo distance = CapsulePolygonDistance(
-				center, nextYaw, halfSegmentLength, polygon
+		for (const ObstacleGeometry& obstacle : obstacles) {
+			const DistanceInfo distance = ObstacleDistance(
+				center, nextYaw, halfSegmentLength, obstacle
 			);
 			if (distance.distance < radius - epsilon) {
 				safe = false;
@@ -579,7 +642,7 @@ bool SweepRotation(
 bool ValidateRequest(
 	const Request& request,
 	const std::vector<Obstacle>& obstacles,
-	std::vector<std::vector<Vec2>>& polygons,
+	std::vector<ObstacleGeometry>& geometries,
 	std::vector<size_t>& obstacleOrder,
 	std::vector<uint64_t>& obstacleIds
 ) {
@@ -601,16 +664,26 @@ bool ValidateRequest(
 	)) {
 		return false;
 	}
-	polygons.clear();
+	geometries.clear();
 	obstacleOrder.clear();
 	obstacleIds.clear();
-	polygons.reserve(obstacles.size());
+	geometries.reserve(obstacles.size());
 	for (size_t index = 0; index < obstacles.size(); ++index) {
-		std::vector<Vec2> polygon;
-		if (!ValidatePolygon(obstacles[index], polygon)) {
-			return false;
+		ObstacleGeometry geometry{};
+		geometry.shape = obstacles[index].shape;
+		if (geometry.shape == ObstacleShape::Circle) {
+			geometry.center = ToVec2(obstacles[index].center);
+			geometry.radius = static_cast<double>(obstacles[index].radius);
+			if (!IsFinite(geometry.center) ||
+				!std::isfinite(geometry.radius) || geometry.radius <= 0.0) {
+				return false;
+			}
+		} else {
+			if (!ValidatePolygon(obstacles[index], geometry.hull)) {
+				return false;
+			}
 		}
-		polygons.push_back(std::move(polygon));
+		geometries.push_back(std::move(geometry));
 		obstacleOrder.push_back(index);
 		obstacleIds.push_back(obstacles[index].entityId);
 	}
@@ -640,10 +713,10 @@ bool Solve(
 		!IsFinite(request.startYaw)) {
 		return false;
 	}
-	std::vector<std::vector<Vec2>> polygons;
+	std::vector<ObstacleGeometry> geometries;
 	std::vector<size_t> obstacleOrder;
 	std::vector<uint64_t> obstacleIds;
-	if (!ValidateRequest(request, obstacles, polygons, obstacleOrder, obstacleIds)) {
+	if (!ValidateRequest(request, obstacles, geometries, obstacleOrder, obstacleIds)) {
 		return false;
 	}
 	const Vec2 startCenter = ToVec2(request.startCenter);
@@ -654,7 +727,7 @@ bool Solve(
 	const double epsilon = skin * 0.1;
 	if (!IsSafePose(
 		startCenter, request.startYaw, radius, halfSegmentLength,
-		polygons, request.bounds, epsilon
+		geometries, request.bounds, epsilon
 	)) {
 		return false;
 	}
@@ -667,7 +740,7 @@ bool Solve(
 		static_cast<double>(request.desiredYaw),
 		radius,
 		halfSegmentLength,
-		polygons,
+		geometries,
 		epsilon,
 		solvedYaw,
 		rotationIterationLimited
@@ -694,7 +767,7 @@ bool Solve(
 			solvedYaw,
 			radius,
 			halfSegmentLength,
-			polygons,
+			geometries,
 			obstacleOrder,
 			request.bounds,
 			epsilon
@@ -703,7 +776,7 @@ bool Solve(
 			currentCenter = Add(currentCenter, remaining);
 			if (!IsSafePose(
 				currentCenter, solvedYaw, radius, halfSegmentLength,
-				polygons, request.bounds, epsilon
+				geometries, request.bounds, epsilon
 			)) {
 				currentCenter = lastVerifiedCenter;
 				slideIterationLimited = true;
@@ -717,7 +790,7 @@ bool Solve(
 		currentCenter = Add(currentCenter, Multiply(remaining, hitTime));
 		if (!IsSafePose(
 			currentCenter, solvedYaw, radius, halfSegmentLength,
-			polygons, request.bounds, epsilon
+			geometries, request.bounds, epsilon
 		)) {
 			currentCenter = lastVerifiedCenter;
 			slideIterationLimited = true;
@@ -744,7 +817,7 @@ bool Solve(
 	}
 	if (!IsSafePose(
 		currentCenter, solvedYaw, radius, halfSegmentLength,
-		polygons, request.bounds, epsilon
+		geometries, request.bounds, epsilon
 	)) {
 		currentCenter = lastVerifiedCenter;
 		solvedVelocity = {};

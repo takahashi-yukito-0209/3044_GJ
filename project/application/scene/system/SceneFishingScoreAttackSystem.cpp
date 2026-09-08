@@ -7,6 +7,7 @@
 
 #include "../../../engine/collision/Collider.h"
 #include "../../../engine/collision/OBBCollider.h"
+#include "../../../engine/collision/SphereCollider.h"
 #include "../../../engine/debug/DebugRenderer.h"
 #include "../../../engine/io/Input.h"
 #include "../../../engine/math/Math.h"
@@ -272,6 +273,51 @@ namespace {
 		return exclusionRadius;
 	}
 
+	struct FishingObstacleSphereGeometry {
+		Vector3 center{};
+		float radius = 0.0f;
+	};
+
+	float WorldAxisScale(const Matrix4x4& matrix, uint32_t axis) {
+		return Math::Length({
+			matrix.m[axis][0], matrix.m[axis][1], matrix.m[axis][2]
+		});
+	}
+
+	bool BuildFishingObstacleSphereGeometry(
+		const SceneDocument& document,
+		const SceneEntity& entity,
+		const SceneComponent& collider,
+		FishingObstacleSphereGeometry& geometry
+	) {
+		const Matrix4x4 world =
+			SceneTransformResolver::ResolveSceneWorldMatrix(document, entity);
+		geometry.center = {
+			collider.colliderOffset.x * world.m[0][0] +
+			collider.colliderOffset.y * world.m[1][0] +
+			collider.colliderOffset.z * world.m[2][0] + world.m[3][0],
+			collider.colliderOffset.x * world.m[0][1] +
+			collider.colliderOffset.y * world.m[1][1] +
+			collider.colliderOffset.z * world.m[2][1] + world.m[3][1],
+			collider.colliderOffset.x * world.m[0][2] +
+			collider.colliderOffset.y * world.m[1][2] +
+			collider.colliderOffset.z * world.m[2][2] + world.m[3][2]
+		};
+		const float scaleX = WorldAxisScale(world, 0);
+		const float scaleY = WorldAxisScale(world, 1);
+		const float scaleZ = WorldAxisScale(world, 2);
+		const float maxScale = (std::max)(scaleX, (std::max)(scaleY, scaleZ));
+		geometry.radius = collider.colliderSphereRadius * maxScale;
+		return std::isfinite(geometry.center.x) &&
+			std::isfinite(geometry.center.y) &&
+			std::isfinite(geometry.center.z) &&
+			std::isfinite(geometry.radius) && geometry.radius > 0.0f;
+	}
+
+	bool IsSphereFishingObstacle(const SceneComponent& collider) {
+		return collider.colliderShape == "Sphere";
+	}
+
 	struct XZPoint {
 		float x = 0.0f;
 		float z = 0.0f;
@@ -279,6 +325,8 @@ namespace {
 
 	struct SharkObstacleFootprint {
 		Vector3 center{};
+		bool isCircle = false;
+		float radius = 0.0f;
 		float axisXCosine = 1.0f;
 		float axisXSine = 0.0f;
 		float halfSizeX = 0.0f;
@@ -305,18 +353,28 @@ namespace {
 		const float sine = std::sin(yaw);
 		const float scaleX = (std::max)(std::abs(transform.scale.x), 0.001f);
 		const float scaleZ = (std::max)(std::abs(transform.scale.z), 0.001f);
-		return {
-			ToSpawnWorldPosition(
-				transform,
-				collider.colliderOffset.x * scaleX,
-				collider.colliderOffset.z * scaleZ,
-				transform.translate.y + collider.colliderOffset.y
-			),
-			cosine,
-			sine,
-			std::abs(collider.colliderSizeMultiplier.x) * scaleX,
-			std::abs(collider.colliderSizeMultiplier.z) * scaleZ
-		};
+		SharkObstacleFootprint result{};
+		result.axisXCosine = cosine;
+		result.axisXSine = sine;
+		if (IsSphereFishingObstacle(collider)) {
+			FishingObstacleSphereGeometry sphere{};
+			if (!BuildFishingObstacleSphereGeometry(document, entity, collider, sphere)) {
+				return result;
+			}
+			result.center = sphere.center;
+			result.isCircle = true;
+			result.radius = sphere.radius;
+			return result;
+		}
+		result.center = ToSpawnWorldPosition(
+			transform,
+			collider.colliderOffset.x * scaleX,
+			collider.colliderOffset.z * scaleZ,
+			transform.translate.y + collider.colliderOffset.y
+		);
+		result.halfSizeX = std::abs(collider.colliderSizeMultiplier.x) * scaleX;
+		result.halfSizeZ = std::abs(collider.colliderSizeMultiplier.z) * scaleZ;
+		return result;
 	}
 
 	std::vector<SharkObstacleFootprint> BuildSharkObstacleFootprints(
@@ -334,9 +392,12 @@ namespace {
 			if (!collider || collider->colliderIsTrigger) {
 				continue;
 			}
-			obstacles.push_back(
-				BuildSharkObstacleFootprint(document, entity, *collider)
-			);
+			SharkObstacleFootprint footprint =
+				BuildSharkObstacleFootprint(document, entity, *collider);
+			if (IsSphereFishingObstacle(*collider) && footprint.radius <= 0.0f) {
+				continue;
+			}
+			obstacles.push_back(std::move(footprint));
 		}
 		return obstacles;
 	}
@@ -409,6 +470,24 @@ namespace {
 			obstacle.axisXCosine,
 			obstacle.axisXSine
 		);
+		if (obstacle.isCircle) {
+			const float deltaX = localEnd.x - localStart.x;
+			const float deltaZ = localEnd.z - localStart.z;
+			const float lengthSquared = deltaX * deltaX + deltaZ * deltaZ;
+			const float parameter = lengthSquared > kTransformEpsilon
+				? std::clamp(
+					-(localStart.x * deltaX + localStart.z * deltaZ) /
+					lengthSquared,
+					0.0f,
+					1.0f
+				)
+				: 0.0f;
+			const float closestX = localStart.x + deltaX * parameter;
+			const float closestZ = localStart.z + deltaZ * parameter;
+			const float inflatedRadius = obstacle.radius + inflation;
+			return closestX * closestX + closestZ * closestZ <=
+				inflatedRadius * inflatedRadius;
+		}
 		const float halfSizeX = obstacle.halfSizeX + inflation;
 		const float halfSizeZ = obstacle.halfSizeZ + inflation;
 		const float delta[2] = {
@@ -964,6 +1043,7 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 			diagnostic_ = "Multiple FishingScoreAttackDirector components are active";
 			textRequests_.clear();
 			iconRequests_.clear();
+			hookBubbleRequests_.clear();
 		} else {
 			Clear();
 		}
@@ -1075,27 +1155,38 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 				entity.id
 			);
 			if (!obstacleBinding || !obstacleBinding->collider ||
-				obstacleBinding->collider->GetType() != Collider::Type::OBB ||
+				(obstacleBinding->collider->GetType() != Collider::Type::OBB &&
+					obstacleBinding->collider->GetType() != Collider::Type::Sphere) ||
 				!obstacleBinding->collider->IsActive() ||
 				obstacleBinding->collider->IsTrigger()) {
 				Fault(
 					document,
 					*director,
-					"FishingObstacle requires an active non-trigger OBB runtime binding"
+					"FishingObstacle requires an active non-trigger Box or Sphere runtime binding"
 				);
 				return;
 			}
-			const auto* obstacleCollider = static_cast<const OBBCollider*>(
-				obstacleBinding->collider
-			);
-			const std::vector<XZPoint> hull = BuildObbProjection(
-				obstacleCollider->GetOBB()
-			);
 			FishingFormationMotion::Obstacle obstacle{};
 			obstacle.entityId = entity.id;
-			obstacle.hull.reserve(hull.size());
-			for (const XZPoint& point : hull) {
-				obstacle.hull.push_back({ point.x, point.z });
+			if (obstacleBinding->collider->GetType() == Collider::Type::OBB) {
+				const auto* obstacleCollider = static_cast<const OBBCollider*>(
+					obstacleBinding->collider
+				);
+				const std::vector<XZPoint> hull = BuildObbProjection(
+					obstacleCollider->GetOBB()
+				);
+				obstacle.hull.reserve(hull.size());
+				for (const XZPoint& point : hull) {
+					obstacle.hull.push_back({ point.x, point.z });
+				}
+			} else {
+				const auto* obstacleCollider = static_cast<const SphereCollider*>(
+					obstacleBinding->collider
+				);
+				obstacle.shape = FishingFormationMotion::ObstacleShape::Circle;
+				const Vector3 center = obstacleCollider->GetWorldCenter();
+				obstacle.center = { center.x, center.z };
+				obstacle.radius = obstacleCollider->GetRadius();
 			}
 			obstacles.push_back(std::move(obstacle));
 		}
@@ -1426,6 +1517,7 @@ void SceneFishingScoreAttackSystem::ApplyHookVisualOverrides(
 	const SceneDocument& document,
 	const std::vector<SceneRuntimeObjectBinding>& bindings
 ) {
+	hookBubbleRequests_.clear();
 	const SceneEntity* directorEntity = document.FindEntity(directorEntityId_);
 	const SceneComponent* director = directorEntity
 		? FindEnabledComponent(*directorEntity, "FishingScoreAttackDirector")
@@ -1461,6 +1553,10 @@ void SceneFishingScoreAttackSystem::ApplyHookVisualOverrides(
 			*hookEntity,
 			"MeshRenderer"
 		);
+		const SceneComponent* hook = FindEnabledComponent(
+			*hookEntity,
+			"FishingHook"
+		);
 		const std::string authoredModelPath = meshRenderer
 			? meshRenderer->modelPath
 			: hookEntity->modelPath;
@@ -1470,6 +1566,43 @@ void SceneFishingScoreAttackSystem::ApplyHookVisualOverrides(
 		const SceneFishingHookRankDefinition rank = active
 			? ResolveFishingHookRank(*director, activeIt->second)
 			: SceneFishingHookRankDefinition{};
+		if (hook && (
+			hook->fishingHookBubbleSpriteEntityId != 0 ||
+			hook->fishingHookRankIconSpriteEntityId != 0
+		)) {
+			const Matrix4x4& worldMatrix = binding->object->GetWorldMatrix();
+			SceneFishingScoreAttackHookBubbleRequest request{};
+			request.hookEntityId = entry.hookEntityId;
+			request.bubbleSpriteEntityId = hook->fishingHookBubbleSpriteEntityId;
+			request.rankIconSpriteEntityId = hook->fishingHookRankIconSpriteEntityId;
+			request.worldAnchor = {
+				worldMatrix.m[3][0] + director->fishingHookRankBubbleWorldOffset.x,
+				worldMatrix.m[3][1] + director->fishingHookRankBubbleWorldOffset.y,
+				worldMatrix.m[3][2] + director->fishingHookRankBubbleWorldOffset.z
+			};
+			request.bubbleTexturePath = director->fishingHookRankBubbleTexturePath;
+			request.rankIconTexturePath = active ? rank.iconTexturePath : std::string{};
+			request.bubbleSize = director->fishingHookRankBubbleSize;
+			request.bubbleScreenOffset = director->fishingHookRankBubbleScreenOffset;
+			request.rankIconSize = {
+				director->fishingHookRankBubbleIconBaseSize.x * rank.bubbleIconScale.x,
+				director->fishingHookRankBubbleIconBaseSize.y * rank.bubbleIconScale.y
+			};
+			request.rankIconScreenOffset = {
+				director->fishingHookRankBubbleScreenOffset.x +
+					director->fishingHookRankBubbleIconBaseOffset.x +
+					rank.bubbleIconOffset.x,
+				director->fishingHookRankBubbleScreenOffset.y +
+					director->fishingHookRankBubbleIconBaseOffset.y +
+					rank.bubbleIconOffset.y
+			};
+			request.bubbleVisible = active &&
+				director->fishingHookRankBubbleVisible &&
+				!request.bubbleTexturePath.empty();
+			request.rankIconVisible = request.bubbleVisible &&
+				!request.rankIconTexturePath.empty();
+			hookBubbleRequests_.push_back(std::move(request));
+		}
 		const std::string desiredModelPath = active && !rank.modelPath.empty()
 			? rank.modelPath
 			: authoredModelPath;
@@ -2246,7 +2379,7 @@ bool SceneFishingScoreAttackSystem::Preflight(
 		std::unordered_set<std::string> rankIds;
 		for (const SceneFishingHookRankDefinition& rank : director.fishingHookRanks) {
 			if (rank.id.empty() || !rankIds.insert(rank.id).second ||
-				!IsFiniteNonNegative(rank.scoreMultiplier) ||
+				!std::isfinite(rank.scoreMultiplier) ||
 				!IsResourceRelativeModelPath(rank.modelPath) ||
 				!std::isfinite(rank.color.x) || !std::isfinite(rank.color.y) ||
 				!std::isfinite(rank.color.z) || !std::isfinite(rank.color.w) ||
@@ -3033,12 +3166,28 @@ void SceneFishingScoreAttackSystem::StartRound(
 						obstacleCollider->colliderIsTrigger) {
 						continue;
 					}
-					const Transform obstacleTransform = SceneTransformResolver::ResolveScene3DTransform(document, entity);
-					if (DistanceXZ(candidateHookCenter, obstacleTransform.translate) <
-						hookRadius + FishingObstacleSpawnExclusionRadius(
-							document, *obstacleCollider, obstacleTransform
+					if (IsSphereFishingObstacle(*obstacleCollider)) {
+						FishingObstacleSphereGeometry sphere{};
+						if (!BuildFishingObstacleSphereGeometry(
+							document, entity, *obstacleCollider, sphere
 						)) {
-						overlaps = true; break;
+							continue;
+						}
+						if (DistanceXZ(candidateHookCenter, sphere.center) <
+							hookRadius + sphere.radius) {
+							overlaps = true;
+							break;
+						}
+					} else {
+						const Transform obstacleTransform =
+							SceneTransformResolver::ResolveScene3DTransform(document, entity);
+						if (DistanceXZ(candidateHookCenter, obstacleTransform.translate) <
+							hookRadius + FishingObstacleSpawnExclusionRadius(
+								document, *obstacleCollider, obstacleTransform
+							)) {
+							overlaps = true;
+							break;
+						}
 					}
 				}
 				if (!overlaps) { spawnPosition = candidate; foundPosition = true; break; }
@@ -3383,23 +3532,37 @@ void SceneFishingScoreAttackSystem::UpdateSharks(
 				if (!obstacleCollider || obstacleCollider->colliderIsTrigger) {
 					continue;
 				}
-				const Transform obstacleTransform =
-					SceneTransformResolver::ResolveScene3DTransform(
-						document, obstacleEntity
+				Vector3 obstacleCenter{};
+				float obstacleRadius = 0.0f;
+				if (IsSphereFishingObstacle(*obstacleCollider)) {
+					FishingObstacleSphereGeometry sphere{};
+					if (!BuildFishingObstacleSphereGeometry(
+						document, obstacleEntity, *obstacleCollider, sphere
+					)) {
+						continue;
+					}
+					obstacleCenter = sphere.center;
+					obstacleRadius = sphere.radius;
+				} else {
+					const Transform obstacleTransform =
+						SceneTransformResolver::ResolveScene3DTransform(
+							document, obstacleEntity
+						);
+					obstacleCenter = ToSpawnWorldPosition(
+						obstacleTransform,
+						obstacleCollider->colliderOffset.x,
+						obstacleCollider->colliderOffset.z,
+						obstacleTransform.translate.y + obstacleCollider->colliderOffset.y
 					);
-				const Vector3 obstacleCenter = ToSpawnWorldPosition(
-					obstacleTransform,
-					obstacleCollider->colliderOffset.x,
-					obstacleCollider->colliderOffset.z,
-					obstacleTransform.translate.y + obstacleCollider->colliderOffset.y
-				);
+					obstacleRadius = ColliderRadiusXZ(*obstacleCollider);
+				}
 				Vector3 away = {
 					basePosition.x - obstacleCenter.x,
 					0.0f,
 					basePosition.z - obstacleCenter.z
 				};
 				float distance = Math::Length(away);
-				const float threshold = sharkRadius + ColliderRadiusXZ(*obstacleCollider) +
+				const float threshold = sharkRadius + obstacleRadius +
 					avoidanceDistance;
 				if (distance >= threshold || threshold <= 0.0f) {
 					continue;
@@ -3818,6 +3981,7 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 ) {
 	textRequests_.clear();
 	iconRequests_.clear();
+	hookBubbleRequests_.clear();
 	const auto addText = [this](uint64_t entityId, std::string text) {
 		if (entityId != 0) {
 			textRequests_.push_back({ entityId, std::move(text) });
@@ -3970,6 +4134,7 @@ void SceneFishingScoreAttackSystem::Clear() {
 	textRequests_.clear();
 	iconRequests_.clear();
 	scorePopup_ = {};
+	hookBubbleRequests_.clear();
 	if (formationParticleActive_) {
 		ParticleManager* particleManager = ParticleManager::GetInstance();
 		if (!formationParticlePauseOwnerKey_.empty()) {

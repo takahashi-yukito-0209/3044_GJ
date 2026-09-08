@@ -847,12 +847,21 @@ void SceneObjectSystem::DrawScreenOverlaySprites(
 			? runtimeOverride->color
 			: spriteRenderer->spriteColor;
 		Sprite* sprite = found->second.sprite.get();
-		sprite->SetPosition({
-			spriteRenderer->spriteViewportAnchor.x * viewportWidth +
-				transform.translate.x,
-			spriteRenderer->spriteViewportAnchor.y * viewportHeight +
-				transform.translate.y
-		});
+		if (runtimeOverride && runtimeOverride->hasViewportPositionOverride) {
+			sprite->SetPosition({
+				runtimeOverride->viewportPosition.x * viewportWidth +
+				runtimeOverride->positionOffsetPixels.x,
+				runtimeOverride->viewportPosition.y * viewportHeight +
+				runtimeOverride->positionOffsetPixels.y
+			});
+		} else {
+			sprite->SetPosition({
+				spriteRenderer->spriteViewportAnchor.x * viewportWidth +
+					transform.translate.x,
+				spriteRenderer->spriteViewportAnchor.y * viewportHeight +
+					transform.translate.y
+			});
+		}
 		sprite->SetRotation(transform.rotate.z);
 		sprite->SetSize({
 			size.x * transform.scale.x,
