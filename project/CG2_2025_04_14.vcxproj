@@ -209,6 +209,8 @@
 	<ClCompile Include="application\scene\system\SceneRuntimeEffectSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneTextRenderSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneTextMotionSystem.cpp" />
+	<ClCompile Include="application\scene\system\SceneTitleBoatMotionSystem.cpp" />
+	<ClCompile Include="application\scene\system\SceneTitleMenuSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneGameFlowSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneFishingScoreAttackSystem.cpp" />
 	<ClCompile Include="application\scene\system\FishingFormationMotion.cpp" />
@@ -225,7 +227,8 @@
     <ClCompile Include="application\scene\system\SceneLightingSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneMiniMapSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneMonitorSystem.cpp" />
-    <ClCompile Include="application\scene\system\SceneObjectSystem.cpp" />
+	<ClCompile Include="application\scene\system\SceneObjectSystem.cpp" />
+	<ClCompile Include="application\scene\system\SceneOptionMenuSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneParticleSystem.cpp" />
 	<ClCompile Include="application\scene\system\ScenePauseSystem.cpp" />
     <ClCompile Include="application\scene\system\ScenePhysicsSystem.cpp" />
@@ -481,6 +484,8 @@
 	<ClInclude Include="application\scene\system\SceneRuntimeEffectSystem.h" />
 	<ClInclude Include="application\scene\system\SceneTextRenderSystem.h" />
 	<ClInclude Include="application\scene\system\SceneTextMotionSystem.h" />
+	<ClInclude Include="application\scene\system\SceneTitleBoatMotionSystem.h" />
+	<ClInclude Include="application\scene\system\SceneTitleMenuSystem.h" />
 	<ClInclude Include="application\scene\system\SceneGameFlowSystem.h" />
 	<ClInclude Include="application\scene\system\SceneFishingScoreAttackSystem.h" />
 	<ClInclude Include="application\scene\system\FishingFormationMotion.h" />
@@ -499,6 +504,7 @@
     <ClInclude Include="application\scene\system\SceneMiniMapSystem.h" />
     <ClInclude Include="application\scene\system\SceneMonitorSystem.h" />
     <ClInclude Include="application\scene\system\SceneObjectSystem.h" />
+	<ClInclude Include="application\scene\system\SceneOptionMenuSystem.h" />
     <ClInclude Include="application\scene\system\SceneParticleSystem.h" />
     <ClInclude Include="application\scene\system\ScenePhysicsSystem.h" />
     <ClInclude Include="application\scene\system\ScenePrefabAnimationSystem.h" />

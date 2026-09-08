@@ -158,6 +158,12 @@
 	<ClCompile Include="application\scene\system\SceneTextMotionSystem.cpp">
 		<Filter>Application\Scene\System</Filter>
 	</ClCompile>
+	<ClCompile Include="application\scene\system\SceneTitleBoatMotionSystem.cpp">
+		<Filter>Application\Scene\System</Filter>
+	</ClCompile>
+	<ClCompile Include="application\scene\system\SceneTitleMenuSystem.cpp">
+		<Filter>Application\Scene\System</Filter>
+	</ClCompile>
 	<ClCompile Include="application\scene\system\SceneGameFlowSystem.cpp">
 		<Filter>Application\Scene\System</Filter>
 	</ClCompile>
@@ -209,6 +215,9 @@
     <ClCompile Include="application\scene\system\SceneObjectSystem.cpp">
       <Filter>Application\Scene\System</Filter>
     </ClCompile>
+	<ClCompile Include="application\scene\system\SceneOptionMenuSystem.cpp">
+	  <Filter>Application\Scene\System</Filter>
+	</ClCompile>
     <ClCompile Include="application\scene\system\SceneParticleSystem.cpp">
       <Filter>Application\Scene\System</Filter>
     </ClCompile>
@@ -459,8 +468,14 @@
 	<ClInclude Include="application\scene\system\SceneTextMotionSystem.h">
 		<Filter>Application\Scene\System</Filter>
 	</ClInclude>
-	<ClInclude Include="application\scene\system\SceneGameFlowSystem.h">
+	<ClInclude Include="application\scene\system\SceneTitleBoatMotionSystem.h">
 		<Filter>Application\Scene\System</Filter>
+	</ClInclude>
+	<ClInclude Include="application\scene\system\SceneTitleMenuSystem.h">
+		<Filter>Application\Scene\System</Filter>
+	</ClInclude>
+	<ClInclude Include="application\scene\system\SceneGameFlowSystem.h">
+	  <Filter>Application\Scene\System</Filter>
 	</ClInclude>
 	<ClInclude Include="application\scene\system\SceneFishingScoreAttackSystem.h">
 		<Filter>Application\Scene\System</Filter>
@@ -513,6 +528,9 @@
     <ClInclude Include="application\scene\system\SceneObjectSystem.h">
       <Filter>Application\Scene\System</Filter>
     </ClInclude>
+	<ClInclude Include="application\scene\system\SceneOptionMenuSystem.h">
+	  <Filter>Application\Scene\System</Filter>
+	</ClInclude>
     <ClInclude Include="application\scene\system\SceneParticleSystem.h">
       <Filter>Application\Scene\System</Filter>
     </ClInclude>
