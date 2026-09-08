@@ -16,6 +16,7 @@ class Object3d;
 
 class ShadowManager {
 public:
+	~ShadowManager();
 	static const uint32_t kMaxSpotShadowMaps = 4;
 	static const uint32_t kShadowMapCount = 1 + kMaxSpotShadowMaps;
 

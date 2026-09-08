@@ -1,0 +1,30 @@
+{
+  "name": "map1",
+  "rocks": [
+    {
+      "entityId": 35,
+      "entityName": "Fishing Rock 2",
+      "modelPath": "rock/Rock_Chunky.obj",
+      "transform": {
+        "rotation": [
+          0.0,
+          -0.2873479127883911,
+          0.0,
+          0.9578263163566589
+        ],
+        "scale": [
+          10.0,
+          10.0,
+          10.0
+        ],
+        "translate": [
+          20.792160034179688,
+          -11.042314529418945,
+          -23.895071029663086
+        ]
+      }
+    }
+  ],
+  "sceneName": "GAMEPLAY",
+  "version": 1
+}

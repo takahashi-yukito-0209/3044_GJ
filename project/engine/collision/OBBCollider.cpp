@@ -45,18 +45,43 @@ bool OBBCollider::Intersects(const Collider& other) const {
 OBBCollider::OBB OBBCollider::GetOBB() const {
 	OBB obb{};
 	obb.center = GetWorldCenter();
-	obb.halfSize = {
-		halfSize_.x * GetWorldAxisScale(0),
-		halfSize_.y * GetWorldAxisScale(1),
-		halfSize_.z * GetWorldAxisScale(2)
-	};
 
 	const Matrix4x4 fallbackMatrix = MakeIdentity4x4();
 	const Matrix4x4& worldMatrix =
 		GetWorldMatrix() ? *GetWorldMatrix() : fallbackMatrix;
-	obb.axis[0] = GetMatrixAxis(worldMatrix, 0);
-	obb.axis[1] = GetMatrixAxis(worldMatrix, 1);
-	obb.axis[2] = GetMatrixAxis(worldMatrix, 2);
+	const Matrix4x4 localRotation = MakeAffineMatrix(
+		{ 1.0f, 1.0f, 1.0f }, localRotation_, {}
+	);
+	const float halfSizes[] = { halfSize_.x, halfSize_.y, halfSize_.z };
+	for (uint32_t axisIndex = 0; axisIndex < 3; ++axisIndex) {
+		const Vector3 localAxis = {
+			localRotation.m[axisIndex][0],
+			localRotation.m[axisIndex][1],
+			localRotation.m[axisIndex][2]
+		};
+		const Vector3 transformedAxis = {
+			localAxis.x * worldMatrix.m[0][0] +
+				localAxis.y * worldMatrix.m[1][0] +
+				localAxis.z * worldMatrix.m[2][0],
+			localAxis.x * worldMatrix.m[0][1] +
+				localAxis.y * worldMatrix.m[1][1] +
+				localAxis.z * worldMatrix.m[2][1],
+			localAxis.x * worldMatrix.m[0][2] +
+				localAxis.y * worldMatrix.m[1][2] +
+				localAxis.z * worldMatrix.m[2][2]
+		};
+		const float worldScale = Math::Length(transformedAxis);
+		obb.axis[axisIndex] = worldScale > 0.000001f
+			? Math::Normalize(transformedAxis)
+			: GetMatrixAxis(worldMatrix, axisIndex);
+		if (axisIndex == 0) {
+			obb.halfSize.x = halfSizes[axisIndex] * worldScale;
+		} else if (axisIndex == 1) {
+			obb.halfSize.y = halfSizes[axisIndex] * worldScale;
+		} else {
+			obb.halfSize.z = halfSizes[axisIndex] * worldScale;
+		}
+	}
 
 	return obb;
 }

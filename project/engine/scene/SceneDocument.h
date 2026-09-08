@@ -413,6 +413,7 @@ struct SceneComponent {
 	std::vector<ScenePauseProfile> pauseProfiles;
 	std::string modelPath;
 	std::string meshCullMode = "Back";
+	bool meshCastsShadow = true;
 	Vector3 meshVisualRotation{};
 	bool meshEnvironmentReflectionOverride = false;
 	float meshEnvironmentReflectionIntensity = 0.3f;
@@ -1034,6 +1035,12 @@ public:
 		debugSettings_ = settings;
 		MarkDirty();
 	}
+	SceneFishingObstacleSettings& GetFishingObstacleSettings() {
+		return fishingObstacleSettings_;
+	}
+	const SceneFishingObstacleSettings& GetFishingObstacleSettings() const {
+		return fishingObstacleSettings_;
+	}
 	bool IsDirty() const { return dirty_; }
 	const std::string& GetAssetId() const { return assetId_; }
 	bool IsPrefabVariant() const { return !variantBaseAssetId_.empty(); }
@@ -1067,6 +1074,7 @@ private:
 	SceneLightingSettings lightingSettings_{};
 	ScenePostProcessSettings postProcessSettings_{};
 	SceneDebugSettings debugSettings_{};
+	SceneFishingObstacleSettings fishingObstacleSettings_{};
 	uint64_t nextId_ = 1;
 	bool dirty_ = false;
 	uint64_t revision_ = 0;

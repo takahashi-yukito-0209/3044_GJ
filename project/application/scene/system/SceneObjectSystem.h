@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <random>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -121,6 +122,12 @@ private:
 	void ClearSprites();
 
 	std::unordered_map<uint64_t, ModelRuntime> models_;
+	// Play開始時にFishingObstacleへ割り当てた岩モデル。Authoring Sceneは変更しない。
+	std::unordered_map<uint64_t, std::string> fishingObstacleModelPaths_;
+	const SceneDocument* fishingObstacleModelDocument_ = nullptr;
+	// Documentの格納先が再利用されても、Playごとに岩配置を再抽選する。
+	bool fishingObstacleLayoutRandomizedForCurrentPlay_ = false;
+	std::mt19937 fishingObstacleRandomEngine_{ std::random_device{}() };
 	std::unordered_map<uint64_t, SpriteRuntime> sprites_;
 	std::unordered_map<uint64_t, SceneSpriteRuntimeOverride> spriteOverrides_;
 };

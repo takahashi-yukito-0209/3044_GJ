@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iterator>
@@ -721,6 +722,14 @@ namespace {
 	}
 
 	constexpr char kEditorSettingsPath[] = "editor_settings.json";
+	constexpr std::array<const char*, 6> kFishingObstacleRockModelPaths = {
+		"rock/Rock_Chunky.obj",
+		"rock/Rock_Flat.obj",
+		"rock/Rock_Round.obj",
+		"rock/Rock_Spire.obj",
+		"rock/Rock_Tall.obj",
+		"rock/Rock_Wide.obj"
+	};
 
 	const char* GetAudioSpatialModeDisplayName(const std::string& mode) {
 		if (mode == "ThreeD") return "ThreeD Point";
@@ -2245,6 +2254,9 @@ void ImGuiManager::DrawEditorWorkspace(
 	}
 	if (showFishingScoreAttackConsole_) {
 		DrawFishingScoreAttackConsoleWindow();
+	}
+	if (showRockLayout_) {
+		DrawRockLayoutWindow();
 	}
 	if (showInputSettings_) {
 		DrawInputSettingsWindow();
@@ -4258,6 +4270,11 @@ void ImGuiManager::DrawSettingsMenu() {
 			"Fishing Score Attack Console###ShowFishingScoreAttackConsoleWindow",
 			"Fishing Score Attack Console###ShowFishingScoreAttackConsoleWindow"
 		), nullptr, &showFishingScoreAttackConsole_);
+		ImGui::MenuItem(SelectEditorText(
+			editorLanguage_,
+			"岩Collider###ShowRockLayoutWindow",
+			"Rock Colliders###ShowRockLayoutWindow"
+		), nullptr, &showRockLayout_);
 		ImGui::MenuItem(SelectEditorText(
 			editorLanguage_,
 			"入力設定###ShowInputSettingsWindow",
@@ -9333,6 +9350,12 @@ void ImGuiManager::DrawInspectorWindow() {
 						}
 					}
 					ImGui::EndCombo();
+				}
+				if (ImGui::Checkbox(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Casts Shadow"),
+					&component.meshCastsShadow
+				)) {
+					document.MarkDirty();
 				}
 				bool reflectionChanged = false;
 				if (!component.meshEnvironmentReflectionOverride) {
@@ -14419,8 +14442,8 @@ void ImGuiManager::DrawInspectorWindow() {
 				ImGui::TextDisabled(
 					SelectEditorText(
 						editorLanguage_,
-						"MeshRendererと非Trigger Colliderを使用するStatic障害物です。",
-						"Uses MeshRenderer and a non-trigger collider as a static obstacle."
+						"MeshRendererと非Trigger Colliderを使用するStatic障害物です。モデル別Colliderは「岩レイアウト」でScene共通設定します。",
+						"A static obstacle using MeshRenderer and a non-trigger collider. Configure model-specific colliders globally in Rock Layouts."
 					)
 				);
 			} else if (component.type == "AgentTeamLeaderController") {
@@ -20635,6 +20658,10 @@ void ImGuiManager::DrawPrefabInspector() {
 				&component.meshVisualRotation.x,
 				0.01f
 			);
+			changed |= ImGui::Checkbox(
+				LocalizedComponentWidgetLabel(editorLanguage_, "Casts Shadow"),
+				&component.meshCastsShadow
+			);
 		} else if (component.type == "Animator") {
 			changed |= ImGui::Checkbox(
 				LocalizedComponentWidgetLabel(editorLanguage_, "Play On Start"), &component.animatorPlayOnStart
@@ -22417,6 +22444,291 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 	}
 	ImGui::EndDisabled();
 	if (changed) document.MarkDirty();
+	ImGui::End();
+}
+
+void ImGuiManager::DrawRockLayoutWindow() {
+	ImGui::Begin(
+		SelectEditorText(
+			editorLanguage_,
+			"岩Collider###RockLayoutWindow",
+			"Rock Colliders###RockLayoutWindow"
+		),
+		&showRockLayout_
+	);
+	if (!editorSession_) {
+		ImGui::TextDisabled("%s", SelectEditorText(
+			editorLanguage_,
+			"Sceneエディターを利用できません。",
+			"Scene editor is not available."
+		));
+		ImGui::End();
+		return;
+	}
+
+	SceneDocument& document = editorSession_->GetActiveDocument();
+	const bool canEditScene = editorSession_->IsEditing();
+	const auto text = [this](const char* japanese, const char* english) {
+		return SelectEditorText(editorLanguage_, japanese, english);
+	};
+	std::vector<const SceneEntity*> allRocks;
+	for (const SceneEntity& entity : document.GetEntities()) {
+		if (!FindEnabledComponent(entity, "FishingObstacle")) {
+			continue;
+		}
+		allRocks.push_back(&entity);
+	}
+	ImGui::TextDisabled("%s", text(
+		"岩はPlay開始時にWaterVolumeの範囲内へランダム配置されます。",
+		"Rocks are randomized within the WaterVolume when Play begins."
+	));
+
+	ImGui::SeparatorText(text("モデル別Collider（Scene共通）", "Model Colliders (Scene-wide)"));
+	ImGui::TextDisabled("%s", text(
+		"ここで設定した6種類の岩Colliderは、全FishingObstacleに共通で使われます。",
+		"These six rock collider profiles are shared by every FishingObstacle in this Scene."
+	));
+	SceneFishingObstacleSettings& obstacleSettings =
+		document.GetFishingObstacleSettings();
+	const SceneComponent* defaultCollider = allRocks.empty()
+		? nullptr
+		: FindComponent(*allRocks.front(), "OBBCollider");
+	ImGui::BeginDisabled(!canEditScene);
+	bool obstacleSettingsChanged = false;
+	if (ImGui::Button(text(
+		"6種類の岩プロファイルを初期化",
+		"Initialize Profiles for All 6 Rocks"
+	))) {
+		for (const char* modelPath : kFishingObstacleRockModelPaths) {
+			const bool alreadyConfigured = std::any_of(
+				obstacleSettings.colliderProfiles.begin(),
+				obstacleSettings.colliderProfiles.end(),
+				[modelPath](const SceneFishingObstacleColliderProfile& profile) {
+					return profile.modelPath == modelPath;
+				}
+			);
+			if (alreadyConfigured) {
+				continue;
+			}
+			SceneFishingObstacleColliderProfile profile{};
+			profile.modelPath = modelPath;
+			if (defaultCollider) {
+				profile.colliderOffset = defaultCollider->colliderOffset;
+				profile.colliderSizeMultiplier =
+					defaultCollider->colliderSizeMultiplier;
+				profile.colliderSphereRadius = defaultCollider->colliderSphereRadius;
+			}
+			obstacleSettings.colliderProfiles.push_back(std::move(profile));
+			obstacleSettingsChanged = true;
+		}
+	}
+	for (const char* modelPath : kFishingObstacleRockModelPaths) {
+		auto found = std::find_if(
+			obstacleSettings.colliderProfiles.begin(),
+			obstacleSettings.colliderProfiles.end(),
+			[modelPath](const SceneFishingObstacleColliderProfile& profile) {
+				return profile.modelPath == modelPath;
+			}
+		);
+		ImGui::PushID(modelPath);
+		if (found == obstacleSettings.colliderProfiles.end()) {
+			ImGui::TextDisabled("%s (%s)", modelPath, text("未設定", "not configured"));
+			ImGui::PopID();
+			continue;
+		}
+		SceneFishingObstacleColliderProfile& profile = *found;
+		if (ImGui::TreeNodeEx(
+			"Profile", ImGuiTreeNodeFlags_DefaultOpen, "%s", modelPath
+		)) {
+			obstacleSettingsChanged |= ImGui::Checkbox(
+				text("有効", "Enabled"), &profile.enabled
+			);
+			obstacleSettingsChanged |= ImGui::DragFloat3(
+				"Collider Offset", &profile.colliderOffset.x, 0.01f
+			);
+			obstacleSettingsChanged |= ImGui::DragFloat3(
+				"Collider Rotation", &profile.colliderRotation.x, 0.01f
+			);
+			obstacleSettingsChanged |= ImGui::DragFloat3(
+				"Collider Size Multiplier", &profile.colliderSizeMultiplier.x,
+				0.01f, 0.001f, 10000.0f
+			);
+			obstacleSettingsChanged |= ImGui::DragFloat(
+				"Sphere Radius", &profile.colliderSphereRadius,
+				0.01f, 0.001f, 10000.0f
+			);
+			ImGui::TreePop();
+		}
+		ImGui::PopID();
+	}
+	if (obstacleSettingsChanged) {
+		document.MarkDirty();
+	}
+	ImGui::EndDisabled();
+	ImGui::End();
+	return;
+
+	#if 0 // 岩レイアウトの保存・読込・適用機能は廃止。
+	ImGui::SeparatorText(text("レイアウトを保存", "Save Layout"));
+	ImGui::InputText(
+		text("レイアウト名", "Layout Name"),
+		rockLayoutNameBuffer_,
+		sizeof(rockLayoutNameBuffer_)
+	);
+	ImGui::SameLine();
+	ImGui::BeginDisabled(!canEditScene || rocksToSave.empty());
+	if (ImGui::Button(text("保存", "Save"))) {
+		json rocks = json::array();
+		for (const SceneEntity* rock : rocksToSave) {
+			const SceneComponent* meshRenderer = FindComponent(
+				*rock, "MeshRenderer"
+			);
+			const std::string modelPath = meshRenderer && !meshRenderer->modelPath.empty()
+				? meshRenderer->modelPath
+				: rock->modelPath;
+			rocks.push_back({
+				{ "entityId", rock->id },
+				{ "entityName", rock->name },
+				{ "modelPath", modelPath },
+				{ "transform", RockLayoutTransformToJson(rock->transform) }
+			});
+		}
+		const std::string layoutName = rockLayoutNameBuffer_;
+		const std::string relativePath = std::string(kRockLayoutDirectory) + "/" +
+			MakeRockLayoutFileStem(layoutName) + kRockLayoutFileSuffix;
+		const json layout = {
+			{ "version", 1 },
+			{ "name", layoutName.empty() ? "Rock Layout" : layoutName },
+			{ "sceneName", document.GetSceneName() },
+			{ "rocks", std::move(rocks) }
+		};
+		rockLayoutLastOperationSucceeded_ = EditableResourcePath::WriteTextAtomically(
+			relativePath, layout.dump(2)
+		);
+		if (rockLayoutLastOperationSucceeded_) {
+			selectedRockLayoutPath_ = relativePath;
+			rockLayoutStatusMessage_ = text(
+				"resources/rock_layouts に保存しました。",
+				"Saved under resources/rock_layouts."
+			);
+		} else {
+			rockLayoutStatusMessage_ = text(
+				"岩レイアウトを保存できませんでした。",
+				"Could not save the rock layout."
+			);
+		}
+	}
+	ImGui::EndDisabled();
+
+	ImGui::SeparatorText(text("保存済みレイアウト", "Saved Layouts"));
+	const std::vector<RockLayoutPreset> presets = LoadRockLayoutPresets();
+	const RockLayoutPreset* selectedPreset = nullptr;
+	for (const RockLayoutPreset& preset : presets) {
+		if (preset.relativePath == selectedRockLayoutPath_) {
+			selectedPreset = &preset;
+			break;
+		}
+	}
+	if (!selectedPreset && !presets.empty()) {
+		selectedPreset = &presets.front();
+		selectedRockLayoutPath_ = selectedPreset->relativePath;
+	}
+	const char* currentLayoutName = selectedPreset
+		? selectedPreset->displayName.c_str()
+		: text("未選択", "None selected");
+	if (ImGui::BeginCombo(text("適用するレイアウト", "Layout to Apply"), currentLayoutName)) {
+		for (const RockLayoutPreset& preset : presets) {
+			const bool selected = selectedPreset == &preset;
+			const std::string label = preset.displayName + " (" +
+				std::to_string(preset.entries.size()) + ")";
+			if (ImGui::Selectable(label.c_str(), selected)) {
+				selectedRockLayoutPath_ = preset.relativePath;
+			}
+			if (selected) {
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	if (presets.empty()) {
+		ImGui::TextDisabled("%s", text(
+			"まだ保存済みの岩レイアウトはありません。",
+			"No rock layouts have been saved yet."
+		));
+	} else if (selectedPreset) {
+		ImGui::TextDisabled(
+			"%s",
+			selectedPreset->sceneName.empty()
+				? text("Scene情報なし", "No source Scene information")
+				: (text("保存元Scene: ", "Source Scene: ") + selectedPreset->sceneName).c_str()
+		);
+		ImGui::BeginDisabled(!canEditScene);
+		if (ImGui::Button(text("選択したレイアウトを適用", "Apply Selected Layout"))) {
+			std::unordered_set<uint64_t> appliedEntityIds;
+			size_t skippedLocked = 0;
+			size_t skippedMissing = 0;
+			for (const RockLayoutEntry& entry : selectedPreset->entries) {
+				SceneEntity* target = entry.entityId != 0
+					? document.FindEntity(entry.entityId)
+					: nullptr;
+				if (!target || !FindEnabledComponent(*target, "FishingObstacle")) {
+					target = nullptr;
+					for (SceneEntity& candidate : document.GetEntities()) {
+						if (candidate.name == entry.entityName &&
+							FindEnabledComponent(candidate, "FishingObstacle")) {
+							target = &candidate;
+							break;
+						}
+					}
+				}
+				if (!target) {
+					++skippedMissing;
+					continue;
+				}
+				if (target->locked) {
+					++skippedLocked;
+					continue;
+				}
+				target->transform = entry.transform;
+				if (!entry.modelPath.empty()) {
+					target->modelPath = entry.modelPath;
+					if (SceneComponent* meshRenderer = FindComponent(
+						*target, "MeshRenderer"
+					)) {
+						meshRenderer->modelPath = entry.modelPath;
+					}
+				}
+				appliedEntityIds.insert(target->id);
+			}
+			const size_t appliedCount = appliedEntityIds.size();
+			if (appliedCount != 0) {
+				document.MarkDirty();
+				selectedEntityIds_ = std::move(appliedEntityIds);
+				selectedEntityId_ = *selectedEntityIds_.begin();
+				hierarchySelectionAnchorId_ = selectedEntityId_;
+				showHierarchy_ = true;
+				showInspector_ = true;
+				revealInspectorRequested_ = true;
+			}
+			rockLayoutLastOperationSucceeded_ = appliedCount != 0;
+			rockLayoutStatusMessage_ = text("適用: ", "Applied: ") +
+				std::to_string(appliedCount) + text(" 個", " rocks") +
+				(skippedLocked != 0 ? text("、ロック中をスキップ: ", ", locked skipped: ") + std::to_string(skippedLocked) : "") +
+				(skippedMissing != 0 ? text("、未検出をスキップ: ", ", missing skipped: ") + std::to_string(skippedMissing) : "");
+		}
+		ImGui::EndDisabled();
+	}
+
+	if (!rockLayoutStatusMessage_.empty()) {
+		ImGui::TextColored(
+			rockLayoutLastOperationSucceeded_
+				? ImVec4(0.35f, 0.85f, 0.4f, 1.0f)
+				: ImVec4(0.95f, 0.35f, 0.3f, 1.0f),
+			"%s",
+			rockLayoutStatusMessage_.c_str()
+		);
+	}
+	#endif
 	ImGui::End();
 }
 

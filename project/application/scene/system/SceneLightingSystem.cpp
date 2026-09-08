@@ -195,13 +195,14 @@ void SceneLightingSystem::RenderShadows(
 	}
 
 	shadowManager_->SetShadowMapSize(lightManager_->GetShadowMapSize());
-	if (!shadowCasters.empty()) {
-		shadowManager_->Render(
-			*lightManager_,
-			shadowCasters.data(),
-			static_cast<uint32_t>(shadowCasters.size())
-		);
-	}
+	// Casterが一時的に無くなっても、前フレームのDepthを残さない。
+	// Renderは有効なMapをClearしてからobjectCount分だけ描画するため、
+	// 空配列ではnullptrを渡してClearだけを実行する。
+	shadowManager_->Render(
+		*lightManager_,
+		shadowCasters.empty() ? nullptr : shadowCasters.data(),
+		static_cast<uint32_t>(shadowCasters.size())
+	);
 }
 
 void SceneLightingSystem::Finalize() {

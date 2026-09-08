@@ -48,6 +48,16 @@ Microsoft::WRL::ComPtr<ID3D12Resource> CreateUavBufferResource(
 
 } // namespace
 
+SkinCluster::~SkinCluster() {
+	if (!srvManager_) {
+		return;
+	}
+	srvManager_->Free(paletteSrvIndex_);
+	srvManager_->Free(inputVertexSrvIndex_);
+	srvManager_->Free(influenceSrvIndex_);
+	srvManager_->Free(outputVertexUavIndex_);
+}
+
 void SkinCluster::Initialize(
 	DirectXCommon* dxCommon,
 	SrvManager* srvManager,
@@ -57,6 +67,7 @@ void SkinCluster::Initialize(
 	assert(dxCommon);
 	assert(srvManager);
 	assert(skeleton.IsValid());
+	srvManager_ = srvManager;
 
 	jointCount_ = static_cast<uint32_t>(skeleton.joints.size());
 	const uint32_t vertexCount = model.GetVertexCount();
