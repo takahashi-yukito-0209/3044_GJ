@@ -1810,6 +1810,10 @@ namespace {
 			result["hookSpawnAreaEntityId"] = component.fishingHookSpawnAreaEntityId;
 			result["hookPoolEntityId"] = component.fishingHookPoolEntityId;
 			result["waterVolumeEntityId"] = component.fishingWaterVolumeEntityId;
+			result["boundaryNegativeXWallEntityId"] = component.fishingBoundaryNegativeXWallEntityId;
+			result["boundaryPositiveXWallEntityId"] = component.fishingBoundaryPositiveXWallEntityId;
+			result["boundaryNegativeZWallEntityId"] = component.fishingBoundaryNegativeZWallEntityId;
+			result["boundaryPositiveZWallEntityId"] = component.fishingBoundaryPositiveZWallEntityId;
 			result["durationSeconds"] = component.fishingDurationSeconds;
 			result["maxSelectableFishCount"] = component.fishingMaxSelectableFishCount;
 			result["confirmInput"] = component.fishingConfirmInputExpression
@@ -3034,6 +3038,18 @@ namespace {
 		);
 		component.fishingMultiplierTextEntityId = RemapEntityId(
 			component.fishingMultiplierTextEntityId, idMap, preserveUnmappedIds
+		component.fishingBoundaryNegativeXWallEntityId = RemapEntityId(
+			component.fishingBoundaryNegativeXWallEntityId, idMap, preserveUnmappedIds
+		);
+		component.fishingBoundaryPositiveXWallEntityId = RemapEntityId(
+			component.fishingBoundaryPositiveXWallEntityId, idMap, preserveUnmappedIds
+		);
+		component.fishingBoundaryNegativeZWallEntityId = RemapEntityId(
+			component.fishingBoundaryNegativeZWallEntityId, idMap, preserveUnmappedIds
+		);
+		component.fishingBoundaryPositiveZWallEntityId = RemapEntityId(
+			component.fishingBoundaryPositiveZWallEntityId, idMap, preserveUnmappedIds
+		);
 		);
 		component.fishingResultTextEntityId = RemapEntityId(
 			component.fishingResultTextEntityId, idMap, preserveUnmappedIds
@@ -3475,6 +3491,22 @@ namespace {
 						1
 					);
 					component.fishingHooksPerDistanceBand = std::clamp(
+					component.fishingBoundaryNegativeXWallEntityId = value.value(
+						"boundaryNegativeXWallEntityId",
+						component.fishingBoundaryNegativeXWallEntityId
+					);
+					component.fishingBoundaryPositiveXWallEntityId = value.value(
+						"boundaryPositiveXWallEntityId",
+						component.fishingBoundaryPositiveXWallEntityId
+					);
+					component.fishingBoundaryNegativeZWallEntityId = value.value(
+						"boundaryNegativeZWallEntityId",
+						component.fishingBoundaryNegativeZWallEntityId
+					);
+					component.fishingBoundaryPositiveZWallEntityId = value.value(
+						"boundaryPositiveZWallEntityId",
+						component.fishingBoundaryPositiveZWallEntityId
+					);
 						value.value("hooksPerDistanceBand", component.fishingHooksPerDistanceBand),
 						1,
 						4
@@ -9744,6 +9776,10 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.cameraFarClip = 1000.0f;
 		component.cameraInvertYaw = false;
 		component.cameraInvertPitch = false;
+		component.fishingBoundaryNegativeXWallEntityId = 0;
+		component.fishingBoundaryPositiveXWallEntityId = 0;
+		component.fishingBoundaryNegativeZWallEntityId = 0;
+		component.fishingBoundaryPositiveZWallEntityId = 0;
 	} else if (type == "Light") {
 		component.lightType = "Point";
 		component.lightColor = { 1.0f, 0.85f, 0.65f, 1.0f };

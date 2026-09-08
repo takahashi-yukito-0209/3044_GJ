@@ -5589,6 +5589,10 @@
       "active": true,
       "components": [
         {
+          "boundaryNegativeXWallEntityId": 40,
+          "boundaryNegativeZWallEntityId": 42,
+          "boundaryPositiveXWallEntityId": 41,
+          "boundaryPositiveZWallEntityId": 43,
           "confirmInput": "Mouse Left",
           "confirmInputExpression": {
             "groups": [

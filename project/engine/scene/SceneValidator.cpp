@@ -11,6 +11,7 @@
 #include "../utility/StringUtility.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cwctype>
 #include <filesystem>
@@ -2343,6 +2344,55 @@ bool SceneValidator::ValidateDocument(
 					"FishingHookPool",
 					"Fishing Hook Pool"
 				);
+				const std::array<uint64_t, 4> boundaryWallIds = {
+					component.fishingBoundaryNegativeXWallEntityId,
+					component.fishingBoundaryPositiveXWallEntityId,
+					component.fishingBoundaryNegativeZWallEntityId,
+					component.fishingBoundaryPositiveZWallEntityId
+				};
+				const bool anyBoundaryWall = std::any_of(
+					boundaryWallIds.begin(), boundaryWallIds.end(),
+					[](uint64_t entityId) { return entityId != 0; }
+				);
+				const bool allBoundaryWalls = std::all_of(
+					boundaryWallIds.begin(), boundaryWallIds.end(),
+					[](uint64_t entityId) { return entityId != 0; }
+				);
+				if (anyBoundaryWall && !allBoundaryWalls) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"Fishing boundary walls must be all configured or all unset"
+					);
+				} else if (allBoundaryWalls) {
+					std::unordered_set<uint64_t> uniqueBoundaryWalls;
+					for (uint64_t boundaryWallId : boundaryWallIds) {
+						const SceneEntity* boundaryWall = document.FindEntity(
+							boundaryWallId
+						);
+						const SceneComponent* boundaryCollider = boundaryWall
+							? SceneEntityQuery::FindEnabledComponent(
+								*boundaryWall, "OBBCollider"
+							)
+							: nullptr;
+						if (!uniqueBoundaryWalls.insert(boundaryWallId).second ||
+							!boundaryWall ||
+							!SceneEntityQuery::IsEntityActiveInHierarchy(
+								document, *boundaryWall
+							) ||
+							!boundaryCollider ||
+							!boundaryCollider->colliderActive ||
+							boundaryCollider->colliderIsTrigger ||
+							boundaryCollider->colliderShape != "Box") {
+							addIssue(
+								SceneValidationSeverity::Error,
+								entity.id,
+								"Fishing boundary walls require unique active non-trigger Box Colliders"
+							);
+							break;
+						}
+					}
+				}
 				if (
 					component.fishingUseFormationCapsuleCollision ||
 					component.fishingFormationOutlineVisible

@@ -20,7 +20,10 @@
 #include "../../../engine/scene/SceneTransformResolver.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <limits>
 #include <unordered_set>
@@ -38,6 +41,9 @@ namespace {
 	constexpr float kTransformEpsilon = 0.0001f;
 	constexpr float kTwoPi = 6.28318530717958647692f;
 
+	constexpr float kFormationRecoveryYawProgress = kTwoPi / 360.0f;
+	constexpr float kFormationRecoveryNoProgressSeconds = 0.5f;
+	constexpr size_t kFormationRecoveryPoseCapacity = 8;
 	float ExtractPlanarYaw(const Transform& transform) {
 		if (transform.useQuaternionRotation) {
 			const Matrix4x4 rotationMatrix = MakeRotateMatrix(
@@ -1204,36 +1210,164 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		motionRequest.desiredYaw = formationCapsule.yaw;
 		motionRequest.radius = formationCapsule.radius;
 		motionRequest.halfSegmentLength = formationCapsule.halfSegmentLength;
-		motionRequest.bounds.enabled = hasPlayerWaterBounds_;
-		if (hasPlayerWaterBounds_) {
-			motionRequest.bounds.center = {
-				playerWaterBounds_.center.x,
-				playerWaterBounds_.center.z
-			};
-			motionRequest.bounds.yaw = playerWaterBounds_.yaw;
-			motionRequest.bounds.halfSizeX = playerWaterBounds_.halfSizeX;
-			motionRequest.bounds.halfSizeZ = playerWaterBounds_.halfSizeZ;
-		}
+		motionRequest.bounds = effectiveBounds;
 		FishingFormationMotion::Result motionResult{};
 		if (!FishingFormationMotion::Solve(
 			motionRequest,
 			obstacles,
 			motionResult
 		)) {
-			Fault(
-				document,
-				*director,
-				"Fishing formation motion solver rejected the current pose"
-			);
+			// 高速移動などで今回の姿勢を解けなくても、設定異常として
+			// セッションをFaultedへ遷移させず、直近の安全位置へ復帰する。
+			playerConstraintRequest_.playerEntityId =
+				director->fishingPlayerEntityId;
+			playerConstraintRequest_.planarPosition =
+				lastSafePlayerPlanarPosition_;
+			playerConstraintRequest_.yaw = lastSafePlayerYaw_;
+			playerConstraintRequest_.planarVelocity = {};
+			hasPlayerConstraintRequest_ = true;
+			formationNoProgressReferencePosition_ = {};
+			formationNoProgressReferenceYaw_ = 0.0f;
+			formationNoProgressSeconds_ = 0.0f;
+			hasFormationNoProgressReference_ = false;
+			BuildTextRequests(*director);
 			return;
 		}
 		formationCapsule.center.x = motionResult.center.x;
 		formationCapsule.center.z = motionResult.center.y;
 		formationCapsule.yaw = motionResult.yaw;
-		lastSafePlayerPlanarPosition_ = formationCapsule.center;
-		lastSafePlayerPlanarPosition_.y = 0.0f;
-		lastSafePlayerYaw_ = formationCapsule.yaw;
-		hasLastSafePlayerPlanarPosition_ = true;
+		const Vector3 previousSafePosition = lastSafePlayerPlanarPosition_;
+		const float previousSafeYaw = lastSafePlayerYaw_;
+		const Vector3 currentSafePosition = {
+			formationCapsule.center.x, 0.0f, formationCapsule.center.z
+		};
+		const bool canRecordRecoveryPose =
+			!motionResult.translationBlocked &&
+			!motionResult.rotationBlocked &&
+			!motionResult.iterationLimited;
+		if (canRecordRecoveryPose && (
+			formationRecoveryPoses_.empty() ||
+			DistanceXZ(
+				currentSafePosition,
+				formationRecoveryPoses_.back().planarPosition
+			) >= (std::max)(formationCapsule.radius * 0.5f, 0.25f)
+		)) {
+			if (formationRecoveryPoses_.size() == kFormationRecoveryPoseCapacity) {
+				formationRecoveryPoses_.erase(formationRecoveryPoses_.begin());
+			}
+			formationRecoveryPoses_.push_back({
+				currentSafePosition, formationCapsule.yaw
+			});
+		}
+
+		const bool hasRotationRequest = AngleDistance(
+			motionRequest.desiredYaw, motionRequest.startYaw
+		) > kFormationRecoveryYawProgress;
+		bool shouldRecoverFormation = false;
+		if (hasRotationRequest && motionResult.rotationBlocked) {
+			if (!hasFormationNoProgressReference_) {
+				formationNoProgressReferencePosition_ = previousSafePosition;
+				formationNoProgressReferenceYaw_ = previousSafeYaw;
+				formationNoProgressSeconds_ = 0.0f;
+				hasFormationNoProgressReference_ = true;
+			} else if (
+				AngleDistance(
+					motionResult.yaw, formationNoProgressReferenceYaw_
+				) >= kFormationRecoveryYawProgress ||
+				DistanceXZ(
+					currentSafePosition,
+					formationNoProgressReferencePosition_
+				) >= (std::max)(formationCapsule.radius * 0.25f, 0.25f)
+			) {
+				formationNoProgressReferencePosition_ = currentSafePosition;
+				formationNoProgressReferenceYaw_ = motionResult.yaw;
+				formationNoProgressSeconds_ = 0.0f;
+			} else {
+				formationNoProgressSeconds_ += deltaTime;
+			}
+			shouldRecoverFormation =
+				formationNoProgressSeconds_ >= kFormationRecoveryNoProgressSeconds;
+		} else {
+			formationNoProgressReferencePosition_ = {};
+			formationNoProgressReferenceYaw_ = 0.0f;
+			formationNoProgressSeconds_ = 0.0f;
+			hasFormationNoProgressReference_ = false;
+		}
+
+		if (shouldRecoverFormation) {
+			size_t preferredRecoveryIndex = formationRecoveryPoses_.size();
+			size_t oldestRecoveryIndex = formationRecoveryPoses_.size();
+			const float minimumRecoveryDistance = (std::max)(
+				formationCapsule.radius, formationCapsule.halfSegmentLength
+			);
+			for (size_t index = formationRecoveryPoses_.size(); index > 0; --index) {
+				const size_t recoveryIndex = index - 1;
+				const FormationRecoveryPose& recoveryPose =
+					formationRecoveryPoses_[recoveryIndex];
+				FishingFormationMotion::Request validationRequest = motionRequest;
+				validationRequest.startCenter = {
+					recoveryPose.planarPosition.x, recoveryPose.planarPosition.z
+				};
+				validationRequest.desiredCenter = validationRequest.startCenter;
+				validationRequest.desiredVelocity = {};
+				validationRequest.startYaw = recoveryPose.yaw;
+				validationRequest.desiredYaw = recoveryPose.yaw;
+				FishingFormationMotion::Result validationResult{};
+				if (!FishingFormationMotion::Solve(
+					validationRequest, obstacles, validationResult
+				)) {
+					continue;
+				}
+				oldestRecoveryIndex = recoveryIndex;
+				if (
+					preferredRecoveryIndex == formationRecoveryPoses_.size() &&
+					DistanceXZ(
+						recoveryPose.planarPosition, currentSafePosition
+					) >= minimumRecoveryDistance
+				) {
+					preferredRecoveryIndex = recoveryIndex;
+				}
+			}
+			const size_t recoveryIndex =
+				preferredRecoveryIndex != formationRecoveryPoses_.size()
+					? preferredRecoveryIndex
+					: oldestRecoveryIndex;
+			const FormationRecoveryPose recoveryPose =
+				recoveryIndex != formationRecoveryPoses_.size()
+					? formationRecoveryPoses_[recoveryIndex]
+					: FormationRecoveryPose{ previousSafePosition, previousSafeYaw };
+			playerConstraintRequest_.playerEntityId =
+				director->fishingPlayerEntityId;
+			playerConstraintRequest_.planarPosition = recoveryPose.planarPosition;
+			playerConstraintRequest_.yaw = recoveryPose.yaw;
+			playerConstraintRequest_.planarVelocity = {};
+			hasPlayerConstraintRequest_ = true;
+			lastSafePlayerPlanarPosition_ = recoveryPose.planarPosition;
+			lastSafePlayerYaw_ = recoveryPose.yaw;
+			hasLastSafePlayerPlanarPosition_ = true;
+			if (recoveryIndex != formationRecoveryPoses_.size()) {
+				formationRecoveryPoses_.erase(
+					formationRecoveryPoses_.begin() +
+						static_cast<std::ptrdiff_t>(recoveryIndex + 1),
+					formationRecoveryPoses_.end()
+				);
+			}
+			formationNoProgressReferencePosition_ = {};
+			formationNoProgressReferenceYaw_ = 0.0f;
+			formationNoProgressSeconds_ = 0.0f;
+			hasFormationNoProgressReference_ = false;
+			formationCapsule.center = recoveryPose.planarPosition;
+			formationCapsule.yaw = recoveryPose.yaw;
+			motionResult.center = {
+				recoveryPose.planarPosition.x, recoveryPose.planarPosition.z
+			};
+			motionResult.yaw = recoveryPose.yaw;
+			motionResult.velocity = {};
+		} else {
+			lastSafePlayerPlanarPosition_ = currentSafePosition;
+			lastSafePlayerYaw_ = formationCapsule.yaw;
+			hasLastSafePlayerPlanarPosition_ = true;
+		}
 		const bool positionChanged =
 			std::abs(motionResult.center.x - motionRequest.desiredCenter.x) >
 				kTransformEpsilon ||
@@ -1391,6 +1525,151 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 				if (fishIndex >= static_cast<int>(director->fishingFishEntityIds.size())) {
 					break;
 				}
+	XZPoint ToWaterLocalPoint(
+		const SceneFishingScoreAttackPlayerWaterBounds& bounds,
+		const XZPoint& worldPoint
+	) {
+		const float cosine = std::cos(bounds.yaw);
+		const float sine = std::sin(bounds.yaw);
+		const float deltaX = worldPoint.x - bounds.center.x;
+		const float deltaZ = worldPoint.z - bounds.center.z;
+		return {
+			deltaX * cosine - deltaZ * sine,
+			deltaX * sine + deltaZ * cosine
+		};
+	}
+
+	bool BuildEffectiveFormationBounds(
+		const SceneComponent& director,
+		const std::vector<SceneRuntimeObjectBinding>& bindings,
+		const SceneFishingScoreAttackPlayerWaterBounds& waterBounds,
+		float playerRadius,
+		FishingFormationMotion::CenterBounds& bounds
+	) {
+		bounds = {};
+		if (
+			waterBounds.playerEntityId == 0 ||
+			!std::isfinite(waterBounds.center.x) ||
+			!std::isfinite(waterBounds.center.z) ||
+			!std::isfinite(waterBounds.yaw) ||
+			!std::isfinite(waterBounds.halfSizeX) ||
+			!std::isfinite(waterBounds.halfSizeZ) ||
+			waterBounds.halfSizeX <= 0.0f ||
+			waterBounds.halfSizeZ <= 0.0f ||
+			!std::isfinite(playerRadius) || playerRadius < 0.0f
+		) {
+			return false;
+		}
+		bounds.enabled = true;
+		bounds.center = { waterBounds.center.x, waterBounds.center.z };
+		bounds.yaw = waterBounds.yaw;
+		bounds.halfSizeX = waterBounds.halfSizeX;
+		bounds.halfSizeZ = waterBounds.halfSizeZ;
+
+		const std::array<uint64_t, 4> wallIds = {
+			director.fishingBoundaryNegativeXWallEntityId,
+			director.fishingBoundaryPositiveXWallEntityId,
+			director.fishingBoundaryNegativeZWallEntityId,
+			director.fishingBoundaryPositiveZWallEntityId
+		};
+		const bool hasAnyWall = std::any_of(
+			wallIds.begin(), wallIds.end(),
+			[](uint64_t entityId) { return entityId != 0; }
+		);
+		if (!hasAnyWall) {
+			return true;
+		}
+		if (!std::all_of(
+			wallIds.begin(), wallIds.end(),
+			[](uint64_t entityId) { return entityId != 0; }
+		)) {
+			return false;
+		}
+
+		auto resolveInnerPlane = [&bindings, &waterBounds](
+			uint64_t entityId,
+			bool useX,
+			bool maximum,
+			float& plane
+		) {
+			const SceneRuntimeObjectBinding* binding = FindBinding(
+				bindings, entityId
+			);
+			if (!binding || !binding->collider ||
+				binding->collider->GetType() != Collider::Type::OBB ||
+				!binding->collider->IsActive() || binding->collider->IsTrigger()) {
+				return false;
+			}
+			const auto* collider = static_cast<const OBBCollider*>(binding->collider);
+			const std::vector<XZPoint> hull = BuildObbProjection(collider->GetOBB());
+			if (hull.empty()) {
+				return false;
+			}
+			plane = maximum ? -(std::numeric_limits<float>::max)() :
+				(std::numeric_limits<float>::max)();
+			for (const XZPoint& point : hull) {
+				const XZPoint local = ToWaterLocalPoint(waterBounds, point);
+				const float value = useX ? local.x : local.z;
+				if (!std::isfinite(value)) {
+					return false;
+				}
+				plane = maximum ? (std::max)(plane, value) :
+					(std::min)(plane, value);
+			}
+			return std::isfinite(plane);
+		};
+
+		float negativeX = 0.0f;
+		float positiveX = 0.0f;
+		float negativeZ = 0.0f;
+		float positiveZ = 0.0f;
+		if (
+			!resolveInnerPlane(wallIds[0], true, true, negativeX) ||
+			!resolveInnerPlane(wallIds[1], true, false, positiveX) ||
+			!resolveInnerPlane(wallIds[2], false, true, negativeZ) ||
+			!resolveInnerPlane(wallIds[3], false, false, positiveZ) ||
+			negativeX >= 0.0f || positiveX <= 0.0f ||
+			negativeZ >= 0.0f || positiveZ <= 0.0f
+		) {
+			return false;
+		}
+
+		constexpr float kWaterBoundarySafetyMargin = 0.1f;
+		const float wallMargin = playerRadius + kWaterBoundarySafetyMargin;
+		const float minimumX = (std::max)(
+			-waterBounds.halfSizeX, negativeX + wallMargin
+		);
+		const float maximumX = (std::min)(
+			waterBounds.halfSizeX, positiveX - wallMargin
+		);
+		const float minimumZ = (std::max)(
+			-waterBounds.halfSizeZ, negativeZ + wallMargin
+		);
+		const float maximumZ = (std::min)(
+			waterBounds.halfSizeZ, positiveZ - wallMargin
+		);
+		if (minimumX >= maximumX || minimumZ >= maximumZ) {
+			return false;
+		}
+		const float localCenterX = (minimumX + maximumX) * 0.5f;
+		const float localCenterZ = (minimumZ + maximumZ) * 0.5f;
+		const float cosine = std::cos(waterBounds.yaw);
+		const float sine = std::sin(waterBounds.yaw);
+		bounds.center = {
+			waterBounds.center.x + localCenterX * cosine + localCenterZ * sine,
+			waterBounds.center.z - localCenterX * sine + localCenterZ * cosine
+		};
+		bounds.halfSizeX = (maximumX - minimumX) * 0.5f;
+		bounds.halfSizeZ = (maximumZ - minimumZ) * 0.5f;
+		return true;
+	}
+
+	float AngleDistance(float first, float second) {
+		return std::abs(std::atan2(
+			std::sin(first - second), std::cos(first - second)
+		));
+	}
+
 				const SceneRuntimeObjectBinding* fishBinding = FindBinding(
 					bindings,
 					director->fishingFishEntityIds[static_cast<size_t>(fishIndex)]
@@ -1572,6 +1851,21 @@ void SceneFishingScoreAttackSystem::ApplyHookVisualOverrides(
 		)) {
 			const Matrix4x4& worldMatrix = binding->object->GetWorldMatrix();
 			SceneFishingScoreAttackHookBubbleRequest request{};
+		FishingFormationMotion::CenterBounds effectiveBounds{};
+		if (hasPlayerWaterBounds_ && !BuildEffectiveFormationBounds(
+			*director,
+			bindings,
+			playerWaterBounds_,
+			playerPlanarColliderRadius_,
+			effectiveBounds
+		)) {
+			Fault(
+				document,
+				*director,
+				"Fishing boundary walls cannot form a valid Player center bounds"
+			);
+			return;
+		}
 			request.hookEntityId = entry.hookEntityId;
 			request.bubbleSpriteEntityId = hook->fishingHookBubbleSpriteEntityId;
 			request.rankIconSpriteEntityId = hook->fishingHookRankIconSpriteEntityId;
@@ -3000,6 +3294,41 @@ void SceneFishingScoreAttackSystem::StartRound(
 		-spawnArea->fishingSpawnHalfSizeX,
 		spawnArea->fishingSpawnHalfSizeX
 	);
+	const std::array<uint64_t, 4> boundaryWallIds = {
+		director.fishingBoundaryNegativeXWallEntityId,
+		director.fishingBoundaryPositiveXWallEntityId,
+		director.fishingBoundaryNegativeZWallEntityId,
+		director.fishingBoundaryPositiveZWallEntityId
+	};
+	const bool hasAnyBoundaryWall = std::any_of(
+		boundaryWallIds.begin(), boundaryWallIds.end(),
+		[](uint64_t entityId) { return entityId != 0; }
+	);
+	if (hasAnyBoundaryWall && !std::all_of(
+		boundaryWallIds.begin(), boundaryWallIds.end(),
+		[](uint64_t entityId) { return entityId != 0; }
+	)) {
+		diagnostic = "Fishing boundary walls must be all configured or all unset";
+		return false;
+	}
+	if (hasAnyBoundaryWall) {
+		std::unordered_set<uint64_t> uniqueBoundaryWalls;
+		for (uint64_t boundaryWallId : boundaryWallIds) {
+			const SceneEntity* boundaryWall = document.FindEntity(boundaryWallId);
+			const SceneComponent* boundaryCollider = boundaryWall
+				? FindEnabledComponent(*boundaryWall, "OBBCollider")
+				: nullptr;
+			if (!uniqueBoundaryWalls.insert(boundaryWallId).second ||
+				!boundaryWall ||
+				!IsEntityActiveInHierarchy(document, *boundaryWall) ||
+				!boundaryCollider || !boundaryCollider->colliderActive ||
+				boundaryCollider->colliderIsTrigger ||
+				boundaryCollider->colliderShape != "Box") {
+				diagnostic = "Fishing boundary walls require unique active non-trigger Box Colliders";
+				return false;
+			}
+		}
+	}
 	std::uniform_real_distribution<float> zDistribution(
 		-spawnArea->fishingSpawnHalfSizeZ,
 		spawnArea->fishingSpawnHalfSizeZ
@@ -3333,6 +3662,7 @@ void SceneFishingScoreAttackSystem::UpdateSharks(
 			const XZPoint lookaheadEnd = {
 				start.x + desiredDirection.x * lookahead,
 				start.z + desiredDirection.z * lookahead
+		playerPlanarColliderRadius_ = playerRadius;
 			};
 			const bool navigationReady = hasWaterBounds && sharkCollider;
 			const bool threat = navigationReady &&
@@ -3400,6 +3730,11 @@ void SceneFishingScoreAttackSystem::UpdateSharks(
 			runtime.wanderHeading = MoveSharkAngle(
 				runtime.wanderHeading,
 				runtime.wanderTargetHeading,
+	formationRecoveryPoses_.clear();
+	formationNoProgressReferencePosition_ = {};
+	formationNoProgressReferenceYaw_ = 0.0f;
+	formationNoProgressSeconds_ = 0.0f;
+	hasFormationNoProgressReference_ = false;
 				turnRate * safeDeltaTime
 			);
 			const Vector3 direction = SharkHeadingVector(runtime.wanderHeading);
@@ -3733,6 +4068,14 @@ bool SceneFishingScoreAttackSystem::ResetSharksForRound(
 					bandWaterTransform,
 					candidate
 				);
+	formationRecoveryPoses_.clear();
+	formationRecoveryPoses_.push_back({
+		lastSafePlayerPlanarPosition_, lastSafePlayerYaw_
+	});
+	formationNoProgressReferencePosition_ = {};
+	formationNoProgressReferenceYaw_ = 0.0f;
+	formationNoProgressSeconds_ = 0.0f;
+	hasFormationNoProgressReference_ = false;
 				const float normalizedZ = (rawWaterLocal.z + waterVolume->waterHalfSize.z) /
 					(2.0f * waterVolume->waterHalfSize.z);
 				const float orientedZ = startFromPositiveWaterZ_
@@ -4164,3 +4507,19 @@ void SceneFishingScoreAttackSystem::Clear() {
 	formationParticleSaveStatus_.clear();
 	formationParticleSaveStatusIsError_ = false;
 }
+	formationRecoveryPoses_.clear();
+	formationNoProgressReferencePosition_ = {};
+	formationNoProgressReferenceYaw_ = 0.0f;
+	formationNoProgressSeconds_ = 0.0f;
+	hasFormationNoProgressReference_ = false;
+	formationRecoveryPoses_.clear();
+	formationNoProgressReferencePosition_ = {};
+	formationNoProgressReferenceYaw_ = 0.0f;
+	formationNoProgressSeconds_ = 0.0f;
+	hasFormationNoProgressReference_ = false;
+	playerPlanarColliderRadius_ = 0.0f;
+	formationRecoveryPoses_.clear();
+	formationNoProgressReferencePosition_ = {};
+	formationNoProgressReferenceYaw_ = 0.0f;
+	formationNoProgressSeconds_ = 0.0f;
+	hasFormationNoProgressReference_ = false;

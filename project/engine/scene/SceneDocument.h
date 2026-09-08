@@ -489,6 +489,10 @@ struct SceneComponent {
 	uint64_t fishingHookSpawnAreaEntityId = 0;
 	uint64_t fishingHookPoolEntityId = 0;
 	uint64_t fishingWaterVolumeEntityId = 0;
+	uint64_t fishingBoundaryNegativeXWallEntityId = 0;
+	uint64_t fishingBoundaryPositiveXWallEntityId = 0;
+	uint64_t fishingBoundaryNegativeZWallEntityId = 0;
+	uint64_t fishingBoundaryPositiveZWallEntityId = 0;
 	float fishingDurationSeconds = 60.0f;
 	int fishingMaxSelectableFishCount = 5;
 	std::string fishingConfirmInput = "ENTER";

@@ -13705,6 +13705,26 @@ void ImGuiManager::DrawInspectorWindow() {
 				if (component.fishingMaxSelectableFishCount > fishCountUpperBound) {
 					component.fishingMaxSelectableFishCount = fishCountUpperBound;
 					fishingChanged = true;
+				drawFishingEntityReference(
+					"Boundary Negative X Wall",
+					component.fishingBoundaryNegativeXWallEntityId,
+					"OBBCollider"
+				);
+				drawFishingEntityReference(
+					"Boundary Positive X Wall",
+					component.fishingBoundaryPositiveXWallEntityId,
+					"OBBCollider"
+				);
+				drawFishingEntityReference(
+					"Boundary Negative Z Wall",
+					component.fishingBoundaryNegativeZWallEntityId,
+					"OBBCollider"
+				);
+				drawFishingEntityReference(
+					"Boundary Positive Z Wall",
+					component.fishingBoundaryPositiveZWallEntityId,
+					"OBBCollider"
+				);
 				}
 				fishingChanged |= ImGui::SliderInt(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Max Fish Count"),
@@ -14652,8 +14672,15 @@ void ImGuiManager::DrawInspectorWindow() {
 				ImGui::TextDisabled(
 					SelectEditorText(
 						editorLanguage_,
-						"Wander Move Speedが0なら従来の楕円周回、正なら自由遊泳です。初期位置はFishingScoreAttackDirectorが決めます。OBBColliderをTriggerにしてください。",
-						"A Wander Move Speed of 0 uses the legacy ellipse patrol; a positive value enables free wander. FishingScoreAttackDirector chooses the initial position. Set the OBBCollider as a trigger."
+						"Wander Move Speedが0なら従来の楕円周回、正なら巡回・発見・追跡を行います。半径・Angular Speed・Initial Phaseは0以外では互換用です。OBBColliderをTriggerにしてください。",
+						"A Wander Move Speed of 0 uses the legacy ellipse patrol; a positive value enables patrol, detection, and chase. Radius, Angular Speed, and Initial Phase are compatibility settings outside zero-speed mode. Set the OBBCollider as a trigger."
+					)
+				);
+				ImGui::TextDisabled(
+					SelectEditorText(
+						editorLanguage_,
+						"発見距離で発見ディレイが始まり、見失い距離の外で一定時間経過後に巡回へ戻ります。巡回復帰後は再発見クールタイム中、発見判定を停止します。",
+						"Detection starts the alert delay. After remaining outside the lose distance for the configured time, the shark returns to patrol. Reacquisition is disabled during the cooldown after patrol resumes."
 					)
 				);
 				ImGui::EndDisabled();
