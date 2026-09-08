@@ -5699,42 +5699,42 @@
               "distanceMultiplier": 1.0,
               "hookCount": 4,
               "hookMultiplierWeights": [
-                40.0,
-                35.0,
-                25.0,
+                50.0,
+                34.0,
+                14.0,
                 2.0,
                 2.0,
                 2.0,
                 1.0,
                 1.0,
+                1.0,
+                1.0
+              ]
+            },
+            {
+              "distanceMultiplier": 1.100000023841858,
+              "hookCount": 3,
+              "hookMultiplierWeights": [
+                8.0,
+                11.399999618530273,
+                6.0,
+                3.0,
+                24.0,
+                24.0,
+                2.0,
+                2.0,
                 1.0,
                 1.0
               ]
             },
             {
               "distanceMultiplier": 1.2000000476837158,
-              "hookCount": 3,
+              "hookCount": 4,
               "hookMultiplierWeights": [
-                8.0,
-                8.0,
-                8.0,
-                24.0,
-                24.0,
-                24.0,
-                2.0,
-                2.0,
-                1.0,
-                1.0
-              ]
-            },
-            {
-              "distanceMultiplier": 1.399999976158142,
-              "hookCount": 2,
-              "hookMultiplierWeights": [
-                6.0,
-                6.0,
-                6.0,
-                20.0,
+                4.0,
+                5.300000190734863,
+                12.899999618530273,
+                9.899999618530273,
                 20.0,
                 20.0,
                 10.0,
@@ -5744,12 +5744,12 @@
               ]
             },
             {
-              "distanceMultiplier": 1.600000023841858,
-              "hookCount": 2,
+              "distanceMultiplier": 1.350000023841858,
+              "hookCount": 5,
               "hookMultiplierWeights": [
-                3.0,
-                3.0,
-                3.0,
+                10.0,
+                0.20000000298023224,
+                0.20000000298023224,
                 10.0,
                 10.0,
                 10.0,
@@ -5907,11 +5907,11 @@
                 1.0,
                 1.0
               ],
-              "displayName": "Rank 1",
+              "displayName": "sashimi",
               "iconTexturePath": "resources/sashimi.png",
               "id": "rank_1",
               "modelPath": "",
-              "scoreMultiplier": 1.0
+              "scoreMultiplier": -700.0
             },
             {
               "bubbleIconOffset": [
@@ -5928,11 +5928,11 @@
                 1.0,
                 1.0
               ],
-              "displayName": "Rank 2",
+              "displayName": "yukke",
               "iconTexturePath": "resources/yukke.png",
               "id": "rank_2",
               "modelPath": "",
-              "scoreMultiplier": 2.0
+              "scoreMultiplier": 300.0
             },
             {
               "bubbleIconOffset": [
@@ -5953,7 +5953,7 @@
               "iconTexturePath": "resources/negitoro.png",
               "id": "rank_3",
               "modelPath": "",
-              "scoreMultiplier": 3.0
+              "scoreMultiplier": 600.0
             },
             {
               "bubbleIconOffset": [
@@ -5974,7 +5974,7 @@
               "iconTexturePath": "resources/tunacanTex.png",
               "id": "rank_4",
               "modelPath": "",
-              "scoreMultiplier": 4.0
+              "scoreMultiplier": 1000.0
             },
             {
               "bubbleIconOffset": [
@@ -6106,10 +6106,10 @@
           "hookScoreUnit": 100.0,
           "hookSpawnAreaEntityId": 12,
           "hookTierScoreMultipliers": [
-            1.0,
-            2.0,
-            3.0,
-            4.0,
+            -700.0,
+            300.0,
+            600.0,
+            1000.0,
             5.0,
             6.0,
             7.0,
@@ -17031,26 +17031,77 @@
       "active": true,
       "components": [
         {
-          "anchor": [0.0, 0.0],
-          "color": [0.0, 0.0, 0.0, 0.58],
+          "anchor": [
+            0.0,
+            0.0
+          ],
+          "color": [
+            0.0,
+            0.0,
+            0.0,
+            0.5799999833106995
+          ],
           "enabled": true,
           "flipX": false,
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
-          "size": [4096.0, 4096.0],
+          "size": [
+            4096.0,
+            4096.0
+          ],
           "texturePath": "human/white.png",
           "type": "SpriteRenderer",
-          "viewportAnchor": [0.0, 0.0]
+          "viewportAnchor": [
+            0.0,
+            0.0
+          ]
         }
       ],
+      "folder": false,
+      "folderTeamEnabled": false,
       "id": 145,
+      "locked": false,
+      "modelPath": "",
       "name": "Pause Dim Overlay",
       "parentId": 144,
+      "sprite": {
+        "anchor": [
+          0.0,
+          0.0
+        ],
+        "color": [
+          0.0,
+          0.0,
+          0.0,
+          0.5799999833106995
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          4096.0,
+          4096.0
+        ],
+        "texturePath": "human/white.png"
+      },
+      "team": "",
       "transform": {
-        "rotation": [0.0, 0.0, 0.0, 1.0],
-        "scale": [1.0, 1.0, 1.0],
-        "translate": [0.0, 0.0, 0.0]
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
       }
     }
   ],
