@@ -135,6 +135,10 @@ public:
 		const SceneDocument& document,
 		const std::vector<SceneRuntimeObjectBinding>& bindings
 	);
+	void ApplySharkVisualOverrides(
+		const SceneDocument& document,
+		const std::vector<SceneRuntimeObjectBinding>& bindings
+	);
 
 	bool IsPlayerMovementAllowed() const;
 	bool AcceptWheelZoom() const;
@@ -148,6 +152,9 @@ public:
 	void AddFormationOutlineDebugDraw(
 		const SceneDocument& document,
 		const SceneAgentSystem& agentSystem
+	) const;
+	void AddSharkNavigationDebugDraw(
+		const SceneDocument& document
 	) const;
 	void UpdateFormationParticleEffect(
 		const SceneDocument& document,
@@ -228,6 +235,12 @@ private:
 	Transform initialPlayerTransform_{};
 	std::vector<uint64_t> initialFishEntityIds_;
 	std::vector<Transform> initialFishTransforms_;
+	enum class SharkNavigationState {
+		Patrol,
+		Alert,
+		Chase,
+		Lost
+	};
 	struct SharkRuntime {
 		Transform initialTransform{};
 		float phase = 0.0f;
@@ -247,15 +260,43 @@ private:
 		float wanderTargetHeading = 0.0f;
 		int wanderAvoidanceSide = 0;
 		std::mt19937 wanderRandom{};
+		SharkNavigationState navigationState = SharkNavigationState::Patrol;
+		std::vector<Vector3> navigationRoute;
+		size_t navigationRouteIndex = 0;
+		float patrolRouteRemainingSeconds = 0.0f;
+		float chaseRouteRemainingSeconds = 0.0f;
+		float alertElapsedSeconds = 0.0f;
+		float lostElapsedSeconds = 0.0f;
+		float reacquireCooldownRemainingSeconds = 0.0f;
+		float alertPulseElapsedSeconds = 0.0f;
+		Vector3 lastSeenPlayerPosition{};
+		bool hasLastSeenPlayerPosition = false;
+		int navigationRejectedFrames = 0;
+		std::vector<int> patrolVisitCounts;
+		int patrolGridWidth = 0;
+		int patrolGridHeight = 0;
+		float patrolGridOriginX = 0.0f;
+		float patrolGridOriginZ = 0.0f;
+		float patrolGridCellSize = 0.0f;
 	};
 	std::unordered_map<uint64_t, SharkRuntime> sharkRuntimes_;
 	std::string fishingTeamName_;
 	SceneFishingScoreAttackPlayerWaterBounds playerWaterBounds_{};
 	bool hasInitialPlayerTransform_ = false;
 	bool hasPlayerWaterBounds_ = false;
+	float playerPlanarColliderRadius_ = 0.0f;
 	Vector3 lastSafePlayerPlanarPosition_{};
 	float lastSafePlayerYaw_ = 0.0f;
 	bool hasLastSafePlayerPlanarPosition_ = false;
+	struct FormationRecoveryPose {
+		Vector3 planarPosition{};
+		float yaw = 0.0f;
+	};
+	std::vector<FormationRecoveryPose> formationRecoveryPoses_;
+	Vector3 formationNoProgressReferencePosition_{};
+	float formationNoProgressReferenceYaw_ = 0.0f;
+	float formationNoProgressSeconds_ = 0.0f;
+	bool hasFormationNoProgressReference_ = false;
 	SceneFishingScoreAttackPlayerConstraintRequest playerConstraintRequest_{};
 	bool hasPlayerConstraintRequest_ = false;
 	bool hasPlayerResetRequest_ = false;

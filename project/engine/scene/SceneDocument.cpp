@@ -1810,6 +1810,10 @@ namespace {
 			result["hookSpawnAreaEntityId"] = component.fishingHookSpawnAreaEntityId;
 			result["hookPoolEntityId"] = component.fishingHookPoolEntityId;
 			result["waterVolumeEntityId"] = component.fishingWaterVolumeEntityId;
+			result["boundaryNegativeXWallEntityId"] = component.fishingBoundaryNegativeXWallEntityId;
+			result["boundaryPositiveXWallEntityId"] = component.fishingBoundaryPositiveXWallEntityId;
+			result["boundaryNegativeZWallEntityId"] = component.fishingBoundaryNegativeZWallEntityId;
+			result["boundaryPositiveZWallEntityId"] = component.fishingBoundaryPositiveZWallEntityId;
 			result["durationSeconds"] = component.fishingDurationSeconds;
 			result["maxSelectableFishCount"] = component.fishingMaxSelectableFishCount;
 			result["confirmInput"] = component.fishingConfirmInputExpression
@@ -1928,6 +1932,8 @@ namespace {
 				VectorToJson(component.fishingFormationParticleEndColor);
 			result["formationParticleEmissiveIntensity"] =
 				component.fishingFormationParticleEmissiveIntensity;
+			result["sharkRouteDebugVisible"] =
+				component.fishingSharkRouteDebugVisible;
 		} else if (component.type == "FishingResultTracker") {
 			result["channelId"] = component.fishingResultChannelId;
 			result["tieBreakMode"] = component.fishingResultTieBreakMode;
@@ -1962,6 +1968,29 @@ namespace {
 			result["obstacleAvoidanceDistance"] = component.fishingSharkObstacleAvoidanceDistance;
 			result["obstacleAvoidanceStrength"] = component.fishingSharkObstacleAvoidanceStrength;
 			result["obstacleAvoidanceResponse"] = component.fishingSharkObstacleAvoidanceResponse;
+			result["patrolRouteRebuildIntervalSeconds"] =
+				component.fishingSharkPatrolRouteRebuildIntervalSeconds;
+			result["navigationCellSize"] = component.fishingSharkNavigationCellSize;
+			result["waypointAcceptanceDistance"] =
+				component.fishingSharkWaypointAcceptanceDistance;
+			result["obstacleClearance"] = component.fishingSharkObstacleClearance;
+			result["detectionDistance"] = component.fishingSharkDetectionDistance;
+			result["loseDistance"] = component.fishingSharkLoseDistance;
+			result["detectionDelaySeconds"] =
+				component.fishingSharkDetectionDelaySeconds;
+			result["lostTargetDelaySeconds"] =
+				component.fishingSharkLostTargetDelaySeconds;
+			result["reacquireCooldownSeconds"] =
+				component.fishingSharkReacquireCooldownSeconds;
+			result["chaseMoveSpeed"] = component.fishingSharkChaseMoveSpeed;
+			result["chaseMaximumTurnRate"] =
+				component.fishingSharkChaseMaximumTurnRate;
+			result["chaseRouteRebuildIntervalSeconds"] =
+				component.fishingSharkChaseRouteRebuildIntervalSeconds;
+			result["alertColor"] = VectorToJson(component.fishingSharkAlertColor);
+			result["alertEmissiveIntensity"] =
+				component.fishingSharkAlertEmissiveIntensity;
+			result["alertPulseSpeed"] = component.fishingSharkAlertPulseSpeed;
 		} else if (component.type == "Camera") {
 			result["isMain"] = component.cameraIsMain;
 			result["fovY"] = component.cameraFovY;
@@ -3009,6 +3038,18 @@ namespace {
 		component.fishingWaterVolumeEntityId = RemapEntityId(
 			component.fishingWaterVolumeEntityId, idMap, preserveUnmappedIds
 		);
+		component.fishingBoundaryNegativeXWallEntityId = RemapEntityId(
+			component.fishingBoundaryNegativeXWallEntityId, idMap, preserveUnmappedIds
+		);
+		component.fishingBoundaryPositiveXWallEntityId = RemapEntityId(
+			component.fishingBoundaryPositiveXWallEntityId, idMap, preserveUnmappedIds
+		);
+		component.fishingBoundaryNegativeZWallEntityId = RemapEntityId(
+			component.fishingBoundaryNegativeZWallEntityId, idMap, preserveUnmappedIds
+		);
+		component.fishingBoundaryPositiveZWallEntityId = RemapEntityId(
+			component.fishingBoundaryPositiveZWallEntityId, idMap, preserveUnmappedIds
+		);
 		component.fishingHookLegendTitleTextEntityId = RemapEntityId(
 			component.fishingHookLegendTitleTextEntityId, idMap, preserveUnmappedIds
 		);
@@ -3450,6 +3491,22 @@ namespace {
 					component.fishingWaterVolumeEntityId = value.value(
 						"waterVolumeEntityId", component.fishingWaterVolumeEntityId
 					);
+					component.fishingBoundaryNegativeXWallEntityId = value.value(
+						"boundaryNegativeXWallEntityId",
+						component.fishingBoundaryNegativeXWallEntityId
+					);
+					component.fishingBoundaryPositiveXWallEntityId = value.value(
+						"boundaryPositiveXWallEntityId",
+						component.fishingBoundaryPositiveXWallEntityId
+					);
+					component.fishingBoundaryNegativeZWallEntityId = value.value(
+						"boundaryNegativeZWallEntityId",
+						component.fishingBoundaryNegativeZWallEntityId
+					);
+					component.fishingBoundaryPositiveZWallEntityId = value.value(
+						"boundaryPositiveZWallEntityId",
+						component.fishingBoundaryPositiveZWallEntityId
+					);
 					component.fishingDurationSeconds = (std::max)(
 						value.value("durationSeconds", component.fishingDurationSeconds),
 						0.001f
@@ -3824,6 +3881,10 @@ namespace {
 						std::isfinite(particleEmissiveIntensity)
 							? std::clamp(particleEmissiveIntensity, 0.0f, 8.0f)
 							: 1.0f;
+					component.fishingSharkRouteDebugVisible = value.value(
+						"sharkRouteDebugVisible",
+						component.fishingSharkRouteDebugVisible
+					);
 				} else if (component.type == "FishingResultTracker") {
 					component.fishingResultChannelId = value.value(
 						"channelId", component.fishingResultChannelId
@@ -3950,6 +4011,110 @@ namespace {
 						value.value(
 							"obstacleAvoidanceResponse",
 							component.fishingSharkObstacleAvoidanceResponse
+						),
+						0.0f
+					);
+					component.fishingSharkPatrolRouteRebuildIntervalSeconds = (std::max)(
+						value.value(
+							"patrolRouteRebuildIntervalSeconds",
+							component.fishingSharkPatrolRouteRebuildIntervalSeconds
+						),
+						0.001f
+					);
+					component.fishingSharkNavigationCellSize = (std::max)(
+						value.value(
+							"navigationCellSize",
+							component.fishingSharkNavigationCellSize
+						),
+						0.001f
+					);
+					component.fishingSharkWaypointAcceptanceDistance = (std::max)(
+						value.value(
+							"waypointAcceptanceDistance",
+							component.fishingSharkWaypointAcceptanceDistance
+						),
+						0.001f
+					);
+					component.fishingSharkObstacleClearance = (std::max)(
+						value.value(
+							"obstacleClearance",
+							component.fishingSharkObstacleClearance
+						),
+						0.0f
+					);
+					component.fishingSharkDetectionDistance = (std::max)(
+						value.value(
+							"detectionDistance",
+							component.fishingSharkDetectionDistance
+						),
+						0.0f
+					);
+					component.fishingSharkLoseDistance = (std::max)(
+						value.value(
+							"loseDistance",
+							component.fishingSharkLoseDistance
+						),
+						0.0f
+					);
+					component.fishingSharkDetectionDelaySeconds = (std::max)(
+						value.value(
+							"detectionDelaySeconds",
+							component.fishingSharkDetectionDelaySeconds
+						),
+						0.0f
+					);
+					component.fishingSharkLostTargetDelaySeconds = (std::max)(
+						value.value(
+							"lostTargetDelaySeconds",
+							component.fishingSharkLostTargetDelaySeconds
+						),
+						0.0f
+					);
+					component.fishingSharkReacquireCooldownSeconds = (std::max)(
+						value.value(
+							"reacquireCooldownSeconds",
+							component.fishingSharkReacquireCooldownSeconds
+						),
+						0.0f
+					);
+					component.fishingSharkChaseMoveSpeed = (std::max)(
+						value.value(
+							"chaseMoveSpeed",
+							component.fishingSharkChaseMoveSpeed
+						),
+						0.0f
+					);
+					component.fishingSharkChaseMaximumTurnRate = (std::max)(
+						value.value(
+							"chaseMaximumTurnRate",
+							component.fishingSharkChaseMaximumTurnRate
+						),
+						0.001f
+					);
+					component.fishingSharkChaseRouteRebuildIntervalSeconds = (std::max)(
+						value.value(
+							"chaseRouteRebuildIntervalSeconds",
+							component.fishingSharkChaseRouteRebuildIntervalSeconds
+						),
+						0.001f
+					);
+					if (value.contains("alertColor")) {
+						component.fishingSharkAlertColor = JsonToVector(
+							value.at("alertColor"), component.fishingSharkAlertColor
+						);
+					}
+					component.fishingSharkAlertEmissiveIntensity = (std::clamp)(
+						value.value(
+							"alertEmissiveIntensity",
+							component.fishingSharkAlertEmissiveIntensity
+						),
+						0.0f,
+						8.0f
+					);
+					component.fishingSharkAlertPulseSpeed = (std::max)(
+						value.value(
+							"alertPulseSpeed",
+							component.fishingSharkAlertPulseSpeed
 						),
 						0.0f
 					);
@@ -9611,6 +9776,10 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 	} else if (type == "FishingScoreAttackDirector") {
 		component.fishingFishEntityIds.clear();
 		component.fishingWaterVolumeEntityId = 0;
+		component.fishingBoundaryNegativeXWallEntityId = 0;
+		component.fishingBoundaryPositiveXWallEntityId = 0;
+		component.fishingBoundaryNegativeZWallEntityId = 0;
+		component.fishingBoundaryPositiveZWallEntityId = 0;
 		component.fishingDurationSeconds = 60.0f;
 		component.fishingMaxSelectableFishCount = 5;
 		component.fishingConfirmInput = "ENTER";
@@ -9692,6 +9861,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingFormationParticleStartColor = { 0.1f, 0.9f, 1.0f, 0.65f };
 		component.fishingFormationParticleEndColor = { 0.1f, 0.9f, 1.0f, 0.65f };
 		component.fishingFormationParticleEmissiveIntensity = 1.0f;
+		component.fishingSharkRouteDebugVisible = false;
 	} else if (type == "FishingResultTracker") {
 		component.fishingResultChannelId = "fishing.score_attack";
 		component.fishingResultTieBreakMode = "HigherRank";
@@ -9719,6 +9889,21 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingSharkObstacleAvoidanceDistance = 8.0f;
 		component.fishingSharkObstacleAvoidanceStrength = 0.65f;
 		component.fishingSharkObstacleAvoidanceResponse = 4.0f;
+		component.fishingSharkPatrolRouteRebuildIntervalSeconds = 8.0f;
+		component.fishingSharkNavigationCellSize = 4.0f;
+		component.fishingSharkWaypointAcceptanceDistance = 1.5f;
+		component.fishingSharkObstacleClearance = 2.0f;
+		component.fishingSharkDetectionDistance = 30.0f;
+		component.fishingSharkLoseDistance = 40.0f;
+		component.fishingSharkDetectionDelaySeconds = 0.75f;
+		component.fishingSharkLostTargetDelaySeconds = 2.0f;
+		component.fishingSharkReacquireCooldownSeconds = 4.0f;
+		component.fishingSharkChaseMoveSpeed = 13.0f;
+		component.fishingSharkChaseMaximumTurnRate = 2.2f;
+		component.fishingSharkChaseRouteRebuildIntervalSeconds = 0.35f;
+		component.fishingSharkAlertColor = { 1.0f, 0.25f, 0.08f, 1.0f };
+		component.fishingSharkAlertEmissiveIntensity = 2.0f;
+		component.fishingSharkAlertPulseSpeed = 8.0f;
 	} else if (type == "AudioSource") {
 		component.audioClipPath.clear();
 		component.audioSpatialMode = "TwoD";

@@ -898,6 +898,33 @@ namespace {
 			, { "Debug Visible", "Debug表示" }, { "Draw Mode", "描画Mode" }
 			, { "Debug Segments", "Debug分割数" }, { "Debug Color", "Debug色" }
 			, { "Damage", "ダメージ" }, { "Poise Damage", "Poiseダメージ" }
+			, { "Patrol Radius X", "互換用巡回半径 X" }
+			, { "Patrol Radius Z", "互換用巡回半径 Z" }
+			, { "Angular Speed", "互換用角速度" }
+			, { "Initial Phase", "互換用初期フェーズ" }
+			, { "Penalty Score", "減点スコア" }
+			, { "Hit Cooldown Seconds", "ヒットクールタイム（秒）" }
+			, { "Path Randomness", "経路ランダム性" }
+			, { "Wander Move Speed", "巡回速度" }
+			, { "Wander Maximum Turn Rate", "巡回最大旋回速度" }
+			, { "Obstacle Avoidance Distance", "障害物回避先読み距離" }
+			, { "Obstacle Avoidance Strength", "障害物回避の強さ" }
+			, { "Obstacle Avoidance Response", "障害物回避応答速度" }
+			, { "Patrol Route Rebuild Interval Seconds", "巡回ルート更新間隔（秒）" }
+			, { "Navigation Cell Size", "経路探索セルサイズ" }
+			, { "Waypoint Acceptance Distance", "経由点到達距離" }
+			, { "Obstacle Clearance", "岩との安全距離" }
+			, { "Detection Distance", "プレイヤー発見距離" }
+			, { "Lose Distance", "プレイヤー見失い距離" }
+			, { "Detection Delay Seconds", "発見ディレイ（秒）" }
+			, { "Lost Target Delay Seconds", "見失うまでの時間（秒）" }
+			, { "Reacquire Cooldown Seconds", "再発見クールタイム（秒）" }
+			, { "Chase Move Speed", "追跡速度" }
+			, { "Chase Maximum Turn Rate", "追跡最大旋回速度" }
+			, { "Chase Route Rebuild Interval Seconds", "追跡ルート更新間隔（秒）" }
+			, { "Alert Color", "発見演出色" }
+			, { "Alert Emissive Intensity", "発見演出の発光強度" }
+			, { "Alert Pulse Speed", "発見演出の点滅速度" }
 			, { "Knockback", "ノックバック" }, { "Vertical Knockback", "垂直ノックバック" }
 			, { "Hit Stop Duration", "Hit Stop時間" }, { "Damage Multiplier", "ダメージ倍率" }
 			, { "Knockback Multiplier", "ノックバック倍率" }, { "Mass", "質量" }
@@ -952,6 +979,7 @@ namespace {
 			, { "Wander Vertical Range", "Wander垂直範囲" }, { "Randomize Seed On Play", "Play時にSeedをランダム化" }
 			, { "Flock Decision Interval", "Flock判断間隔" }, { "Flock Acceleration", "Flock加速度" }
 			, { "Flock Max Turn Rate", "Flock最大旋回速度" }, { "Return Strength", "復帰の強さ" }
+			, { "Shark Route Debug Visible", "サメの予定ルートを表示" }
 			, { "Max Distance", "最大距離" }, { "Use Team Heading", "Team Headingを使用" }
 			, { "Team Heading Direction", "Team Heading方向" }, { "Team Heading Weight", "Team Headingの強さ" }
 			, { "Team Heading Follow Speed", "Team Heading追従速度" }, { "Pitch From Vertical Velocity", "垂直速度からPitchを設定" }
@@ -13678,6 +13706,26 @@ void ImGuiManager::DrawInspectorWindow() {
 					"WaterVolume"
 				);
 				drawFishingEntityReference(
+					"Boundary Negative X Wall",
+					component.fishingBoundaryNegativeXWallEntityId,
+					"OBBCollider"
+				);
+				drawFishingEntityReference(
+					"Boundary Positive X Wall",
+					component.fishingBoundaryPositiveXWallEntityId,
+					"OBBCollider"
+				);
+				drawFishingEntityReference(
+					"Boundary Negative Z Wall",
+					component.fishingBoundaryNegativeZWallEntityId,
+					"OBBCollider"
+				);
+				drawFishingEntityReference(
+					"Boundary Positive Z Wall",
+					component.fishingBoundaryPositiveZWallEntityId,
+					"OBBCollider"
+				);
+				drawFishingEntityReference(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Hook Spawn Area"),
 					component.fishingHookSpawnAreaEntityId,
 					"FishingHookSpawnArea"
@@ -14052,6 +14100,12 @@ void ImGuiManager::DrawInspectorWindow() {
 				fishingChanged |= ImGui::InputInt(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Random Seed"),
 					&component.fishingRandomSeed
+				);
+				fishingChanged |= ImGui::Checkbox(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Shark Route Debug Visible"
+					),
+					&component.fishingSharkRouteDebugVisible
 				);
 				ImGui::SeparatorText(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Formation Capsule")
@@ -14619,6 +14673,66 @@ void ImGuiManager::DrawInspectorWindow() {
 					LocalizedComponentWidgetLabel(editorLanguage_, "Obstacle Avoidance Response"),
 					&component.fishingSharkObstacleAvoidanceResponse, 0.1f, 0.0f, 1000.0f
 				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Patrol Route Rebuild Interval Seconds"),
+					&component.fishingSharkPatrolRouteRebuildIntervalSeconds, 0.1f, 0.001f, 3600.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Navigation Cell Size"),
+					&component.fishingSharkNavigationCellSize, 0.1f, 0.001f, 100.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Waypoint Acceptance Distance"),
+					&component.fishingSharkWaypointAcceptanceDistance, 0.1f, 0.001f, 100.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Obstacle Clearance"),
+					&component.fishingSharkObstacleClearance, 0.1f, 0.0f, 100.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Detection Distance"),
+					&component.fishingSharkDetectionDistance, 0.1f, 0.0f, 10000.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Lose Distance"),
+					&component.fishingSharkLoseDistance, 0.1f, 0.0f, 10000.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Detection Delay Seconds"),
+					&component.fishingSharkDetectionDelaySeconds, 0.05f, 0.0f, 60.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Lost Target Delay Seconds"),
+					&component.fishingSharkLostTargetDelaySeconds, 0.05f, 0.0f, 60.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Reacquire Cooldown Seconds"),
+					&component.fishingSharkReacquireCooldownSeconds, 0.05f, 0.0f, 3600.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Chase Move Speed"),
+					&component.fishingSharkChaseMoveSpeed, 0.1f, 0.0f, 10000.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Chase Maximum Turn Rate"),
+					&component.fishingSharkChaseMaximumTurnRate, 0.05f, 0.001f, 1000.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Chase Route Rebuild Interval Seconds"),
+					&component.fishingSharkChaseRouteRebuildIntervalSeconds, 0.05f, 0.001f, 60.0f
+				);
+				sharkChanged |= ImGui::ColorEdit4(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Alert Color"),
+					&component.fishingSharkAlertColor.x
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Alert Emissive Intensity"),
+					&component.fishingSharkAlertEmissiveIntensity, 0.1f, 0.0f, 8.0f
+				);
+				sharkChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Alert Pulse Speed"),
+					&component.fishingSharkAlertPulseSpeed, 0.1f, 0.0f, 100.0f
+				);
 				component.fishingSharkRadiusX = (std::max)(
 					component.fishingSharkRadiusX, 0.001f
 				);
@@ -14646,14 +14760,75 @@ void ImGuiManager::DrawInspectorWindow() {
 				component.fishingSharkObstacleAvoidanceResponse = (std::max)(
 					component.fishingSharkObstacleAvoidanceResponse, 0.0f
 				);
+				component.fishingSharkPatrolRouteRebuildIntervalSeconds = (std::max)(
+					component.fishingSharkPatrolRouteRebuildIntervalSeconds, 0.001f
+				);
+				component.fishingSharkNavigationCellSize = (std::max)(
+					component.fishingSharkNavigationCellSize, 0.001f
+				);
+				component.fishingSharkWaypointAcceptanceDistance = (std::max)(
+					component.fishingSharkWaypointAcceptanceDistance, 0.001f
+				);
+				component.fishingSharkObstacleClearance = (std::max)(
+					component.fishingSharkObstacleClearance, 0.0f
+				);
+				component.fishingSharkDetectionDistance = (std::max)(
+					component.fishingSharkDetectionDistance, 0.0f
+				);
+				component.fishingSharkLoseDistance = (std::max)(
+					component.fishingSharkLoseDistance, 0.0f
+				);
+				component.fishingSharkDetectionDelaySeconds = (std::max)(
+					component.fishingSharkDetectionDelaySeconds, 0.0f
+				);
+				component.fishingSharkLostTargetDelaySeconds = (std::max)(
+					component.fishingSharkLostTargetDelaySeconds, 0.0f
+				);
+				component.fishingSharkReacquireCooldownSeconds = (std::max)(
+					component.fishingSharkReacquireCooldownSeconds, 0.0f
+				);
+				component.fishingSharkChaseMoveSpeed = (std::max)(
+					component.fishingSharkChaseMoveSpeed, 0.0f
+				);
+				component.fishingSharkChaseMaximumTurnRate = (std::max)(
+					component.fishingSharkChaseMaximumTurnRate, 0.001f
+				);
+				component.fishingSharkChaseRouteRebuildIntervalSeconds = (std::max)(
+					component.fishingSharkChaseRouteRebuildIntervalSeconds, 0.001f
+				);
+				component.fishingSharkAlertColor.x = std::clamp(
+					component.fishingSharkAlertColor.x, 0.0f, 1.0f
+				);
+				component.fishingSharkAlertColor.y = std::clamp(
+					component.fishingSharkAlertColor.y, 0.0f, 1.0f
+				);
+				component.fishingSharkAlertColor.z = std::clamp(
+					component.fishingSharkAlertColor.z, 0.0f, 1.0f
+				);
+				component.fishingSharkAlertColor.w = std::clamp(
+					component.fishingSharkAlertColor.w, 0.0f, 1.0f
+				);
+				component.fishingSharkAlertEmissiveIntensity = std::clamp(
+					component.fishingSharkAlertEmissiveIntensity, 0.0f, 8.0f
+				);
+				component.fishingSharkAlertPulseSpeed = (std::max)(
+					component.fishingSharkAlertPulseSpeed, 0.0f
+				);
 				if (sharkChanged) {
 					document.MarkDirty();
 				}
 				ImGui::TextDisabled(
 					SelectEditorText(
 						editorLanguage_,
-						"Wander Move Speedが0なら従来の楕円周回、正なら自由遊泳です。初期位置はFishingScoreAttackDirectorが決めます。OBBColliderをTriggerにしてください。",
-						"A Wander Move Speed of 0 uses the legacy ellipse patrol; a positive value enables free wander. FishingScoreAttackDirector chooses the initial position. Set the OBBCollider as a trigger."
+						"Wander Move Speedが0なら従来の楕円周回、正なら巡回・発見・追跡を行います。半径・Angular Speed・Initial Phaseは0以外では互換用です。OBBColliderをTriggerにしてください。",
+						"A Wander Move Speed of 0 uses the legacy ellipse patrol; a positive value enables patrol, detection, and chase. Radius, Angular Speed, and Initial Phase are compatibility settings outside zero-speed mode. Set the OBBCollider as a trigger."
+					)
+				);
+				ImGui::TextDisabled(
+					SelectEditorText(
+						editorLanguage_,
+						"発見距離で発見ディレイが始まり、見失い距離の外で一定時間経過後に巡回へ戻ります。巡回復帰後は再発見クールタイム中、発見判定を停止します。",
+						"Detection starts the alert delay. After remaining outside the lose distance for the configured time, the shark returns to patrol. Reacquisition is disabled during the cooldown after patrol resumes."
 					)
 				);
 				ImGui::EndDisabled();
@@ -22585,6 +22760,10 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 		changed |= ImGui::InputInt(text("ランダムシード", "Random Seed"), &director->fishingRandomSeed);
 		drawReference(text("プレイヤー", "Player"), director->fishingPlayerEntityId, "PlayerBehavior");
 		drawReference(text("水域", "Water Volume"), director->fishingWaterVolumeEntityId, "WaterVolume");
+		drawReference("Boundary Negative X Wall", director->fishingBoundaryNegativeXWallEntityId, "OBBCollider");
+		drawReference("Boundary Positive X Wall", director->fishingBoundaryPositiveXWallEntityId, "OBBCollider");
+		drawReference("Boundary Negative Z Wall", director->fishingBoundaryNegativeZWallEntityId, "OBBCollider");
+		drawReference("Boundary Positive Z Wall", director->fishingBoundaryPositiveZWallEntityId, "OBBCollider");
 		drawReference(text("釣り針スポーン範囲", "Hook Spawn Area"), director->fishingHookSpawnAreaEntityId, "FishingHookSpawnArea");
 		drawReference(text("釣り針プール", "Hook Pool"), director->fishingHookPoolEntityId, "FishingHookPool");
 		int removeFishIndex = -1;
@@ -22888,20 +23067,41 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 	}
 
 	if (ImGui::TreeNodeEx("Sharks###FishingConsoleSharks", ImGuiTreeNodeFlags_DefaultOpen, text("サメ", "Sharks"))) {
+		ImGui::BeginDisabled(!canEditScene || directorEntity->locked);
+		changed |= ImGui::Checkbox(
+			text("サメの予定ルートを表示", "Shark Route Debug Visible"),
+			&director->fishingSharkRouteDebugVisible
+		);
+		ImGui::EndDisabled();
 		for (SceneEntity& entity : document.GetEntities()) {
 			SceneComponent* shark = FindComponent(entity, "FishingShark");
 			if (!shark || !shark->enabled) continue;
 			ImGui::PushID(static_cast<int>(entity.id));
 			ImGui::TextUnformatted(entity.name.c_str());
 			ImGui::BeginDisabled(!canEditScene || entity.locked);
-			changed |= ImGui::DragInt("Penalty Score", &shark->fishingSharkPenaltyScore, 10.0f, 0, 1000000000);
-			changed |= ImGui::DragFloat("Hit Cooldown Seconds", &shark->fishingSharkHitCooldownSeconds, 0.05f, 0.0f, 3600.0f);
-			changed |= ImGui::DragFloat("Path Randomness", &shark->fishingSharkPathRandomness, 0.01f, 0.0f, 1.0f);
-			changed |= ImGui::DragFloat("Wander Move Speed", &shark->fishingSharkWanderMoveSpeed, 0.1f, 0.0f, 10000.0f);
-			changed |= ImGui::DragFloat("Wander Maximum Turn Rate", &shark->fishingSharkWanderMaximumTurnRate, 0.05f, 0.0f, 1000.0f);
-			changed |= ImGui::DragFloat("Obstacle Avoidance Distance", &shark->fishingSharkObstacleAvoidanceDistance, 0.1f, 0.0f, 10000.0f);
-			changed |= ImGui::DragFloat("Obstacle Avoidance Strength", &shark->fishingSharkObstacleAvoidanceStrength, 0.01f, 0.0f, 1.0f);
-			changed |= ImGui::DragFloat("Obstacle Avoidance Response", &shark->fishingSharkObstacleAvoidanceResponse, 0.1f, 0.0f, 1000.0f);
+			changed |= ImGui::DragInt(text("減点スコア", "Penalty Score"), &shark->fishingSharkPenaltyScore, 10.0f, 0, 1000000000);
+			changed |= ImGui::DragFloat(text("ヒットクールタイム（秒）", "Hit Cooldown Seconds"), &shark->fishingSharkHitCooldownSeconds, 0.05f, 0.0f, 3600.0f);
+			changed |= ImGui::DragFloat(text("経路ランダム性", "Path Randomness"), &shark->fishingSharkPathRandomness, 0.01f, 0.0f, 1.0f);
+			changed |= ImGui::DragFloat(text("巡回速度", "Wander Move Speed"), &shark->fishingSharkWanderMoveSpeed, 0.1f, 0.0f, 10000.0f);
+			changed |= ImGui::DragFloat(text("巡回最大旋回速度", "Wander Maximum Turn Rate"), &shark->fishingSharkWanderMaximumTurnRate, 0.05f, 0.0f, 1000.0f);
+			changed |= ImGui::DragFloat(text("障害物回避先読み距離", "Obstacle Avoidance Distance"), &shark->fishingSharkObstacleAvoidanceDistance, 0.1f, 0.0f, 10000.0f);
+			changed |= ImGui::DragFloat(text("障害物回避の強さ", "Obstacle Avoidance Strength"), &shark->fishingSharkObstacleAvoidanceStrength, 0.01f, 0.0f, 1.0f);
+			changed |= ImGui::DragFloat(text("障害物回避応答速度", "Obstacle Avoidance Response"), &shark->fishingSharkObstacleAvoidanceResponse, 0.1f, 0.0f, 1000.0f);
+			changed |= ImGui::DragFloat(text("巡回ルート更新間隔（秒）", "Patrol Route Rebuild Interval Seconds"), &shark->fishingSharkPatrolRouteRebuildIntervalSeconds, 0.1f, 0.001f, 3600.0f);
+			changed |= ImGui::DragFloat(text("経路探索セルサイズ", "Navigation Cell Size"), &shark->fishingSharkNavigationCellSize, 0.1f, 0.001f, 100.0f);
+			changed |= ImGui::DragFloat(text("経由点到達距離", "Waypoint Acceptance Distance"), &shark->fishingSharkWaypointAcceptanceDistance, 0.1f, 0.001f, 100.0f);
+			changed |= ImGui::DragFloat(text("岩との安全距離", "Obstacle Clearance"), &shark->fishingSharkObstacleClearance, 0.1f, 0.0f, 100.0f);
+			changed |= ImGui::DragFloat(text("プレイヤー発見距離", "Detection Distance"), &shark->fishingSharkDetectionDistance, 0.1f, 0.0f, 10000.0f);
+			changed |= ImGui::DragFloat(text("プレイヤー見失い距離", "Lose Distance"), &shark->fishingSharkLoseDistance, 0.1f, 0.0f, 10000.0f);
+			changed |= ImGui::DragFloat(text("発見ディレイ（秒）", "Detection Delay Seconds"), &shark->fishingSharkDetectionDelaySeconds, 0.05f, 0.0f, 60.0f);
+			changed |= ImGui::DragFloat(text("見失うまでの時間（秒）", "Lost Target Delay Seconds"), &shark->fishingSharkLostTargetDelaySeconds, 0.05f, 0.0f, 60.0f);
+			changed |= ImGui::DragFloat(text("再発見クールタイム（秒）", "Reacquire Cooldown Seconds"), &shark->fishingSharkReacquireCooldownSeconds, 0.05f, 0.0f, 3600.0f);
+			changed |= ImGui::DragFloat(text("追跡速度", "Chase Move Speed"), &shark->fishingSharkChaseMoveSpeed, 0.1f, 0.0f, 10000.0f);
+			changed |= ImGui::DragFloat(text("追跡最大旋回速度", "Chase Maximum Turn Rate"), &shark->fishingSharkChaseMaximumTurnRate, 0.05f, 0.001f, 1000.0f);
+			changed |= ImGui::DragFloat(text("追跡ルート更新間隔（秒）", "Chase Route Rebuild Interval Seconds"), &shark->fishingSharkChaseRouteRebuildIntervalSeconds, 0.05f, 0.001f, 60.0f);
+			changed |= ImGui::ColorEdit4(text("発見演出色", "Alert Color"), &shark->fishingSharkAlertColor.x);
+			changed |= ImGui::DragFloat(text("発見演出の発光強度", "Alert Emissive Intensity"), &shark->fishingSharkAlertEmissiveIntensity, 0.1f, 0.0f, 8.0f);
+			changed |= ImGui::DragFloat(text("発見演出の点滅速度", "Alert Pulse Speed"), &shark->fishingSharkAlertPulseSpeed, 0.1f, 0.0f, 100.0f);
 			ImGui::EndDisabled();
 			ImGui::SameLine();
 			if (ImGui::SmallButton(text("サメをInspectorで開く", "Open Shark Inspector"))) {

@@ -76,9 +76,9 @@ void SceneParticleSystem::Update(
 	}
 
 	Input* input = Input::GetInstance();
-	if (editing && input && input->TriggerKey(DIK_SPACE)) {
-		particleManager->CycleSceneParticleAssets(sceneId);
-	}
+	//if (editing && input && input->TriggerKey(DIK_SPACE)) {
+	//	particleManager->CycleSceneParticleAssets(sceneId);
+	//}
 	if (editorPreviewEmitter_) {
 		editorPreviewEmitter_->Update();
 	}

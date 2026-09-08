@@ -951,6 +951,10 @@ void RuntimeScene::Update(float deltaTime)
 			*activeDocument,
 			runtimeObjectBindings_
 		);
+		fishingScoreAttackSystem_.ApplySharkVisualOverrides(
+			*activeDocument,
+			runtimeObjectBindings_
+		);
 		physicsSystem_.SyncSceneSettings(
 			*activeDocument,
 			player_,
@@ -1237,6 +1241,10 @@ void RuntimeScene::Update(float deltaTime)
 			*activeDocument,
 			runtimeObjectBindings_
 		);
+		fishingScoreAttackSystem_.ApplySharkVisualOverrides(
+			*activeDocument,
+			runtimeObjectBindings_
+		);
 	}
 	runtimeEffectSystem_.SetWorldEffectsPaused(runtimeSceneId, worldEffectsPaused);
 	objectSystem_.ClearSpriteOverrides();
@@ -1303,6 +1311,7 @@ void RuntimeScene::Update(float deltaTime)
 			*activeDocument,
 			agentSystem_
 		);
+		fishingScoreAttackSystem_.AddSharkNavigationDebugDraw(*activeDocument);
 	}
 	if (activeDocument && playing) {
 		// Eventは同FrameのTextMotion completionを次Packageで受け取れる位置に置く。
@@ -1566,6 +1575,11 @@ void RuntimeScene::UpdatePaused()
 			*document,
 			runtimeObjectBindings_
 		);
+		fishingScoreAttackSystem_.ApplySharkVisualOverrides(
+			*document,
+			runtimeObjectBindings_
+		);
+		fishingScoreAttackSystem_.AddSharkNavigationDebugDraw(*document);
 		objectSystem_.ClearSpriteOverrides();
 		for (const SceneFishingScoreAttackIconRequest& request :
 			fishingScoreAttackSystem_.GetIconRequests()) {

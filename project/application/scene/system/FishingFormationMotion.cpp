@@ -14,7 +14,11 @@ constexpr double kSegmentEpsilon = 1.0e-12;
 constexpr double kPi = 3.1415926535897932384626433832795;
 constexpr int kRotationIterations = 64;
 constexpr int kCastIterations = 32;
-constexpr int kSlideIterations = 4;
+constexpr int kSlideIterations = 32;
+constexpr double kMinimumTranslationStep = 0.25;
+constexpr double kTranslationStepRadiusScale = 0.5;
+constexpr int kRotationEscapeRingCount = 4;
+constexpr int kRotationEscapeDirectionCount = 16;
 
 struct Vec2 {
 	double x = 0.0;
@@ -575,68 +579,193 @@ Vec2 ProjectToContactCone(Vec2 value, const std::vector<Contact>& contacts) {
 	return best;
 }
 
-bool SweepRotation(
-	Vec2 center,
-	double startYaw,
-	double desiredYaw,
+double MaximumTranslationStep(double radius) {
+	return (std::max)(
+		radius * kTranslationStepRadiusScale,
+		kMinimumTranslationStep
+	);
+}
+
+struct RotationSolveResult {
+	Vec2 center{};
+	double yaw = 0.0;
+	bool complete = false;
+	bool iterationLimited = false;
+};
+
+bool TryFindRotationEscapeCenter(
+	Vec2 currentCenter,
+	double currentYaw,
+	double nextYaw,
+	Vec2 desiredCenter,
 	double radius,
 	double halfSegmentLength,
 	const std::vector<ObstacleGeometry>& obstacles,
+	const std::vector<size_t>& obstacleOrder,
+	const CenterBounds& bounds,
 	double epsilon,
-	double& outputYaw,
-	bool& iterationLimited
+	double remainingEscapeBudget,
+	Vec2& outputCenter,
+	double& outputDistance
 ) {
-	const double deltaYaw = WrapAngle(desiredYaw - startYaw);
-	outputYaw = startYaw;
-	if (halfSegmentLength <= kSegmentEpsilon || std::abs(deltaYaw) <= kEpsilon) {
-		outputYaw = desiredYaw;
-		return true;
+	if (remainingEscapeBudget <= epsilon) {
+		return false;
 	}
-	double progress = 0.0;
-	for (int iteration = 0; iteration < kRotationIterations; ++iteration) {
-		if (progress >= 1.0 - kEpsilon) {
-			outputYaw = desiredYaw;
+	Vec2 preferredDirection = Subtract(desiredCenter, currentCenter);
+	if (!Normalize(preferredDirection, preferredDirection)) {
+		preferredDirection = Forward(static_cast<float>(currentYaw));
+	}
+	const Vec2 leftDirection = {
+		-preferredDirection.y,
+		preferredDirection.x
+	};
+	for (int ring = 1; ring <= kRotationEscapeRingCount; ++ring) {
+		const double distance = remainingEscapeBudget *
+			static_cast<double>(ring) /
+			static_cast<double>(kRotationEscapeRingCount);
+		for (int order = 0; order < kRotationEscapeDirectionCount; ++order) {
+			const int directionOffset = order == 0
+				? 0
+				: (order % 2 == 0 ? -1 : 1) * ((order + 1) / 2);
+			const double angle = 2.0 * kPi *
+				static_cast<double>(directionOffset) /
+				static_cast<double>(kRotationEscapeDirectionCount);
+			const Vec2 direction = Add(
+				Multiply(preferredDirection, std::cos(angle)),
+				Multiply(leftDirection, std::sin(angle))
+			);
+			const Vec2 candidateCenter = Add(
+				currentCenter,
+				Multiply(direction, distance)
+			);
+			const CastHit path = Cast(
+				currentCenter,
+				Subtract(candidateCenter, currentCenter),
+				currentYaw,
+				radius,
+				halfSegmentLength,
+				obstacles,
+				obstacleOrder,
+				bounds,
+				epsilon
+			);
+			if (path.hit ||
+				!IsSafePose(
+					candidateCenter, currentYaw, radius, halfSegmentLength,
+					obstacles, bounds, epsilon
+				) ||
+				!IsSafePose(
+					candidateCenter, nextYaw, radius, halfSegmentLength,
+					obstacles, bounds, epsilon
+				)) {
+				continue;
+			}
+			outputCenter = candidateCenter;
+			outputDistance = distance;
 			return true;
 		}
-		const double currentYaw = startYaw + deltaYaw * progress;
+	}
+	return false;
+}
+
+RotationSolveResult SolveRotationWithEscape(
+	Vec2 startCenter,
+	double startYaw,
+	double desiredYaw,
+	Vec2 desiredCenter,
+	double radius,
+	double halfSegmentLength,
+	const std::vector<ObstacleGeometry>& obstacles,
+	const std::vector<size_t>& obstacleOrder,
+	const CenterBounds& bounds,
+	double skin,
+	double epsilon
+) {
+	RotationSolveResult result{};
+	result.center = startCenter;
+	result.yaw = startYaw;
+	const double deltaYaw = WrapAngle(desiredYaw - startYaw);
+	if (halfSegmentLength <= kSegmentEpsilon || std::abs(deltaYaw) <= kEpsilon) {
+		result.yaw = desiredYaw;
+		result.complete = true;
+		return result;
+	}
+	double progress = 0.0;
+	double consumedEscapeDistance = 0.0;
+	const double maximumEscapeDistance = MaximumTranslationStep(radius);
+	for (int iteration = 0; iteration < kRotationIterations; ++iteration) {
+		if (progress >= 1.0 - kEpsilon) {
+			result.yaw = desiredYaw;
+			result.complete = true;
+			return result;
+		}
+		const double currentYaw = result.yaw;
 		double minimumGap = std::numeric_limits<double>::max();
 		for (const ObstacleGeometry& obstacle : obstacles) {
 			const DistanceInfo distance = ObstacleDistance(
-				center, currentYaw, halfSegmentLength, obstacle
+				result.center, currentYaw, halfSegmentLength, obstacle
 			);
 			minimumGap = (std::min)(minimumGap, distance.distance - radius);
 		}
-		if (minimumGap <= epsilon) {
-			return false;
-		}
 		const double angularTravel = halfSegmentLength * std::abs(deltaYaw);
-		const double maximumProgress = angularTravel > kSegmentEpsilon
+		double maximumProgress = minimumGap > epsilon &&
+			angularTravel > kSegmentEpsilon
 			? std::clamp((minimumGap - epsilon) * 0.8 / angularTravel, 0.0, 1.0)
-			: 1.0;
+			: 0.0;
+		if (maximumProgress <= 1.0e-6) {
+			const double minimumAngularStep =
+				(std::max)(skin, radius * 0.05) / halfSegmentLength;
+			maximumProgress = (std::min)(
+				1.0 - progress,
+				minimumAngularStep / std::abs(deltaYaw)
+			);
+		}
 		const double step = (std::min)(1.0 - progress, maximumProgress);
 		if (step <= 1.0e-6) {
-			return false;
+			result.iterationLimited = true;
+			return result;
 		}
 		const double nextProgress = progress + step;
 		const double nextYaw = startYaw + deltaYaw * nextProgress;
-		bool safe = true;
-		for (const ObstacleGeometry& obstacle : obstacles) {
-			const DistanceInfo distance = ObstacleDistance(
-				center, nextYaw, halfSegmentLength, obstacle
-			);
-			if (distance.distance < radius - epsilon) {
-				safe = false;
-				break;
-			}
+		if (IsSafePose(
+			result.center, nextYaw, radius, halfSegmentLength,
+			obstacles, bounds, epsilon
+		)) {
+			result.yaw = nextYaw;
+			progress = nextProgress;
+			continue;
 		}
-		if (!safe) {
-			return false;
+		Vec2 escapeCenter{};
+		double escapeDistance = 0.0;
+		if (!TryFindRotationEscapeCenter(
+			result.center,
+			currentYaw,
+			nextYaw,
+			desiredCenter,
+			radius,
+			halfSegmentLength,
+			obstacles,
+			obstacleOrder,
+			bounds,
+			epsilon,
+			maximumEscapeDistance - consumedEscapeDistance,
+			escapeCenter,
+			escapeDistance
+		)) {
+			return result;
 		}
+		result.center = escapeCenter;
+		result.yaw = nextYaw;
+		consumedEscapeDistance += escapeDistance;
 		progress = nextProgress;
-		outputYaw = nextYaw;
 	}
-	iterationLimited = true;
-	return false;
+	if (progress >= 1.0 - kEpsilon) {
+		result.yaw = desiredYaw;
+		result.complete = true;
+		return result;
+	}
+	result.iterationLimited = true;
+	return result;
 }
 
 bool ValidateRequest(
@@ -732,38 +861,46 @@ bool Solve(
 		return false;
 	}
 
-	double solvedYaw = request.startYaw;
-	bool rotationIterationLimited = false;
-	const bool rotationSucceeded = SweepRotation(
+	const RotationSolveResult rotation = SolveRotationWithEscape(
 		startCenter,
 		static_cast<double>(request.startYaw),
 		static_cast<double>(request.desiredYaw),
+		desiredCenter,
 		radius,
 		halfSegmentLength,
 		geometries,
-		epsilon,
-		solvedYaw,
-		rotationIterationLimited
+		obstacleOrder,
+		request.bounds,
+		skin,
+		epsilon
 	);
-	result.rotationBlocked = !rotationSucceeded;
-	if (!rotationSucceeded) {
-		solvedYaw = request.startYaw;
-	}
+	const double solvedYaw = rotation.yaw;
+	const bool rotationIterationLimited = rotation.iterationLimited;
+	result.rotationBlocked = !rotation.complete;
 	result.yaw = static_cast<float>(solvedYaw);
 
-	Vec2 currentCenter = startCenter;
+	Vec2 currentCenter = rotation.center;
 	Vec2 remaining = Subtract(desiredCenter, currentCenter);
 	Vec2 solvedVelocity = ToVec2(request.desiredVelocity);
 	std::vector<Contact> activeContacts;
 	bool slideIterationLimited = false;
 	Vec2 lastVerifiedCenter = currentCenter;
+	const double maximumTranslationStep = MaximumTranslationStep(radius);
 	for (int iteration = 0; iteration < kSlideIterations; ++iteration) {
 		if (LengthSquared(remaining) <= epsilon * epsilon) {
 			break;
 		}
+		Vec2 stepDelta = remaining;
+		const double remainingLength = std::sqrt(LengthSquared(remaining));
+		if (remainingLength > maximumTranslationStep) {
+			stepDelta = Multiply(
+				remaining,
+				maximumTranslationStep / remainingLength
+			);
+		}
 		const CastHit hit = Cast(
 			currentCenter,
-			remaining,
+			stepDelta,
 			solvedYaw,
 			radius,
 			halfSegmentLength,
@@ -773,7 +910,7 @@ bool Solve(
 			epsilon
 		);
 		if (!hit.hit) {
-			currentCenter = Add(currentCenter, remaining);
+			currentCenter = Add(currentCenter, stepDelta);
 			if (!IsSafePose(
 				currentCenter, solvedYaw, radius, halfSegmentLength,
 				geometries, request.bounds, epsilon
@@ -783,11 +920,11 @@ bool Solve(
 				break;
 			}
 			lastVerifiedCenter = currentCenter;
-			remaining = {};
-			break;
+			remaining = Subtract(remaining, stepDelta);
+			continue;
 		}
 		const double hitTime = std::clamp(hit.time, 0.0, 1.0);
-		currentCenter = Add(currentCenter, Multiply(remaining, hitTime));
+		currentCenter = Add(currentCenter, Multiply(stepDelta, hitTime));
 		if (!IsSafePose(
 			currentCenter, solvedYaw, radius, halfSegmentLength,
 			geometries, request.bounds, epsilon
@@ -800,13 +937,12 @@ bool Solve(
 		activeContacts.insert(
 			activeContacts.end(), hit.contacts.begin(), hit.contacts.end()
 		);
-		const Vec2 leftover = Multiply(remaining, 1.0 - hitTime);
+		const Vec2 leftover = Add(
+			Multiply(stepDelta, 1.0 - hitTime),
+			Subtract(remaining, stepDelta)
+		);
 		remaining = ProjectToContactCone(leftover, activeContacts);
 		solvedVelocity = ProjectToContactCone(solvedVelocity, activeContacts);
-		if (hitTime >= 1.0 - epsilon) {
-			remaining = {};
-			break;
-		}
 	}
 	if (LengthSquared(remaining) > epsilon * epsilon) {
 		slideIterationLimited = true;
