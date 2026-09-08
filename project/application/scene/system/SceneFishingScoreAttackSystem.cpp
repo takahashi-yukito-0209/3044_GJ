@@ -1352,10 +1352,12 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			scorePopup_.elapsedSeconds = 0.0f;
 			scorePopup_.active = true;
 		}
-		DeactivatePoolHooks(document, *director);
 		playerConstraintRequest_ = {};
 		hasPlayerConstraintRequest_ = false;
 		hasPlayerResetRequest_ = hasInitialPlayerTransform_;
+		if (!SpawnHooks(document, *director)) {
+			return;
+		}
 		state_ = SceneFishingScoreAttackState::SelectingNext;
 		SetFishPreview(document, *director);
 		BuildTextRequests(*director);
@@ -1504,10 +1506,12 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		scorePopup_.elapsedSeconds = 0.0f;
 		scorePopup_.active = true;
 	}
-	DeactivatePoolHooks(document, *director);
 	playerConstraintRequest_ = {};
 	hasPlayerConstraintRequest_ = false;
 	hasPlayerResetRequest_ = hasInitialPlayerTransform_;
+	if (!SpawnHooks(document, *director)) {
+		return;
+	}
 	state_ = SceneFishingScoreAttackState::SelectingNext;
 	SetFishPreview(document, *director);
 	BuildTextRequests(*director);
@@ -2897,6 +2901,9 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 	playerConstraintRequest_ = {};
 	hasPlayerConstraintRequest_ = false;
 	DeactivatePoolHooks(document, director);
+	if (!SpawnHooks(document, director)) {
+		return;
+	}
 	SetFishPreview(document, director);
 	state_ = SceneFishingScoreAttackState::SelectingInitial;
 	BuildTextRequests(director);
@@ -2958,7 +2965,7 @@ void SceneFishingScoreAttackSystem::UpdateSelection(
 	StartRound(document, director);
 }
 
-void SceneFishingScoreAttackSystem::StartRound(
+bool SceneFishingScoreAttackSystem::SpawnHooks(
 	SceneDocument& document,
 	const SceneComponent& director
 ) {
@@ -2983,12 +2990,13 @@ void SceneFishingScoreAttackSystem::StartRound(
 		"WaterVolume"
 	);
 	if (!player || !spawnAreaEntity || !spawnArea || !pool || !waterEntity || !waterVolume) {
-		Fault(document, director, "Fishing round references became invalid");
-		return;
+		Fault(document, director, "Fishing hook spawn references became invalid");
+		return false;
 	}
 
-	const Transform playerTransform =
-		SceneTransformResolver::ResolveScene3DTransform(document, *player);
+	const Transform playerTransform = hasInitialPlayerTransform_
+		? initialPlayerTransform_
+		: SceneTransformResolver::ResolveScene3DTransform(document, *player);
 	const Transform areaTransform =
 		SceneTransformResolver::ResolveScene3DTransform(document, *spawnAreaEntity);
 	Transform waterTransform =
@@ -3028,7 +3036,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 				}
 				if (availableEntryIndices.empty()) {
 					Fault(document, director, "FishingHookPool cannot select unique hooks");
-					return;
+					return false;
 				}
 				std::uniform_int_distribution<size_t> entryDistribution(
 					0, availableEntryIndices.size() - 1
@@ -3069,7 +3077,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 				}
 				if (selectedTierIndex < 0) {
 					Fault(document, director, "FishingHookBand has no selectable tier");
-					return;
+					return false;
 				}
 				hookMultiplierTier = selectedTierIndex + 1;
 			} else {
@@ -3081,7 +3089,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 				}
 				if (!std::isfinite(totalWeight) || totalWeight <= 0.0f) {
 					Fault(document, director, "FishingHookPool cannot select unique hooks for a distance band");
-					return;
+					return false;
 				}
 				std::uniform_real_distribution<float> weightDistribution(0.0f, totalWeight);
 				float remainingWeight = weightDistribution(random_);
@@ -3101,7 +3109,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 				}
 				if (!selectedEntry) {
 					Fault(document, director, "FishingHookPool selection failed");
-					return;
+					return false;
 				}
 			}
 			const SceneComponent* hookCollider = FindComponent(
@@ -3112,7 +3120,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 			);
 			if (!hookEntityForPlacement) {
 				Fault(document, director, "Selected FishingHook is missing");
-				return;
+				return false;
 			}
 			const Transform hookTransform =
 				SceneTransformResolver::ResolveScene3DTransform(
@@ -3194,7 +3202,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 			}
 			if (!foundPosition) {
 				Fault(document, director, "FishingHookSpawnArea has no valid position for a distance band");
-				return;
+				return false;
 			}
 			SceneEntity* hookEntity = document.FindEntity(selectedEntry->hookEntityId);
 			hookEntity->transform.translate = spawnPosition;
@@ -3215,9 +3223,23 @@ void SceneFishingScoreAttackSystem::StartRound(
 			activeHooks_.push_back({ hookEntity->id, bandIndex, distanceMultiplier, hookMultiplierTier });
 		}
 	}
+	return true;
+}
+
+void SceneFishingScoreAttackSystem::StartRound(
+	SceneDocument& document,
+	const SceneComponent& director
+) {
+	const SceneEntity* player = document.FindEntity(director.fishingPlayerEntityId);
+	if (!player) {
+		Fault(document, director, "Fishing player reference became invalid");
+		return;
+	}
+	const Transform playerTransform =
+		SceneTransformResolver::ResolveScene3DTransform(document, *player);
 	roundFishCount_ = selectedFishCount_;
 	roundDistanceBand_ = 0;
-	roundMultiplier_ = useHookBandSettings
+	roundMultiplier_ = director.fishingUseHookBandSettings
 		? director.fishingHookBands.front().distanceMultiplier
 		: director.fishingDistanceMultiplierBase;
 	lastSafePlayerPlanarPosition_ = {
