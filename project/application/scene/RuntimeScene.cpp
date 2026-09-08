@@ -1493,7 +1493,8 @@ bool RuntimeScene::HasScreenOverlay() const
 	return
 		document &&
 		(
-			miniMapSystem_.HasScreenOverlay(document) ||
+			// ミニマップ表示を一時停止するため、Overlay判定から外す。
+			// miniMapSystem_.HasScreenOverlay(document) ||
 			objectSystem_.HasScreenOverlaySprites(*document) ||
 			textRenderSystem_.HasScreenOverlay(*document)
 		);
@@ -1503,7 +1504,8 @@ void RuntimeScene::DrawScreenOverlay(uint32_t width, uint32_t height)
 {
 	SceneDocument* document = GetSceneDocument();
 	if (document) {
-		miniMapSystem_.DrawScreenOverlay(document, width, height);
+		// ミニマップ表示を一時停止するため、描画呼び出しを残して無効化する。
+		// miniMapSystem_.DrawScreenOverlay(document, width, height);
 		objectSystem_.DrawScreenOverlaySprites(*document, width, height);
 		textRenderSystem_.DrawScreenOverlay(*document, width, height);
 	}
