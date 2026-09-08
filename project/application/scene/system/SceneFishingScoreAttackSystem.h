@@ -194,6 +194,7 @@ private:
 	) const;
 	void InitializeRun(SceneDocument& document, const SceneComponent& director);
 	void UpdateSelection(SceneDocument& document, const SceneComponent& director);
+	bool SpawnHooks(SceneDocument& document, const SceneComponent& director);
 	void StartRound(SceneDocument& document, const SceneComponent& director);
 	void UpdateSharks(
 		SceneDocument& document,
