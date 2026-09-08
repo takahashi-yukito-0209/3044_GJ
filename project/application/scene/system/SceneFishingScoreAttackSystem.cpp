@@ -1628,6 +1628,7 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 	if (state_ == SceneFishingScoreAttackState::Navigating) {
 		UpdateSharks(document, *director, deltaTime);
 	}
+	UpdateCurrentPositionMultiplier(document, *director);
 	BuildTextRequests(*director);
 }
 
@@ -5033,6 +5034,59 @@ void SceneFishingScoreAttackSystem::DeactivatePoolHooks(
 	activeHooks_.clear();
 }
 
+void SceneFishingScoreAttackSystem::UpdateCurrentPositionMultiplier(
+	const SceneDocument& document,
+	const SceneComponent& director
+) {
+	hasCurrentPositionMultiplier_ = false;
+	if (state_ != SceneFishingScoreAttackState::Navigating) {
+		return;
+	}
+	const SceneEntity* player = document.FindEntity(director.fishingPlayerEntityId);
+	const SceneEntity* waterEntity = document.FindEntity(
+		director.fishingWaterVolumeEntityId
+	);
+	const SceneComponent* waterVolume = FindComponent(
+		document,
+		director.fishingWaterVolumeEntityId,
+		"WaterVolume"
+	);
+	if (!player || !waterEntity || !waterVolume ||
+		waterVolume->waterHalfSize.z <= 0.0f) {
+		return;
+	}
+	const Transform playerTransform =
+		SceneTransformResolver::ResolveScene3DTransform(document, *player);
+	Transform waterTransform =
+		SceneTransformResolver::ResolveScene3DTransform(document, *waterEntity);
+	waterTransform.translate.x += waterVolume->waterOffset.x;
+	waterTransform.translate.y += waterVolume->waterOffset.y;
+	waterTransform.translate.z += waterVolume->waterOffset.z;
+	const int distanceBandCount = director.fishingUseHookBandSettings
+		? 5
+		: director.fishingDistanceBandCount;
+	if (distanceBandCount <= 0) {
+		return;
+	}
+	const Vector3 playerWaterLocal = ToLocalXZ(
+		waterTransform, playerTransform.translate
+	);
+	const float normalizedZ = (playerWaterLocal.z + waterVolume->waterHalfSize.z) /
+		(2.0f * waterVolume->waterHalfSize.z);
+	const float orientedZ = startFromPositiveWaterZ_
+		? 1.0f - std::clamp(normalizedZ, 0.0f, 0.99999f)
+		: std::clamp(normalizedZ, 0.0f, 0.99999f);
+	const int distanceBand = (std::min)(
+		static_cast<int>(std::floor(orientedZ * distanceBandCount)),
+		distanceBandCount - 1
+	);
+	currentPositionMultiplier_ = director.fishingUseHookBandSettings
+		? director.fishingHookBands[static_cast<size_t>(distanceBand)].distanceMultiplier
+		: director.fishingDistanceMultiplierBase +
+			director.fishingDistanceMultiplierStep * static_cast<float>(distanceBand);
+	hasCurrentPositionMultiplier_ = std::isfinite(currentPositionMultiplier_);
+}
+
 void SceneFishingScoreAttackSystem::BuildTextRequests(
 	const SceneComponent& director
 ) {
@@ -5064,14 +5118,10 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 	);
 	addText(
 		director.fishingMultiplierTextEntityId,
-		state_ == SceneFishingScoreAttackState::Navigating
+		state_ == SceneFishingScoreAttackState::Navigating &&
+			hasCurrentPositionMultiplier_
 			? director.fishingMultiplierPrefix +
-				FormatOneDecimal(director.fishingDistanceMultiplierBase) + "x - " +
-				FormatOneDecimal(
-					director.fishingDistanceMultiplierBase +
-					director.fishingDistanceMultiplierStep *
-						static_cast<float>(director.fishingDistanceBandCount - 1)
-				) + "x"
+				FormatOneDecimal(currentPositionMultiplier_) + "x"
 			: std::string{}
 	);
 	if (state_ == SceneFishingScoreAttackState::Result) {
@@ -5181,6 +5231,8 @@ void SceneFishingScoreAttackSystem::Clear() {
 	roundFishCount_ = 0;
 	roundDistanceBand_ = 0;
 	roundMultiplier_ = 0.0f;
+	currentPositionMultiplier_ = 0.0f;
+	hasCurrentPositionMultiplier_ = false;
 	elapsedSeconds_ = 0.0;
 	totalScore_ = 0;
 	timerRunning_ = false;

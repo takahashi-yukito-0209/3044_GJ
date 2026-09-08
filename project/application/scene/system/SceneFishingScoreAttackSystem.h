@@ -217,6 +217,10 @@ private:
 	void SetFishPreview(SceneDocument& document, const SceneComponent& director);
 	void DeactivatePoolHooks(SceneDocument& document, const SceneComponent& director);
 	void LoadFormationParticleTuning(const SceneComponent& director);
+	void UpdateCurrentPositionMultiplier(
+		const SceneDocument& document,
+		const SceneComponent& director
+	);
 	void BuildTextRequests(const SceneComponent& director);
 	void InitializeResultTracking(
 		const SceneDocument& document,
@@ -308,6 +312,8 @@ private:
 	int roundFishCount_ = 0;
 	int roundDistanceBand_ = 0;
 	float roundMultiplier_ = 0.0f;
+	float currentPositionMultiplier_ = 0.0f;
+	bool hasCurrentPositionMultiplier_ = false;
 	double elapsedSeconds_ = 0.0;
 	long long totalScore_ = 0;
 	bool timerRunning_ = false;
