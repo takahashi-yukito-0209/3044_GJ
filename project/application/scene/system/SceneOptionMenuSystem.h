@@ -33,6 +33,12 @@ public:
 	/// </summary>
 	void Clear();
 
+	// ポーズメニューからも同じ音量設定を操作できるように公開する。
+	void AdjustBgmVolume(int deltaPercent);
+	void AdjustSeVolume(int deltaPercent);
+	int GetBgmVolumePercent() const;
+	int GetSeVolumePercent() const;
+
 private:
 	struct MenuItem {
 		uint64_t entityId = 0; // 表示を上書きするTextRenderer Entity ID。

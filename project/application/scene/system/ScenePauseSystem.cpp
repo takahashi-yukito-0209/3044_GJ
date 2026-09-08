@@ -106,6 +106,7 @@ void ScenePauseSystem::CommitRequests(
 		}
 	}
 	activeRequests_ = std::move(working);
+	UpdateSnapshot(document);
 }
 
 bool ScenePauseSystem::IsDomainPaused(ScenePauseDomain domain) const {
