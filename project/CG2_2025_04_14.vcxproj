@@ -213,6 +213,7 @@
 	<ClCompile Include="application\scene\system\SceneTitleMenuSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneGameFlowSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneFishingScoreAttackSystem.cpp" />
+	<ClCompile Include="application\scene\system\SceneFishingResultPresentationSystem.cpp" />
 	<ClCompile Include="application\scene\system\FishingFormationMotion.cpp" />
 	<ClCompile Include="application\scene\system\SceneAudioSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneDebugSystem.cpp" />
@@ -493,6 +494,7 @@
 	<ClInclude Include="application\scene\system\SceneTitleMenuSystem.h" />
 	<ClInclude Include="application\scene\system\SceneGameFlowSystem.h" />
 	<ClInclude Include="application\scene\system\SceneFishingScoreAttackSystem.h" />
+	<ClInclude Include="application\scene\system\SceneFishingResultPresentationSystem.h" />
 	<ClInclude Include="application\scene\system\FishingFormationMotion.h" />
 	<ClInclude Include="application\scene\system\SceneAudioSystem.h" />
     <ClInclude Include="application\scene\system\SceneDebugSystem.h" />

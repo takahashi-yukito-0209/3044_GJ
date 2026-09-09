@@ -22,12 +22,12 @@ public:
 	ScenePauseMenuResult Update(
 		const SceneDocument& document,
 		const ScenePauseSystem& pauseSystem,
-		SceneOptionMenuSystem& optionMenuSystem
+		SceneOptionMenuSystem& optionMenuSystem,
+		float deltaTime
 	);
 	void ApplyTextOverrides(
 		const SceneDocument& document,
 		SceneTextRenderSystem& textRenderSystem,
-		bool pauseActive,
 		const SceneOptionMenuSystem& optionMenuSystem
 	) const;
 	void Clear();
@@ -40,6 +40,10 @@ private:
 
 	std::vector<MenuItem> CollectMenuItems(const SceneDocument& document) const;
 	uint64_t FindControllerEntityId(const SceneDocument& document) const;
+	void UpdateVisibility(bool visible, float deltaTime);
+	float GetPresentationProgress(int animationOrder) const;
 	bool optionOpen_ = false;
 	int selectedIndex_ = 0;
+	float visibilityProgress_ = 0.0f;
+	bool visibilityTargetVisible_ = false;
 };

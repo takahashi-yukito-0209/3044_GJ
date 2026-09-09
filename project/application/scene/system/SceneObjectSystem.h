@@ -82,6 +82,13 @@ public:
 		SceneDocument& document,
 		std::vector<SceneRuntimeObjectBinding>& bindings
 	);
+	// 現在Documentと、外部Systemへ貸し出しているbindingの整合性を検証する。
+	// Componentは参照せず、破損区間の診断にだけ使用する。
+	bool ValidateBindings(
+		const SceneDocument& document,
+		const std::vector<SceneRuntimeObjectBinding>& bindings,
+		std::string& diagnostic
+	) const;
 
 	void ApplyRenderCamera(Camera* camera);
 	void PrepareModelDraw() const;

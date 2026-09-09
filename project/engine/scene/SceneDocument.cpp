@@ -1904,6 +1904,7 @@ namespace {
 			result["scorePrefix"] = component.fishingScorePrefix;
 			result["multiplierPrefix"] = component.fishingMultiplierPrefix;
 			result["resultPrefix"] = component.fishingResultPrefix;
+			result["finishText"] = component.fishingFinishText;
 			result["useFormationCapsuleCollision"] =
 				component.fishingUseFormationCapsuleCollision;
 			result["formationOutlineVisible"] =
@@ -1939,6 +1940,41 @@ namespace {
 		} else if (component.type == "FishingResultTracker") {
 			result["channelId"] = component.fishingResultChannelId;
 			result["tieBreakMode"] = component.fishingResultTieBreakMode;
+		} else if (component.type == "FishingResultPresenter") {
+			result["channelId"] = component.fishingResultPresentationChannelId;
+			result["backgroundEntityId"] =
+				component.fishingResultPresentationBackgroundEntityId;
+			result["scoreTextEntityId"] =
+				component.fishingResultPresentationScoreTextEntityId;
+			result["scorePrefix"] = component.fishingResultPresentationScorePrefix;
+			result["fallbackVariantId"] =
+				component.fishingResultPresentationFallbackVariantId;
+			result["includeSharkInWinnerSelection"] =
+				component.fishingResultPresentationIncludeSharkInWinnerSelection;
+			result["sharkVariantId"] =
+				component.fishingResultPresentationSharkVariantId;
+			json variants = json::array();
+			for (const SceneFishingResultVisualVariant& variant :
+				component.fishingResultPresentationVariants) {
+				variants.push_back({
+					{ "id", variant.id },
+					{ "backgroundTexturePath", variant.backgroundTexturePath },
+					{ "decorationTexturePath", variant.decorationTexturePath }
+				});
+			}
+			result["variants"] = std::move(variants);
+			json decorations = json::array();
+			for (const SceneFishingResultDecorationEntry& decoration :
+				component.fishingResultPresentationDecorations) {
+				decorations.push_back({
+					{ "spriteEntityId", decoration.spriteEntityId },
+					{ "minScaleMultiplier", decoration.minScaleMultiplier },
+					{ "maxScaleMultiplier", decoration.maxScaleMultiplier },
+					{ "periodSeconds", decoration.periodSeconds },
+					{ "phaseOffset", decoration.phaseOffset }
+				});
+			}
+			result["decorations"] = std::move(decorations);
 		} else if (component.type == "FishingHookSpawnArea") {
 			result["halfSizeX"] = component.fishingSpawnHalfSizeX;
 			result["halfSizeZ"] = component.fishingSpawnHalfSizeZ;
@@ -3081,6 +3117,22 @@ namespace {
 		component.fishingResultTextEntityId = RemapEntityId(
 			component.fishingResultTextEntityId, idMap, preserveUnmappedIds
 		);
+		component.fishingResultPresentationBackgroundEntityId = RemapEntityId(
+			component.fishingResultPresentationBackgroundEntityId,
+			idMap,
+			preserveUnmappedIds
+		);
+		component.fishingResultPresentationScoreTextEntityId = RemapEntityId(
+			component.fishingResultPresentationScoreTextEntityId,
+			idMap,
+			preserveUnmappedIds
+		);
+		for (SceneFishingResultDecorationEntry& decoration :
+			component.fishingResultPresentationDecorations) {
+			decoration.spriteEntityId = RemapEntityId(
+				decoration.spriteEntityId, idMap, preserveUnmappedIds
+			);
+		}
 		for (SceneEventBinding& binding : component.eventBindings) {
 			binding.targetEntityId = RemapEntityId(
 				binding.targetEntityId, idMap, preserveUnmappedIds
@@ -3785,6 +3837,9 @@ namespace {
 					component.fishingResultPrefix = value.value(
 						"resultPrefix", component.fishingResultPrefix
 					);
+					component.fishingFinishText = value.value(
+						"finishText", component.fishingFinishText
+					);
 					component.fishingUseFormationCapsuleCollision = value.value(
 						"useFormationCapsuleCollision",
 						component.fishingUseFormationCapsuleCollision
@@ -3898,6 +3953,82 @@ namespace {
 					component.fishingResultTieBreakMode = value.value(
 						"tieBreakMode", component.fishingResultTieBreakMode
 					);
+				} else if (component.type == "FishingResultPresenter") {
+					component.fishingResultPresentationChannelId = value.value(
+						"channelId", component.fishingResultPresentationChannelId
+					);
+					component.fishingResultPresentationBackgroundEntityId = value.value(
+						"backgroundEntityId",
+						component.fishingResultPresentationBackgroundEntityId
+					);
+					component.fishingResultPresentationScoreTextEntityId = value.value(
+						"scoreTextEntityId",
+						component.fishingResultPresentationScoreTextEntityId
+					);
+					component.fishingResultPresentationScorePrefix = value.value(
+						"scorePrefix", component.fishingResultPresentationScorePrefix
+					);
+					component.fishingResultPresentationFallbackVariantId = value.value(
+						"fallbackVariantId",
+						component.fishingResultPresentationFallbackVariantId
+					);
+					component.fishingResultPresentationIncludeSharkInWinnerSelection =
+						value.value(
+							"includeSharkInWinnerSelection",
+							component.fishingResultPresentationIncludeSharkInWinnerSelection
+						);
+					component.fishingResultPresentationSharkVariantId = value.value(
+						"sharkVariantId",
+						component.fishingResultPresentationSharkVariantId
+					);
+					component.fishingResultPresentationVariants.clear();
+					const auto variants = value.find("variants");
+					if (variants != value.end() && variants->is_array()) {
+						for (const json& sourceVariant : *variants) {
+							if (!sourceVariant.is_object()) {
+								continue;
+							}
+							SceneFishingResultVisualVariant variant{};
+							variant.id = sourceVariant.value("id", variant.id);
+							variant.backgroundTexturePath = sourceVariant.value(
+								"backgroundTexturePath", variant.backgroundTexturePath
+							);
+							variant.decorationTexturePath = sourceVariant.value(
+								"decorationTexturePath", variant.decorationTexturePath
+							);
+							component.fishingResultPresentationVariants.push_back(
+								std::move(variant)
+							);
+						}
+					}
+					component.fishingResultPresentationDecorations.clear();
+					const auto decorations = value.find("decorations");
+					if (decorations != value.end() && decorations->is_array()) {
+						for (const json& sourceDecoration : *decorations) {
+							if (!sourceDecoration.is_object()) {
+								continue;
+							}
+							SceneFishingResultDecorationEntry decoration{};
+							decoration.spriteEntityId = sourceDecoration.value(
+								"spriteEntityId", decoration.spriteEntityId
+							);
+							decoration.minScaleMultiplier = sourceDecoration.value(
+								"minScaleMultiplier", decoration.minScaleMultiplier
+							);
+							decoration.maxScaleMultiplier = sourceDecoration.value(
+								"maxScaleMultiplier", decoration.maxScaleMultiplier
+							);
+							decoration.periodSeconds = sourceDecoration.value(
+								"periodSeconds", decoration.periodSeconds
+							);
+							decoration.phaseOffset = sourceDecoration.value(
+								"phaseOffset", decoration.phaseOffset
+							);
+							component.fishingResultPresentationDecorations.push_back(
+								decoration
+							);
+						}
+					}
 				} else if (component.type == "FishingHookSpawnArea") {
 					component.fishingSpawnHalfSizeX = (std::max)(
 						value.value("halfSizeX", component.fishingSpawnHalfSizeX),
@@ -9853,6 +9984,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingScorePrefix = "SCORE ";
 		component.fishingMultiplierPrefix = "MULTIPLIER ";
 		component.fishingResultPrefix = "RESULT ";
+		component.fishingFinishText.clear();
 		component.fishingUseFormationCapsuleCollision = false;
 		component.fishingFormationOutlineVisible = false;
 		component.fishingFormationOutlineColor = { 0.1f, 0.9f, 1.0f, 1.0f };
@@ -9872,6 +10004,16 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 	} else if (type == "FishingResultTracker") {
 		component.fishingResultChannelId = "fishing.score_attack";
 		component.fishingResultTieBreakMode = "HigherRank";
+	} else if (type == "FishingResultPresenter") {
+		component.fishingResultPresentationChannelId = "fishing.score_attack";
+		component.fishingResultPresentationBackgroundEntityId = 0;
+		component.fishingResultPresentationScoreTextEntityId = 0;
+		component.fishingResultPresentationScorePrefix = "SCORE ";
+		component.fishingResultPresentationFallbackVariantId = "rank_1";
+		component.fishingResultPresentationIncludeSharkInWinnerSelection = false;
+		component.fishingResultPresentationSharkVariantId = "shark";
+		component.fishingResultPresentationVariants.clear();
+		component.fishingResultPresentationDecorations.clear();
 	} else if (type == "FishingHookSpawnArea") {
 		component.fishingSpawnHalfSizeX = 10.0f;
 		component.fishingSpawnHalfSizeZ = 10.0f;

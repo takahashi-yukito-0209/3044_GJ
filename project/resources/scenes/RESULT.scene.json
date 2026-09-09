@@ -224,6 +224,202 @@
           0.0
         ]
       }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "backgroundEntityId": 5,
+          "channelId": "fishing.score_attack",
+          "decorations": [
+            { "spriteEntityId": 7, "minScaleMultiplier": 0.85, "maxScaleMultiplier": 1.12, "periodSeconds": 1.4, "phaseOffset": 0.0 },
+            { "spriteEntityId": 8, "minScaleMultiplier": 0.9, "maxScaleMultiplier": 1.15, "periodSeconds": 1.7, "phaseOffset": 0.17 },
+            { "spriteEntityId": 9, "minScaleMultiplier": 0.84, "maxScaleMultiplier": 1.1, "periodSeconds": 2.0, "phaseOffset": 0.33 },
+            { "spriteEntityId": 10, "minScaleMultiplier": 0.88, "maxScaleMultiplier": 1.14, "periodSeconds": 1.6, "phaseOffset": 0.5 },
+            { "spriteEntityId": 11, "minScaleMultiplier": 0.9, "maxScaleMultiplier": 1.15, "periodSeconds": 2.2, "phaseOffset": 0.67 },
+            { "spriteEntityId": 12, "minScaleMultiplier": 0.86, "maxScaleMultiplier": 1.12, "periodSeconds": 1.8, "phaseOffset": 0.83 },
+            { "spriteEntityId": 13, "minScaleMultiplier": 0.84, "maxScaleMultiplier": 1.1, "periodSeconds": 2.4, "phaseOffset": 0.08 },
+            { "spriteEntityId": 14, "minScaleMultiplier": 0.91, "maxScaleMultiplier": 1.15, "periodSeconds": 1.5, "phaseOffset": 0.25 },
+            { "spriteEntityId": 15, "minScaleMultiplier": 0.85, "maxScaleMultiplier": 1.13, "periodSeconds": 2.1, "phaseOffset": 0.42 },
+            { "spriteEntityId": 16, "minScaleMultiplier": 0.89, "maxScaleMultiplier": 1.15, "periodSeconds": 1.9, "phaseOffset": 0.58 },
+            { "spriteEntityId": 17, "minScaleMultiplier": 0.87, "maxScaleMultiplier": 1.12, "periodSeconds": 2.3, "phaseOffset": 0.75 },
+            { "spriteEntityId": 18, "minScaleMultiplier": 0.9, "maxScaleMultiplier": 1.14, "periodSeconds": 1.6, "phaseOffset": 0.92 }
+          ],
+          "enabled": true,
+          "fallbackVariantId": "rank_1",
+          "includeSharkInWinnerSelection": false,
+          "localId": 1,
+          "scorePrefix": "SCORE ",
+          "scoreTextEntityId": 6,
+          "sharkVariantId": "shark",
+          "type": "FishingResultPresenter",
+          "variants": [
+            { "id": "rank_1", "backgroundTexturePath": "sashimi_Back.png", "decorationTexturePath": "sashimi.png" },
+            { "id": "rank_2", "backgroundTexturePath": "yukke_Back.png", "decorationTexturePath": "yukke.png" },
+            { "id": "rank_3", "backgroundTexturePath": "negitoro_Back.png", "decorationTexturePath": "negitoro.png" },
+            { "id": "rank_4", "backgroundTexturePath": "tunacan_Back.png", "decorationTexturePath": "tunacanTex.png" }
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 4,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Result Presenter",
+      "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" },
+      "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [
+        { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [1920.0, 1080.0], "texturePath": "sashimi_Back.png", "type": "SpriteRenderer", "viewportAnchor": [0.5, 0.5] }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 5,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Result Background",
+      "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" },
+      "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "characterSpacing": 0.0,
+          "clipEnabled": false,
+          "color": [1.0, 1.0, 1.0, 1.0],
+          "enabled": true,
+          "fontFamily": "Arial",
+          "fontResourcePath": "",
+          "fontSize": 84.0,
+          "fontSource": "System",
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [800.0, 160.0],
+          "lineSpacing": 1.0,
+          "localId": 1,
+          "opacity": 1.0,
+          "outlineColor": [0.0, 0.0, 0.0, 1.0],
+          "outlineEnabled": true,
+          "outlineWidth": 1.0,
+          "overflowMode": "Overflow",
+          "overlayPlacement": { "clipEnabled": false, "pivot": [0.5, 0.5], "position": [0.0, 0.0], "rotation": 0.0, "scale": [1.0, 1.0], "sortingOrder": 100, "viewportAnchor": [0.5, 0.5] },
+          "pivot": [0.0, 0.0],
+          "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": { "clipEnabled": false, "pivot": [0.0, 0.0], "position": [0.0, 0.0], "rotation": 0.0, "scale": [1.0, 1.0], "sortingOrder": 0, "viewportAnchor": [0.0, 0.0] },
+          "shadowColor": [0.0, 0.0, 0.0, 1.0],
+          "shadowEnabled": true,
+          "shadowOffset": [6.0, 6.0],
+          "sortingOrder": 100,
+          "text": "SCORE 0",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "viewportAnchor": [0.5, 0.5],
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 6,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing Result Score",
+      "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" },
+      "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [300.0, 200.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.08, 0.1] }],
+      "folder": false, "folderTeamEnabled": false, "id": 7, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 01", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.3, 0.08] }],
+      "folder": false, "folderTeamEnabled": false, "id": 8, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 02", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.6, 0.09] }],
+      "folder": false, "folderTeamEnabled": false, "id": 9, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 03", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [300.0, 200.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.89, 0.12] }],
+      "folder": false, "folderTeamEnabled": false, "id": 10, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 04", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.06, 0.36] }],
+      "folder": false, "folderTeamEnabled": false, "id": 11, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 05", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.94, 0.39] }],
+      "folder": false, "folderTeamEnabled": false, "id": 12, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 06", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [260.0, 175.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.07, 0.72] }],
+      "folder": false, "folderTeamEnabled": false, "id": 13, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 07", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.29, 0.88] }],
+      "folder": false, "folderTeamEnabled": false, "id": 14, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 08", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.59, 0.88] }],
+      "folder": false, "folderTeamEnabled": false, "id": 15, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 09", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [300.0, 200.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.9, 0.78] }],
+      "folder": false, "folderTeamEnabled": false, "id": 16, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 10", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.12, 0.94] }],
+      "folder": false, "folderTeamEnabled": false, "id": 17, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 11", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.82, 0.95] }],
+      "folder": false, "folderTeamEnabled": false, "id": 18, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 12", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
     }
   ],
   "lighting": {

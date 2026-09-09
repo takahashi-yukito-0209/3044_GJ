@@ -267,6 +267,8 @@ bool SceneValidator::ValidateDocument(
 	uint64_t firstPersistentBgmEntityId = 0;
 	uint32_t fishingDirectorCount = 0;
 	uint64_t firstFishingDirectorEntityId = 0;
+	uint32_t fishingResultPresenterCount = 0;
+	uint64_t firstFishingResultPresenterEntityId = 0;
 	uint32_t pauseControllerCount = 0;
 	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> prefabLocalIds;
 	std::unordered_map<std::string, uint64_t> activeLeaderControllers;
@@ -2943,6 +2945,142 @@ bool SceneValidator::ValidateDocument(
 						"Entity contains multiple active FishingResultTracker components"
 					);
 				}
+			} else if (component.type == "FishingResultPresenter") {
+				auto validatePresenterReference = [
+					&addIssue,
+					&document,
+					&entity
+				](uint64_t targetId, const char* componentType, const char* label) {
+					if (targetId == 0) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							std::string(label) + " Entity is not set"
+						);
+						return;
+					}
+					const SceneEntity* target = document.FindEntity(targetId);
+					if (!target || !SceneEntityQuery::FindEnabledComponent(
+						*target, componentType
+					)) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							std::string(label) +
+								" does not reference an enabled " + componentType
+						);
+					}
+				};
+				if (component.fishingResultPresentationChannelId.empty()) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultPresenter requires a channelId"
+					);
+				}
+				validatePresenterReference(
+					component.fishingResultPresentationBackgroundEntityId,
+					"SpriteRenderer",
+					"Fishing Result Background"
+				);
+				validatePresenterReference(
+					component.fishingResultPresentationScoreTextEntityId,
+					"TextRenderer",
+					"Fishing Result Score Text"
+				);
+				if (component.fishingResultPresentationFallbackVariantId.empty()) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultPresenter requires a fallback variant ID"
+					);
+				}
+				std::unordered_set<std::string> variantIds;
+				for (const SceneFishingResultVisualVariant& variant :
+					component.fishingResultPresentationVariants) {
+					if (variant.id.empty()) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingResultPresenter contains an empty variant ID"
+						);
+					} else if (!variantIds.insert(variant.id).second) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingResultPresenter contains a duplicate variant ID: " +
+								variant.id
+						);
+					}
+					if (variant.backgroundTexturePath.empty() ||
+						variant.decorationTexturePath.empty()) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingResultPresenter variants require background and decoration textures"
+						);
+					}
+				}
+				if (!component.fishingResultPresentationFallbackVariantId.empty() &&
+					!variantIds.contains(
+						component.fishingResultPresentationFallbackVariantId
+					)) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultPresenter fallback variant ID does not resolve"
+					);
+				}
+				if (component.fishingResultPresentationIncludeSharkInWinnerSelection &&
+					!variantIds.contains(
+						component.fishingResultPresentationSharkVariantId
+					)) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"FishingResultPresenter shark variant ID does not resolve"
+					);
+				}
+				std::unordered_set<uint64_t> decorationEntityIds;
+				for (const SceneFishingResultDecorationEntry& decoration :
+					component.fishingResultPresentationDecorations) {
+					validatePresenterReference(
+						decoration.spriteEntityId,
+						"SpriteRenderer",
+						"Fishing Result Decoration"
+					);
+					if (decoration.spriteEntityId != 0 &&
+						!decorationEntityIds.insert(
+							decoration.spriteEntityId
+						).second) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingResultPresenter contains a duplicate decoration Entity"
+						);
+					}
+					if (!std::isfinite(decoration.minScaleMultiplier) ||
+						!std::isfinite(decoration.maxScaleMultiplier) ||
+						decoration.minScaleMultiplier <= 0.0f ||
+						decoration.minScaleMultiplier > decoration.maxScaleMultiplier ||
+						!std::isfinite(decoration.periodSeconds) ||
+						decoration.periodSeconds <= 0.0f ||
+						!std::isfinite(decoration.phaseOffset) ||
+						decoration.phaseOffset < 0.0f ||
+						decoration.phaseOffset >= 1.0f) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingResultPresenter has invalid decoration pulse settings"
+						);
+					}
+				}
+				if (component.enabled && activeInHierarchy) {
+					++fishingResultPresenterCount;
+					if (firstFishingResultPresenterEntityId == 0) {
+						firstFishingResultPresenterEntityId = entity.id;
+					}
+				}
 			} else if (component.type == "FishingHookSpawnArea") {
 				if (!std::isfinite(component.fishingSpawnHalfSizeX) ||
 					!std::isfinite(component.fishingSpawnHalfSizeZ) ||
@@ -3263,6 +3401,13 @@ bool SceneValidator::ValidateDocument(
 			SceneValidationSeverity::Error,
 			firstFishingDirectorEntityId,
 			"Scene contains multiple active FishingScoreAttackDirector components"
+		);
+	}
+	if (fishingResultPresenterCount > 1) {
+		addIssue(
+			SceneValidationSeverity::Error,
+			firstFishingResultPresenterEntityId,
+			"Scene contains multiple active FishingResultPresenter components"
 		);
 	}
 	if (activeAudioListenerCount > 1) {

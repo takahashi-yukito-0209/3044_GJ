@@ -615,15 +615,22 @@ void SceneCameraSystem::ApplyPlayerDissolve(
 		? rawAmount * rawAmount * (3.0f - 2.0f * rawAmount)
 		: 0.0f;
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
-		const SceneEntity* bindingEntity = binding.entityId != 0
-			? document.FindEntity(binding.entityId)
-			: nullptr; // 現在Document上のEntity。
-		if (
-			bindingEntity &&
-			binding.object &&
-			HasComponent(*bindingEntity, "PlayerBehavior") &&
-			(!enabled || bindingEntity->id == targetEntityId)
-		) {
+		if (!binding.object) {
+			continue;
+		}
+		// 三人称カメラがないSceneの初期化時にも解除処理は呼ばれる。
+		// 解除時は対象判定をせず、全runtime objectへ解除値を適用する。
+		// ここで全EntityのComponentを走査すると、TitleLogoTextなどの
+		// 非Player Entityを含むbindingでRelease時の不正参照を誘発する。
+		if (!enabled) {
+			binding.object->SetDissolve(0.0f, 0.08f, 6.0f);
+			continue;
+		}
+		if (binding.entityId == 0 || binding.entityId != targetEntityId) {
+			continue;
+		}
+		const SceneEntity* bindingEntity = document.FindEntity(binding.entityId);
+		if (bindingEntity && HasComponent(*bindingEntity, "PlayerBehavior")) {
 			binding.object->SetDissolve(amount, 0.08f, 6.0f);
 		}
 	}

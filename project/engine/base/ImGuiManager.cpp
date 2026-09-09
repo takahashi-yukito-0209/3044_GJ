@@ -14410,6 +14410,14 @@ void ImGuiManager::DrawInspectorWindow() {
 						LocalizedComponentWidgetLabel(editorLanguage_, "Result Prefix"),
 						component.fishingResultPrefix
 					);
+					fishingChanged |= InputTextString(
+						SelectEditorText(
+							editorLanguage_,
+							"終了表示###FishingFinishText",
+							"Finish Text###FishingFinishText"
+						),
+						component.fishingFinishText
+					);
 					const bool layoutInputsChanged =
 						layoutRankCountBefore != component.fishingHookRankCount ||
 						layoutAutoBefore != component.fishingHookLegendAutoLayout ||
@@ -14461,6 +14469,247 @@ void ImGuiManager::DrawInspectorWindow() {
 					ImGui::EndCombo();
 				}
 				if (resultTrackerChanged) {
+					document.MarkDirty();
+				}
+				ImGui::EndDisabled();
+			} else if (component.type == "FishingResultPresenter") {
+				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
+				bool resultPresenterChanged = false;
+				auto drawResultEntityReference = [
+					&document,
+					&resultPresenterChanged,
+					this
+				](const char* japaneseLabel, const char* englishLabel,
+					uint64_t& entityId, const char* requiredType) {
+					const SceneEntity* selected = entityId != 0
+						? document.FindEntity(entityId)
+						: nullptr;
+					const std::string preview = selected
+						? BuildEntityHierarchyLabel(document, *selected)
+						: SelectEditorText(editorLanguage_, "未設定", "Not set");
+					if (ImGui::BeginCombo(
+						SelectEditorText(editorLanguage_, japaneseLabel, englishLabel),
+						preview.c_str()
+					)) {
+						for (const SceneEntity& candidate : document.GetEntities()) {
+							if (!FindEnabledComponent(candidate, requiredType)) {
+								continue;
+							}
+							const std::string candidateLabel =
+								BuildEntityHierarchyLabel(document, candidate);
+							if (ImGui::Selectable(
+								candidateLabel.c_str(), entityId == candidate.id
+							)) {
+								entityId = candidate.id;
+								resultPresenterChanged = true;
+							}
+						}
+						ImGui::EndCombo();
+					}
+				};
+				resultPresenterChanged |= InputTextString(
+					SelectEditorText(
+						editorLanguage_,
+						"結果チャンネル###FishingResultPresenterChannel",
+						"Result Channel###FishingResultPresenterChannel"
+					),
+					component.fishingResultPresentationChannelId
+				);
+				drawResultEntityReference(
+					"背景Sprite###FishingResultPresenterBackground",
+					"Background Sprite###FishingResultPresenterBackground",
+					component.fishingResultPresentationBackgroundEntityId,
+					"SpriteRenderer"
+				);
+				drawResultEntityReference(
+					"中央Score Text###FishingResultPresenterScoreText",
+					"Center Score Text###FishingResultPresenterScoreText",
+					component.fishingResultPresentationScoreTextEntityId,
+					"TextRenderer"
+				);
+				resultPresenterChanged |= InputTextString(
+					SelectEditorText(
+						editorLanguage_,
+						"Score接頭辞###FishingResultPresenterScorePrefix",
+						"Score Prefix###FishingResultPresenterScorePrefix"
+					),
+					component.fishingResultPresentationScorePrefix
+				);
+				resultPresenterChanged |= InputTextString(
+					SelectEditorText(
+						editorLanguage_,
+						"フォールバックVariant ID###FishingResultPresenterFallback",
+						"Fallback Variant ID###FishingResultPresenterFallback"
+					),
+					component.fishingResultPresentationFallbackVariantId
+				);
+				resultPresenterChanged |= ImGui::Checkbox(
+					SelectEditorText(
+						editorLanguage_,
+						"サメを勝者選択に含める###FishingResultPresenterIncludeShark",
+						"Include Shark In Winner Selection###FishingResultPresenterIncludeShark"
+					),
+					&component.fishingResultPresentationIncludeSharkInWinnerSelection
+				);
+				resultPresenterChanged |= InputTextString(
+					SelectEditorText(
+						editorLanguage_,
+						"サメVariant ID###FishingResultPresenterSharkVariant",
+						"Shark Variant ID###FishingResultPresenterSharkVariant"
+					),
+					component.fishingResultPresentationSharkVariantId
+				);
+				ImGui::TextDisabled("%s", SelectEditorText(
+					editorLanguage_,
+					"背景／中央Score／装飾Spriteを指定し、VariantごとにTextureを設定します。",
+					"Assign background, center score, and decoration sprites, then set textures per variant."
+				));
+				ImGui::TextDisabled("%s", SelectEditorText(
+					editorLanguage_,
+					"サメが同数の場合は釣り針の結果を優先します。",
+					"A hook result wins ties with shark counts."
+				));
+				if (ImGui::TreeNodeEx(
+					"FishingResultVariants",
+					ImGuiTreeNodeFlags_DefaultOpen,
+					"%s",
+					SelectEditorText(editorLanguage_, "表示Variant", "Visual Variants")
+				)) {
+					int removeVariantIndex = -1;
+					for (size_t index = 0;
+						index < component.fishingResultPresentationVariants.size();
+						++index) {
+						SceneFishingResultVisualVariant& variant =
+							component.fishingResultPresentationVariants[index];
+						ImGui::PushID(static_cast<int>(index));
+						ImGui::Text(
+							"%s %zu",
+							SelectEditorText(editorLanguage_, "Variant", "Variant"),
+							index + 1
+						);
+						resultPresenterChanged |= InputTextString(
+							SelectEditorText(editorLanguage_, "ID###ResultVariantId", "ID###ResultVariantId"),
+							variant.id
+						);
+						resultPresenterChanged |= InputTextString(
+							SelectEditorText(
+								editorLanguage_,
+								"背景Texture Path###ResultVariantBackground",
+								"Background Texture Path###ResultVariantBackground"
+							),
+							variant.backgroundTexturePath
+						);
+						resultPresenterChanged |= InputTextString(
+							SelectEditorText(
+								editorLanguage_,
+								"装飾Texture Path###ResultVariantDecoration",
+								"Decoration Texture Path###ResultVariantDecoration"
+							),
+							variant.decorationTexturePath
+						);
+						if (ImGui::SmallButton(SelectEditorText(
+							editorLanguage_, "削除###RemoveResultVariant", "Remove###RemoveResultVariant"
+						))) {
+							removeVariantIndex = static_cast<int>(index);
+						}
+						ImGui::Separator();
+						ImGui::PopID();
+					}
+					if (removeVariantIndex >= 0) {
+						component.fishingResultPresentationVariants.erase(
+							component.fishingResultPresentationVariants.begin() +
+							removeVariantIndex
+						);
+						resultPresenterChanged = true;
+					}
+					if (ImGui::SmallButton(SelectEditorText(
+						editorLanguage_, "Variantを追加###AddResultVariant", "Add Variant###AddResultVariant"
+					))) {
+						component.fishingResultPresentationVariants.push_back({});
+						resultPresenterChanged = true;
+					}
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNodeEx(
+					"FishingResultDecorations",
+					ImGuiTreeNodeFlags_DefaultOpen,
+					"%s",
+					SelectEditorText(editorLanguage_, "周囲装飾", "Decorations")
+				)) {
+					int removeDecorationIndex = -1;
+					for (size_t index = 0;
+						index < component.fishingResultPresentationDecorations.size();
+						++index) {
+						SceneFishingResultDecorationEntry& decoration =
+							component.fishingResultPresentationDecorations[index];
+						ImGui::PushID(static_cast<int>(index));
+						ImGui::Text(
+							"%s %zu",
+							SelectEditorText(editorLanguage_, "装飾", "Decoration"),
+							index + 1
+						);
+						drawResultEntityReference(
+							"Sprite###ResultDecorationSprite",
+							"Sprite###ResultDecorationSprite",
+							decoration.spriteEntityId,
+							"SpriteRenderer"
+						);
+						resultPresenterChanged |= ImGui::DragFloat(
+							SelectEditorText(
+								editorLanguage_,
+								"最小Scale倍率###ResultDecorationMinScale",
+								"Minimum Scale Multiplier###ResultDecorationMinScale"
+							),
+							&decoration.minScaleMultiplier, 0.01f, 0.001f, 100.0f
+						);
+						resultPresenterChanged |= ImGui::DragFloat(
+							SelectEditorText(
+								editorLanguage_,
+								"最大Scale倍率###ResultDecorationMaxScale",
+								"Maximum Scale Multiplier###ResultDecorationMaxScale"
+							),
+							&decoration.maxScaleMultiplier, 0.01f, 0.001f, 100.0f
+						);
+						resultPresenterChanged |= ImGui::DragFloat(
+							SelectEditorText(
+								editorLanguage_,
+								"周期（秒）###ResultDecorationPeriod",
+								"Period Seconds###ResultDecorationPeriod"
+							),
+							&decoration.periodSeconds, 0.05f, 0.01f, 1000.0f
+						);
+						resultPresenterChanged |= ImGui::DragFloat(
+							SelectEditorText(
+								editorLanguage_,
+								"位相オフセット###ResultDecorationPhase",
+								"Phase Offset###ResultDecorationPhase"
+							),
+							&decoration.phaseOffset, 0.01f, 0.0f, 0.999f
+						);
+						if (ImGui::SmallButton(SelectEditorText(
+							editorLanguage_, "削除###RemoveResultDecoration", "Remove###RemoveResultDecoration"
+						))) {
+							removeDecorationIndex = static_cast<int>(index);
+						}
+						ImGui::Separator();
+						ImGui::PopID();
+					}
+					if (removeDecorationIndex >= 0) {
+						component.fishingResultPresentationDecorations.erase(
+							component.fishingResultPresentationDecorations.begin() +
+							removeDecorationIndex
+						);
+						resultPresenterChanged = true;
+					}
+					if (ImGui::SmallButton(SelectEditorText(
+						editorLanguage_, "装飾を追加###AddResultDecoration", "Add Decoration###AddResultDecoration"
+					))) {
+						component.fishingResultPresentationDecorations.push_back({});
+						resultPresenterChanged = true;
+					}
+					ImGui::TreePop();
+				}
+				if (resultPresenterChanged) {
 					document.MarkDirty();
 				}
 				ImGui::EndDisabled();

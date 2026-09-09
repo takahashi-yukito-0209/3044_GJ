@@ -322,6 +322,8 @@ private:
 	std::string resultChannelId_;
 	std::string resultTieBreakMode_ = "HigherRank";
 	std::vector<SceneFishingResultRankRecord> resultRankRecords_;
+	uint64_t sharkHitCount_ = 0;
+	uint64_t sharkFishWeightedCount_ = 0;
 	bool resultSessionBeginRequested_ = false;
 	SceneFishingScoreAttackSessionBeginRequest resultSessionBeginRequest_{};
 	bool resultSessionPublishRequested_ = false;

@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <initializer_list>
 
 namespace {
@@ -24,6 +25,9 @@ namespace {
 	} };
 	constexpr Vector4 kSelectedColor = { 1.0f, 0.92f, 0.55f, 1.0f };
 	constexpr Vector4 kNormalColor = { 0.78f, 0.86f, 0.94f, 1.0f };
+	constexpr float kVisibilityAnimationSeconds = 0.36f;
+	constexpr float kVisibilityStartOffsetY = 24.0f;
+	constexpr float kVisibilityStagger = 0.30f;
 
 	bool TriggerAnyKey(Input* input, std::initializer_list<BYTE> keyCodes) {
 		if (!input) {
@@ -36,16 +40,25 @@ namespace {
 		}
 		return false;
 	}
+
+	float EaseInOutCubic(float value) {
+		const float clamped = std::clamp(value, 0.0f, 1.0f);
+		return clamped < 0.5f
+			? 4.0f * clamped * clamped * clamped
+			: 1.0f - std::pow(-2.0f * clamped + 2.0f, 3.0f) * 0.5f;
+	}
 }
 
 ScenePauseMenuResult ScenePauseMenuSystem::Update(
 	const SceneDocument& document,
 	const ScenePauseSystem& pauseSystem,
-	SceneOptionMenuSystem& optionMenuSystem
+	SceneOptionMenuSystem& optionMenuSystem,
+	float deltaTime
 ) {
 	ScenePauseMenuResult result{};
 	const uint64_t controllerEntityId = FindControllerEntityId(document);
 	if (controllerEntityId == 0) {
+		UpdateVisibility(false, deltaTime);
 		return result;
 	}
 
@@ -53,6 +66,7 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 	const bool pauseActive = pauseSystem.IsPauseActive(
 		controllerEntityId, kPauseProfileId, kPauseRequestId
 	);
+	bool showHud = pauseActive;
 	if (TriggerAnyKey(input, { DIK_ESCAPE })) {
 		if (pauseActive) {
 			if (optionOpen_) {
@@ -60,14 +74,18 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 				selectedIndex_ = 0;
 			} else {
 				result.resumeRequested = true;
+				showHud = false;
 			}
 		} else {
 			optionOpen_ = false;
 			selectedIndex_ = 0;
 			result.pauseRequested = true;
+			showHud = true;
 		}
+		UpdateVisibility(showHud, deltaTime);
 		return result;
 	}
+	UpdateVisibility(showHud, deltaTime);
 	if (!pauseActive) {
 		return result;
 	}
@@ -118,21 +136,29 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 void ScenePauseMenuSystem::ApplyTextOverrides(
 	const SceneDocument& document,
 	SceneTextRenderSystem& textRenderSystem,
-	bool pauseActive,
 	const SceneOptionMenuSystem& optionMenuSystem
 ) const {
-	const auto applyVisibility = [&document, &textRenderSystem, pauseActive](
+	const auto applyVisibility = [this, &document, &textRenderSystem](
 		const char* name,
-		bool visible
+		bool visible,
+		int animationOrder
 	) {
 		const SceneEntity* entity = document.FindEntityByName(name);
 		if (!entity || !SceneEntityQuery::IsEntityActiveInHierarchy(document, *entity) ||
 			!SceneEntityQuery::FindEnabledComponent(*entity, "TextRenderer")) {
 			return;
 		}
+		const float presentationProgress =
+			GetPresentationProgress(animationOrder);
+		const float presentationScale = EaseInOutCubic(presentationProgress);
+		const Vector2 presentationOffset = {
+			0.0f,
+			(1.0f - presentationScale) * kVisibilityStartOffsetY
+		};
 		textRenderSystem.SetPresentationOverride(
-			entity->id, {}, 0.0f, { 1.0f, 1.0f },
-			pauseActive && visible ? 1.0f : 0.0f
+			entity->id, presentationOffset, 0.0f,
+			{ presentationScale, presentationScale },
+			visible ? presentationProgress : 0.0f
 		);
 	};
 	const SceneEntity* header = document.FindEntityByName("PauseMenuHeaderText");
@@ -152,13 +178,15 @@ void ScenePauseMenuSystem::ApplyTextOverrides(
 				: "W/S or UP/DOWN : SELECT    ENTER : CONFIRM    ESCAPE : RESUME"
 		);
 	}
-	applyVisibility("PauseMenuHeaderText", true);
-	applyVisibility("PauseMenuGuideText", true);
-	for (const char* name : kMainMenuEntityNames) {
-		applyVisibility(name, !optionOpen_);
+	applyVisibility("PauseMenuHeaderText", true, 0);
+	applyVisibility("PauseMenuGuideText", true, 4);
+	for (size_t index = 0; index < kMainMenuEntityNames.size(); ++index) {
+		applyVisibility(kMainMenuEntityNames[index], !optionOpen_,
+			static_cast<int>(index) + 1);
 	}
-	for (const char* name : kOptionMenuEntityNames) {
-		applyVisibility(name, optionOpen_);
+	for (size_t index = 0; index < kOptionMenuEntityNames.size(); ++index) {
+		applyVisibility(kOptionMenuEntityNames[index], optionOpen_,
+			static_cast<int>(index) + 1);
 	}
 
 	const std::vector<MenuItem> menuItems = CollectMenuItems(document);
@@ -168,9 +196,17 @@ void ScenePauseMenuSystem::ApplyTextOverrides(
 		: 0;
 	for (int index = 0; index < itemCount; ++index) {
 		const bool selected = index == selectedIndex;
+		const float presentationProgress =
+			GetPresentationProgress(index + 1);
+		const float presentationScale = EaseInOutCubic(presentationProgress);
+		const Vector2 presentationOffset = {
+			0.0f,
+			(1.0f - presentationScale) * kVisibilityStartOffsetY
+		};
 		textRenderSystem.SetPresentationOverride(
-			menuItems[index].entityId, {}, 0.0f, { 1.0f, 1.0f },
-			pauseActive ? 1.0f : 0.0f
+			menuItems[index].entityId, presentationOffset, 0.0f,
+			{ presentationScale, presentationScale },
+			presentationProgress
 		);
 		textRenderSystem.SetTextColorOverride(
 			menuItems[index].entityId, selected ? kSelectedColor : kNormalColor
@@ -192,6 +228,39 @@ void ScenePauseMenuSystem::ApplyTextOverrides(
 void ScenePauseMenuSystem::Clear() {
 	optionOpen_ = false;
 	selectedIndex_ = 0;
+	visibilityProgress_ = 0.0f;
+	visibilityTargetVisible_ = false;
+}
+
+void ScenePauseMenuSystem::UpdateVisibility(bool visible, float deltaTime) {
+	visibilityTargetVisible_ = visible;
+	const float progressDelta = (std::max)(deltaTime, 0.0f) /
+		kVisibilityAnimationSeconds;
+	visibilityProgress_ = std::clamp(
+		visibilityProgress_ + (visible ? progressDelta : -progressDelta),
+		0.0f,
+		1.0f
+	);
+}
+
+float ScenePauseMenuSystem::GetPresentationProgress(int animationOrder) const {
+	const float stagger = std::clamp(
+		static_cast<float>(animationOrder) * kVisibilityStagger,
+		0.0f,
+		0.9f
+	);
+	if (visibilityTargetVisible_) {
+		return std::clamp(
+			(visibilityProgress_ - stagger) / (1.0f - stagger),
+			0.0f,
+			1.0f
+		);
+	}
+	return std::clamp(
+		visibilityProgress_ / (1.0f - stagger),
+		0.0f,
+		1.0f
+	);
 }
 
 std::vector<ScenePauseMenuSystem::MenuItem>
