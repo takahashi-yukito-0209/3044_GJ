@@ -242,6 +242,7 @@ private:
 	);
 	void UpdateSelection(SceneDocument& document, const SceneComponent& director);
 	bool SpawnHooks(SceneDocument& document, const SceneComponent& director);
+	void UpdateHookDrops(SceneDocument& document, float deltaTime);
 	void StartRound(SceneDocument& document, const SceneComponent& director);
 	void UpdateSharks(
 		SceneDocument& document,
@@ -329,6 +330,9 @@ private:
 		int distanceBand = 0;
 		float multiplier = 0.0f;
 		int hookMultiplierTier = 1;
+		Vector3 landingPosition{};
+		float dropElapsedSeconds = 0.0f;
+		bool isDropping = false;
 	};
 	std::vector<ActiveHook> activeHooks_;
 	struct FishCatchAnimation {
