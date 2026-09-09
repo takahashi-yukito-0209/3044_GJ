@@ -1,7 +1,6 @@
 // 役割: DescriptorHeapの生成、Descriptor確保、GPU可視化設定を実装する。
 #include "SrvManager.h"
 #include <cassert>
-const uint32_t SrvManager::kMaxSRVCount = 512;
 SrvManager* SrvManager::instance_ = nullptr;
 
 SrvManager* SrvManager::GetInstance() {

@@ -52,6 +52,13 @@ namespace {
 	}
 
 	/// <summary>
+	/// Tutorial Sceneかを判定します。
+	/// </summary>
+	bool IsTutorialRuntimeScene(const std::string& sceneId) {
+		return sceneId == kTutorialSceneId || sceneId == "TUTORIAL";
+	}
+
+	/// <summary>
 	/// タイトル背景の船と水面演出を使うSceneかを判定します。
 	/// </summary>
 	bool IsTitleBackdropScene(const std::string& sceneId) {
@@ -1736,6 +1743,16 @@ void RuntimeScene::Update(float deltaTime)
 		} else if (playing && gameplayRuntimeScene) {
 			const bool pauseActive =
 				pauseSystem_.IsDomainPaused(ScenePauseDomain::Gameplay);
+			if (pauseActive && IsTutorialRuntimeScene(GetSceneAssetId())) {
+				const SceneEntity* tutorialMessageEntity =
+					activeDocument->FindEntityByName("Fishing Tutorial Message"); // チュートリアル指示文Entity。
+				if (tutorialMessageEntity) {
+					textRenderSystem_.SetTextOverride(
+						tutorialMessageEntity->id,
+						{}
+					);
+				}
+			}
 			if (pauseActive) {
 				for (const SceneEntity& entity : activeDocument->GetEntities()) {
 					const SceneComponent* textRenderer =

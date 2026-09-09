@@ -2935,6 +2935,158 @@
       "active": true,
       "components": [
         {
+          "characterSpacing": 0.0,
+          "clipEnabled": false,
+          "color": [
+            1.0,
+            1.0,
+            1.0,
+            0.8500000238418579
+          ],
+          "enabled": true,
+          "fontFamily": "なぎの",
+          "fontResourcePath": "",
+          "fontSize": 24.0,
+          "fontSource": "System",
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Left",
+          "layoutSize": [
+            0.0,
+            0.0
+          ],
+          "lineSpacing": 1.0,
+          "localId": 1,
+          "opacity": 1.0,
+          "outlineColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "outlineEnabled": true,
+          "outlineWidth": 1.0,
+          "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              1.0
+            ],
+            "position": [
+              24.0,
+              -24.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              1.0
+            ]
+          },
+          "pivot": [
+            0.0,
+            1.0
+          ],
+          "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              1.0
+            ],
+            "position": [
+              24.0,
+              -24.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 100,
+            "viewportAnchor": [
+              0.0,
+              1.0
+            ]
+          },
+          "screenOverlayScaleMode": "Inherit",
+          "shadowColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "shadowEnabled": true,
+          "shadowOffset": [
+            2.0,
+            2.0
+          ],
+          "sortingOrder": 100,
+          "text": "ESCでポーズ",
+          "type": "TextRenderer",
+          "verticalAlignment": "Bottom",
+          "viewportAnchor": [
+            0.0,
+            1.0
+          ],
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 149,
+      "locked": false,
+      "modelPath": "",
+      "name": "Fishing HUD Pause Help",
+      "parentId": 86,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          24.0,
+          -24.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
           "castsShadow": true,
           "cullMode": "Back",
           "enabled": true,

@@ -149,6 +149,84 @@ namespace {
 		return rank;
 	}
 
+	/// <summary>
+	/// チュートリアルの得点練習中かを判定する。
+	/// </summary>
+	bool IsTutorialScorePracticeStep(SceneFishingScoreAttackTutorialStep step) {
+		switch (step) {
+		case SceneFishingScoreAttackTutorialStep::ScoreOnePractice:
+		case SceneFishingScoreAttackTutorialStep::ScoreMultiPractice:
+		case SceneFishingScoreAttackTutorialStep::ScoreAdjustedPractice:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	/// <summary>
+	/// チュートリアル中に正の得点ランクだけへ絞るかを判定する。
+	/// </summary>
+	bool RequiresPositiveTutorialHookRank(SceneFishingScoreAttackTutorialStep step) {
+		return step != SceneFishingScoreAttackTutorialStep::Disabled &&
+			step != SceneFishingScoreAttackTutorialStep::FreePlay;
+	}
+
+	/// <summary>
+	/// 指定された釣り針ランクが正の得点を持つかを判定する。
+	/// </summary>
+	bool HasPositiveHookScoreRank(
+		const SceneComponent& director,
+		size_t tierIndex
+	) {
+		const SceneFishingHookRankDefinition rank = ResolveFishingHookRank(
+			director,
+			static_cast<int>(tierIndex) + 1
+		); // 判定対象の釣り針ランク。
+		return std::isfinite(rank.scoreMultiplier) &&
+			rank.scoreMultiplier > 0.0f;
+	}
+
+	/// <summary>
+	/// チュートリアル上でサメを表示してよい段階かを判定する。
+	/// </summary>
+	bool IsTutorialSharkVisibleStep(SceneFishingScoreAttackTutorialStep step) {
+		return step == SceneFishingScoreAttackTutorialStep::Disabled ||
+			step == SceneFishingScoreAttackTutorialStep::SharkExplanation ||
+			step == SceneFishingScoreAttackTutorialStep::FreePlay;
+	}
+
+	/// <summary>
+	/// Scene上のサメEntityを非表示にする。
+	/// </summary>
+	void DeactivateSceneSharks(SceneDocument& document) {
+		for (SceneEntity& entity : document.GetEntities()) {
+			if (FindEnabledComponent(entity, "FishingShark")) {
+				entity.active = false;
+			}
+		}
+	}
+
+	/// <summary>
+	/// サメのスポーン候補帯を優先帯から順に構築する。
+	/// </summary>
+	std::vector<int> BuildSharkSpawnBandOrder(int preferredBand, int maxBand) {
+		const int clampedMaxBand = (std::max)(maxBand, 1); // 使用できる最大距離帯。
+		const int clampedPreferredBand = std::clamp(
+			preferredBand,
+			1,
+			clampedMaxBand
+		); // 最初に試す距離帯。
+		std::vector<int> bandOrder;
+		bandOrder.reserve(static_cast<size_t>(clampedMaxBand));
+		bandOrder.push_back(clampedPreferredBand);
+		for (int band = 1; band <= clampedMaxBand; ++band) {
+			if (band != clampedPreferredBand) {
+				bandOrder.push_back(band);
+			}
+		}
+		return bandOrder;
+	}
+
 	bool IsFiniteNonNegative(float value) {
 		return std::isfinite(value) && value >= 0.0f;
 	}
@@ -1676,8 +1754,7 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 	if (
 		tutorialScene &&
 		tutorialAutoStartNextRound_ &&
-		(tutorialStep_ == SceneFishingScoreAttackTutorialStep::ScoreMultiPractice ||
-			tutorialStep_ == SceneFishingScoreAttackTutorialStep::ScoreAdjustedPractice) &&
+		IsTutorialScorePracticeStep(tutorialStep_) &&
 		state_ == SceneFishingScoreAttackState::SelectingNext
 	) {
 		tutorialAutoStartNextRound_ = false;
@@ -2478,6 +2555,8 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	}
 	if (awardedScore > 0) {
 		NotifyTutorialHookScored();
+	} else if (tutorialScene && IsTutorialScorePracticeStep(tutorialStep_)) {
+		tutorialAutoStartNextRound_ = true;
 	}
 	playerConstraintRequest_ = {};
 	hasPlayerConstraintRequest_ = false;
@@ -4789,7 +4868,8 @@ void SceneFishingScoreAttackSystem::NotifyTutorialHookScored() {
 std::string SceneFishingScoreAttackSystem::GetTutorialMessage() const {
 	switch (tutorialStep_) {
 	case SceneFishingScoreAttackTutorialStep::Overview:
-		return "ツナになるために魚を集めよう ENTER / Y";
+		return "プレイヤーはツナ缶になることを\n"
+			"とても栄誉に思っているぞ！ ENTER / Y";
 	case SceneFishingScoreAttackTutorialStep::MoveExplanation:
 		return "WASD / 左スティックで移動 ENTER / Y";
 	case SceneFishingScoreAttackTutorialStep::MovePractice:
@@ -4801,7 +4881,7 @@ std::string SceneFishingScoreAttackSystem::GetTutorialMessage() const {
 	case SceneFishingScoreAttackTutorialStep::FishCountExplanation:
 		return "魚を増やすと得点も増える ENTER / Y";
 	case SceneFishingScoreAttackTutorialStep::FishCountPractice:
-		return "ホイール/十字キーで魚数を変えて CLICK/A";
+		return "ホイール/上下キーで魚数を変えて SPACE / ENTER";
 	case SceneFishingScoreAttackTutorialStep::ScoreMultiPractice:
 		return "1匹のまま何度か取ってみよう";
 	case SceneFishingScoreAttackTutorialStep::ScoreAdjustedPractice:
@@ -5108,6 +5188,8 @@ bool SceneFishingScoreAttackSystem::SpawnHooks(
 		distanceBandCount > kTutorialMinimumHookDistanceBand
 			? kTutorialMinimumHookDistanceBand
 			: distanceBandCount - 1; // チュートリアル中に残す最初の距離帯。
+	const bool requirePositiveTutorialHookRank =
+		RequiresPositiveTutorialHookRank(tutorialStep_); // チュートリアル中にマイナス得点ランクを除外するか。
 	int spawnedHookCount = 0; // 今回の配置で有効化した釣り針数。
 	for (int bandIndex = 0; bandIndex < distanceBandCount; ++bandIndex) {
 		if (spawnedHookCount >= tutorialHookSpawnLimit) {
@@ -5154,12 +5236,28 @@ bool SceneFishingScoreAttackSystem::SpawnHooks(
 				));
 				float totalWeight = 0.0f;
 				for (size_t tierIndex = 0; tierIndex < activeRankCount; ++tierIndex) {
+					if (
+						requirePositiveTutorialHookRank &&
+						!HasPositiveHookScoreRank(director, tierIndex)
+					) {
+						continue;
+					}
 					totalWeight += tierWeights[tierIndex];
+				}
+				if (!std::isfinite(totalWeight) || totalWeight <= 0.0f) {
+					Fault(document, director, "FishingHookBand has no selectable tutorial tier");
+					return false;
 				}
 				std::uniform_real_distribution<float> weightDistribution(0.0f, totalWeight);
 				float remainingWeight = weightDistribution(random_);
 				int selectedTierIndex = -1;
 				for (size_t tierIndex = 0; tierIndex < activeRankCount; ++tierIndex) {
+					if (
+						requirePositiveTutorialHookRank &&
+						!HasPositiveHookScoreRank(director, tierIndex)
+					) {
+						continue;
+					}
 					if (tierWeights[tierIndex] <= 0.0f) {
 						continue;
 					}
@@ -5172,7 +5270,15 @@ bool SceneFishingScoreAttackSystem::SpawnHooks(
 				if (selectedTierIndex < 0) {
 					for (int tierIndex = static_cast<int>(activeRankCount) - 1;
 						tierIndex >= 0; --tierIndex) {
-						if (tierWeights[static_cast<size_t>(tierIndex)] > 0.0f) {
+						const size_t fallbackTierIndex =
+							static_cast<size_t>(tierIndex); // 抽選漏れ時に使う候補ランク。
+						if (
+							requirePositiveTutorialHookRank &&
+							!HasPositiveHookScoreRank(director, fallbackTierIndex)
+						) {
+							continue;
+						}
+						if (tierWeights[fallbackTierIndex] > 0.0f) {
 							selectedTierIndex = tierIndex;
 							break;
 						}
@@ -5945,6 +6051,10 @@ bool SceneFishingScoreAttackSystem::ResetSharksForRound(
 	SceneDocument& document,
 	const SceneComponent& director
 ) {
+	if (!IsTutorialSharkVisibleStep(tutorialStep_)) {
+		DeactivateSceneSharks(document);
+		return true;
+	}
 	const SceneEntity* waterEntity = document.FindEntity(
 		director.fishingWaterVolumeEntityId
 	);
@@ -5989,9 +6099,13 @@ bool SceneFishingScoreAttackSystem::ResetSharksForRound(
 		-spawnArea->fishingSpawnHalfSizeZ,
 		spawnArea->fishingSpawnHalfSizeZ
 	);
+	const int maximumSpawnBand =
+		(std::max)(static_cast<int>(director.fishingHookBands.size()) - 1, 1); // サメを出す最大距離帯。
+	const int spawnBandCount =
+		maximumSpawnBand + 1; // 0番帯を含めた距離帯数。
 	std::uniform_int_distribution<int> bandDistribution(
 		1,
-		(std::max)(static_cast<int>(director.fishingHookBands.size()) - 1, 1)
+		maximumSpawnBand
 	);
 	std::uniform_real_distribution<float> headingDistribution(
 		-3.14159265358979323846f,
@@ -6011,6 +6125,7 @@ bool SceneFishingScoreAttackSystem::ResetSharksForRound(
 		if (!shark) {
 			continue;
 		}
+		entity->active = true;
 		const float wanderMoveSpeed = std::isfinite(
 			shark->fishingSharkWanderMoveSpeed
 		) ? (std::max)(shark->fishingSharkWanderMoveSpeed, 0.0f) : 0.0f;
@@ -6030,75 +6145,85 @@ bool SceneFishingScoreAttackSystem::ResetSharksForRound(
 			const float obstacleClearance = std::isfinite(
 				shark->fishingSharkObstacleClearance
 			) ? (std::max)(shark->fishingSharkObstacleClearance, 0.0f) : 0.0f;
-			const int selectedBand = bandDistribution(runtime.wanderRandom);
+			const int preferredBand =
+				bandDistribution(runtime.wanderRandom); // 最初に試す距離帯。
+			const std::vector<int> bandOrder =
+				BuildSharkSpawnBandOrder(preferredBand, maximumSpawnBand); // 失敗時に試す距離帯順。
 			Vector3 spawnPosition{};
 			float spawnHeading = 0.0f;
 			bool foundPosition = false;
-			for (int attempt = 0; attempt < spawnArea->fishingSpawnMaxAttempts; ++attempt) {
-				const Vector3 candidate = ToSpawnWorldPosition(
-					areaTransform,
-					xDistribution(runtime.wanderRandom),
-					zDistribution(runtime.wanderRandom),
-					playerTransform.translate.y
-				);
-				const Vector3 rawWaterLocal = ToLocalXZ(
-					bandWaterTransform,
-					candidate
-				);
-				const float normalizedZ = (rawWaterLocal.z + waterVolume->waterHalfSize.z) /
-					(2.0f * waterVolume->waterHalfSize.z);
-				const float orientedZ = startFromPositiveWaterZ_
-					? 1.0f - std::clamp(normalizedZ, 0.0f, 0.99999f)
-					: std::clamp(normalizedZ, 0.0f, 0.99999f);
-				const int candidateBand = (std::min)(
-					static_cast<int>(std::floor(orientedZ * 5.0f)),
-					4
-				);
-				if (candidateBand != selectedBand ||
-					!IsPointInsideSharkWater(
-						{ candidate.x, candidate.z },
-						waterBounds,
-						sharkRadius + 0.25f + obstacleClearance
-					) ||
-					DistanceXZ(candidate, playerTransform.translate) <
-						spawnArea->fishingSpawnMinimumDistance ||
-					!IsSharkSegmentClear(
-						{ candidate.x, candidate.z },
-						{ candidate.x, candidate.z },
-						waterBounds, obstacles, sharkRadius, obstacleClearance
-					)) {
-					continue;
-				}
-				bool overlapsShark = false;
-				for (size_t index = 0; index < spawnedSharkPositions.size(); ++index) {
-					if (DistanceXZ(candidate, spawnedSharkPositions[index]) <
-						sharkRadius + spawnedSharkRadii[index] + 0.25f) {
-						overlapsShark = true;
-						break;
+			for (int selectedBand : bandOrder) {
+				for (int attempt = 0; attempt < spawnArea->fishingSpawnMaxAttempts; ++attempt) {
+					const Vector3 candidate = ToSpawnWorldPosition(
+						areaTransform,
+						xDistribution(runtime.wanderRandom),
+						zDistribution(runtime.wanderRandom),
+						playerTransform.translate.y
+					);
+					const Vector3 rawWaterLocal = ToLocalXZ(
+						bandWaterTransform,
+						candidate
+					);
+					const float normalizedZ = (rawWaterLocal.z + waterVolume->waterHalfSize.z) /
+						(2.0f * waterVolume->waterHalfSize.z);
+					const float orientedZ = startFromPositiveWaterZ_
+						? 1.0f - std::clamp(normalizedZ, 0.0f, 0.99999f)
+						: std::clamp(normalizedZ, 0.0f, 0.99999f);
+					const int candidateBand = (std::min)(
+						static_cast<int>(std::floor(
+							orientedZ * static_cast<float>(spawnBandCount)
+						)),
+						maximumSpawnBand
+					);
+					if (candidateBand != selectedBand ||
+						!IsPointInsideSharkWater(
+							{ candidate.x, candidate.z },
+							waterBounds,
+							sharkRadius + 0.25f + obstacleClearance
+						) ||
+						DistanceXZ(candidate, playerTransform.translate) <
+							spawnArea->fishingSpawnMinimumDistance ||
+						!IsSharkSegmentClear(
+							{ candidate.x, candidate.z },
+							{ candidate.x, candidate.z },
+							waterBounds, obstacles, sharkRadius, obstacleClearance
+						)) {
+						continue;
 					}
+					bool overlapsShark = false;
+					for (size_t index = 0; index < spawnedSharkPositions.size(); ++index) {
+						if (DistanceXZ(candidate, spawnedSharkPositions[index]) <
+							sharkRadius + spawnedSharkRadii[index] + 0.25f) {
+							overlapsShark = true;
+							break;
+						}
+					}
+					if (overlapsShark) {
+						continue;
+					}
+					spawnHeading = headingDistribution(runtime.wanderRandom);
+					const float lookahead = (std::max)(
+						shark->fishingSharkObstacleAvoidanceDistance,
+						wanderMoveSpeed * 0.75f
+					);
+					if (MeasureSharkHeadingClearance(
+						{ candidate.x, candidate.z },
+						spawnHeading,
+						lookahead,
+						waterBounds,
+						obstacles,
+						sharkRadius,
+						obstacleClearance
+					) < lookahead - kTransformEpsilon) {
+						continue;
+					}
+					spawnPosition = candidate;
+					foundPosition = true;
+					break;
 				}
-				if (overlapsShark) {
-					continue;
+				if (foundPosition) {
+					break;
 				}
-				spawnHeading = headingDistribution(runtime.wanderRandom);
-				const float lookahead = (std::max)(
-					shark->fishingSharkObstacleAvoidanceDistance,
-					wanderMoveSpeed * 0.75f
-				);
-				if (MeasureSharkHeadingClearance(
-					{ candidate.x, candidate.z },
-					spawnHeading,
-					lookahead,
-					waterBounds,
-					obstacles,
-					sharkRadius,
-					obstacleClearance
-				) < lookahead - kTransformEpsilon) {
-					continue;
-				}
-				spawnPosition = candidate;
-				foundPosition = true;
-				break;
 			}
 			if (!foundPosition) {
 				Fault(

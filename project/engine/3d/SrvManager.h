@@ -2,6 +2,7 @@
 #pragma once
 #include "../base/DirectXCommon.h"
 #include <array>
+#include <cstdint>
 #include <vector>
 class SrvManager{
 
@@ -39,8 +40,8 @@ private:
 	DirectXCommon* directXCommon = nullptr;
 	static SrvManager* instance_;
 
-	// 最大SRV数（最大テクスチャ枚数）
-	static const uint32_t kMaxSRVCount;
+	// CBV/SRV/UAVデスクリプタヒープで確保できる最大数
+	static constexpr uint32_t kMaxSRVCount = 4096;
 	// SRV用のデスクリプタサイズ
 	uint32_t descriptorSize;
 	// SRV用デスクリプタヒープ
@@ -48,7 +49,7 @@ private:
 
 	//次に使用するSRVインデックス
 	uint32_t useIndex = 0;
-	std::array<bool, 512> allocatedIndices_{};
+	std::array<bool, kMaxSRVCount> allocatedIndices_{};
 	std::vector<uint32_t> freeIndices_;
 };
 
