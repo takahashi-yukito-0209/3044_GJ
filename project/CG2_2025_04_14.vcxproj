@@ -179,6 +179,7 @@
     <ClCompile Include="engine\math\Quaternion.cpp" />
     <ClCompile Include="engine\math\Matrix4x4.cpp" />
     <ClCompile Include="engine\utility\Logger.cpp" />
+	<ClCompile Include="engine\text\ResourceFontInstaller.cpp" />
     <ClCompile Include="engine\utility\SystemPerformanceMonitor.cpp" />
     <ClCompile Include="engine\base\EditorLocalization.cpp" />
     <ClCompile Include="engine\base\EditorComponentCatalog.cpp" />
@@ -430,6 +431,7 @@
     <ClInclude Include="engine\math\Vector3.h" />
     <ClInclude Include="engine\math\Vector4.h" />
     <ClInclude Include="engine\utility\Logger.h" />
+	<ClInclude Include="engine\text\ResourceFontInstaller.h" />
     <ClInclude Include="engine\utility\EditableResourcePath.h" />
     <ClInclude Include="engine\utility\ResourceTextureCatalog.h" />
     <ClInclude Include="engine\utility\SystemPerformanceMonitor.h" />

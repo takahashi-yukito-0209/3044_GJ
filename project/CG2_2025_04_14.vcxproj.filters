@@ -47,6 +47,7 @@
     <ClCompile Include="engine\io\Input.cpp" />
     <ClCompile Include="engine\math\Quaternion.cpp" />
     <ClCompile Include="engine\utility\Logger.cpp" />
+	<ClCompile Include="engine\text\ResourceFontInstaller.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="engine\math\Math.cpp" />
     <ClCompile Include="engine\2d\Sprite.cpp" />
@@ -346,6 +347,7 @@
     <ClInclude Include="engine\base\SceneRenderTarget.h" />
     <ClInclude Include="engine\io\Input.h" />
     <ClInclude Include="engine\utility\Logger.h" />
+	<ClInclude Include="engine\text\ResourceFontInstaller.h" />
     <ClInclude Include="engine\utility\EditableResourcePath.h" />
     <ClInclude Include="engine\utility\ResourceTextureCatalog.h" />
     <ClInclude Include="engine\utility\SystemPerformanceMonitor.h" />
