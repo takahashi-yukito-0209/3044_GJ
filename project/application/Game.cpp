@@ -678,6 +678,10 @@ void Game::Update() {
 	} else {
 		sceneManager_->UpdatePaused();
 	}
+	if (sceneManager_->ConsumeExitRequest()) {
+		endRequest_ = true;
+		return;
+	}
 	ApplyRuntimePostProcessSettings();
 	if (preserveEditorCamera) {
 		RestoreCameraSnapshot(editorCameraSnapshot);

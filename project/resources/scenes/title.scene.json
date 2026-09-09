@@ -975,6 +975,157 @@
       "active": true,
       "components": [
         {
+          "characterSpacing": 0.0,
+          "clipEnabled": false,
+          "color": [
+            0.7799999713897705,
+            0.8600000143051147,
+            0.9399999976158142,
+            1.0
+          ],
+          "enabled": true,
+          "fontFamily": "Arial",
+          "fontResourcePath": "",
+          "fontSize": 50.0,
+          "fontSource": "System",
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [
+            560.0,
+            76.0
+          ],
+          "lineSpacing": 1.0,
+          "localId": 1,
+          "opacity": 1.0,
+          "outlineColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "outlineEnabled": true,
+          "outlineWidth": 1.0,
+          "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.5,
+              0.5
+            ],
+            "position": [
+              360.0,
+              228.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 5,
+            "viewportAnchor": [
+              0.5,
+              0.5
+            ]
+          },
+          "pivot": [
+            0.0,
+            0.0
+          ],
+          "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              0.0,
+              0.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 0,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
+          "shadowColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "shadowEnabled": true,
+          "shadowOffset": [
+            3.0,
+            3.0
+          ],
+          "sortingOrder": 0,
+          "text": "EXIT",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "viewportAnchor": [
+            0.0,
+            0.0
+          ],
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 104,
+      "locked": false,
+      "modelPath": "",
+      "name": "TitleMenuExitText",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
           "breakupStrength": 1.0,
           "causticsIntensity": 0.3499999940395355,
           "causticsScale": 0.07999999821186066,

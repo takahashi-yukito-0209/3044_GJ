@@ -29,6 +29,10 @@ public:
 	virtual void Update(float deltaTime) = 0;
 	// Pause中はSimulationを進めず、Debug Cameraなど必要な表示状態だけを更新する。
 	virtual void UpdatePaused() {}
+	/// <summary>
+	/// Scene内で発生したアプリ終了要求を呼び出し元へ渡します。
+	/// </summary>
+	virtual bool ConsumeExitRequest() { return false; }
 
 	virtual void Draw() = 0;
 	// Additive描画ではActive SceneのCameraを全Instanceへ共有する。

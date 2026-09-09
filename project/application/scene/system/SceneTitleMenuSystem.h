@@ -12,13 +12,14 @@ class SceneTextRenderSystem;
 
 struct SceneTitleMenuResult {
 	std::string requestedSceneId; // 決定操作で要求された遷移先Scene ID。
+	bool exitRequested = false; // 決定操作で要求されたゲーム終了。
 };
 
 // Title Sceneのメニュー入力とTextRendererの選択表示だけを担当する。
 class SceneTitleMenuSystem {
 public:
 	/// <summary>
-	/// タイトルメニュー入力を更新し、決定時の遷移先Scene IDを返します。
+	/// タイトルメニュー入力を更新し、遷移または終了要求を返します。
 	/// </summary>
 	SceneTitleMenuResult Update(const SceneDocument& document);
 
@@ -40,6 +41,7 @@ private:
 		uint64_t entityId = 0; // 表示を上書きするTextRenderer Entity ID。
 		std::string label; // メニューに表示する項目名。
 		std::string targetSceneId; // 決定時に遷移するScene ID。
+		bool exitRequested = false; // 決定時にゲーム終了を要求する項目か。
 	};
 
 	/// <summary>

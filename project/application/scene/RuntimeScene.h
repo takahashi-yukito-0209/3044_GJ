@@ -56,6 +56,10 @@ public:
 	void PrepareForSceneTransition() override;
 	void Update(float deltaTime) override;
 	void UpdatePaused() override;
+	/// <summary>
+	/// メニュー操作で発生したゲーム終了要求を返し、内部状態を消費します。
+	/// </summary>
+	bool ConsumeExitRequest() override;
 	void Draw() override;
 	Camera* GetRenderCamera() const override;
 	void DrawWithCamera(Camera* viewCamera) override;
@@ -116,6 +120,7 @@ private:
 	Camera* debugCamera_ = nullptr;
 	Player* player_ = nullptr;
 	std::vector<SceneRuntimeObjectBinding> runtimeObjectBindings_;
+	bool exitRequested_ = false; // 上位のGameへ渡すゲーム終了要求。
 	bool titleStartTransitionActive_ = false; // タイトルSTART後の退出演出中か。
 	float titleStartTransitionElapsedSeconds_ = 0.0f; // タイトル退出演出の経過時間。
 
