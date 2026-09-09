@@ -254,7 +254,7 @@ private:
 	VoiceCallback voiceCallback_;
 	std::unique_ptr<AudioDirector> audioDirector_;
 	uint64_t nextPlaybackId_ = 1;
-	float busVolumes_[5] = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
+	float busVolumes_[5] = { 1.0f, 0.6f, 0.6f, 0.6f, 0.6f };
 	std::unordered_map<uint64_t, std::unique_ptr<PlaybackState>> playbacks_;
 	std::vector<std::unique_ptr<PlaybackState>> retiringPlaybacks_;
 	std::unordered_map<std::string, std::weak_ptr<const AudioClip>> clipCache_;

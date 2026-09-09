@@ -16916,7 +16916,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "BGM 音量 < 100% >",
+          "text": "BGM 音量 < 60% >",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -17068,7 +17068,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "SE  音量 < 100% >",
+          "text": "SE  音量 < 60% >",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [

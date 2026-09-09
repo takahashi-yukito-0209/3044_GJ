@@ -27,11 +27,12 @@ namespace {
 	constexpr int kVolumeStepPercent = 10;
 	constexpr int kMinimumVolumePercent = 0;
 	constexpr int kMaximumVolumePercent = 100;
+	constexpr int kDefaultVolumePercent = 60;
 	constexpr Vector4 kSelectedColor = { 1.0f, 0.92f, 0.55f, 1.0f };
 	constexpr Vector4 kNormalColor = { 0.78f, 0.86f, 0.94f, 1.0f };
 
-	int gBgmVolumePercent = 100; // BGM Busへ反映する音量値。
-	int gSeVolumePercent = 100; // SFX Busへ反映する音量値。
+	int gBgmVolumePercent = kDefaultVolumePercent; // BGM Busへ反映する音量値。
+	int gSeVolumePercent = kDefaultVolumePercent; // SFX Busへ反映する音量値。
 
 	/// <summary>
 	/// 複数候補キーのいずれかが押された瞬間かを判定します。
