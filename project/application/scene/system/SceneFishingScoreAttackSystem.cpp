@@ -2459,13 +2459,17 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		}
 		totalScore_ += awardedScore;
 	}
-	if (awardedScore > 0 &&
+	if (awardedScore != 0 &&
 		director->fishingResultTextEntityId != 0 &&
 		hitHookBinding && hitHookBinding->object) {
 		const Matrix4x4& hookWorld = hitHookBinding->object->GetWorldMatrix();
 		scorePopup_.entityId = director->fishingResultTextEntityId;
-		scorePopup_.text = "+" + std::to_string(awardedScore);
-		scorePopup_.color = rank.color;
+		scorePopup_.text = awardedScore > 0
+			? "+" + std::to_string(awardedScore)
+			: std::to_string(awardedScore);
+		scorePopup_.color = awardedScore > 0
+			? rank.color
+			: Vector4{ 1.0f, 0.18f, 0.18f, 1.0f };
 		scorePopup_.worldPosition = {
 			hookWorld.m[3][0], hookWorld.m[3][1] + 1.25f, hookWorld.m[3][2]
 		};
