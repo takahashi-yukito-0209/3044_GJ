@@ -1615,8 +1615,7 @@ void RuntimeScene::Update(float deltaTime)
 			}
 			pauseMenuSystem_.ApplyTextOverrides(
 				*activeDocument,
-				textRenderSystem_,
-				optionMenuSystem_
+				textRenderSystem_
 			);
 		}
 	}

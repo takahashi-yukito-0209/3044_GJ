@@ -2,6 +2,7 @@
 #include "Framework.h"
 
 #include "../utility/Logger.h"
+#include "../text/ResourceFontInstaller.h"
 #include "D3DResourceLeadChecker.h"
 #include "WinApp.h"
 #include "DirectXCommon.h"
@@ -45,6 +46,7 @@ void Framework::Run() {
 
 void Framework::Initialize() {
 	Logger::Initialize();
+	ResourceFontInstaller::Install();
 
 	checker_ = new D3DResourceLeadChecker();
 
@@ -184,5 +186,6 @@ void Framework::Finalize() {
 	delete checker_;
 	checker_ = nullptr;
 
+	ResourceFontInstaller::Uninstall();
 	Logger::Finalize();
 }

@@ -380,7 +380,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -462,7 +462,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "START",
+          "text": "すたーと",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -531,7 +531,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -613,7 +613,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "TUTORIAL",
+          "text": "ちゅーとりある",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -682,7 +682,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -764,7 +764,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "OPTION",
+          "text": "おぷしょん",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -833,7 +833,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -915,7 +915,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "CREDIT",
+          "text": "くれじっと",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
