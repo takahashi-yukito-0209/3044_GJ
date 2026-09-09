@@ -161,6 +161,10 @@
                         "phase": "Pressed"
                       },
                       {
+                        "input": "SPACE",
+                        "phase": "Pressed"
+                      },
+                      {
                         "input": "Gamepad A",
                         "phase": "Pressed"
                       }
