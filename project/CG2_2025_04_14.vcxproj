@@ -210,6 +210,7 @@
 	<ClCompile Include="application\scene\system\SceneRuntimeEffectSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneTextRenderSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneTextMotionSystem.cpp" />
+	<ClCompile Include="application\scene\system\SceneSpriteMotionSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneTitleBoatMotionSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneTitleMenuSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneGameFlowSystem.cpp" />
@@ -493,6 +494,7 @@
 	<ClInclude Include="application\scene\system\SceneRuntimeEffectSystem.h" />
 	<ClInclude Include="application\scene\system\SceneTextRenderSystem.h" />
 	<ClInclude Include="application\scene\system\SceneTextMotionSystem.h" />
+	<ClInclude Include="application\scene\system\SceneSpriteMotionSystem.h" />
 	<ClInclude Include="application\scene\system\SceneTitleBoatMotionSystem.h" />
 	<ClInclude Include="application\scene\system\SceneTitleMenuSystem.h" />
 	<ClInclude Include="application\scene\system\SceneGameFlowSystem.h" />

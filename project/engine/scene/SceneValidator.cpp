@@ -988,6 +988,70 @@ bool SceneValidator::ValidateDocument(
 								clip.id);
 					}
 				}
+			} else if (component.type == "SpriteMotion") {
+				const SceneComponent* spriteRenderer =
+					SceneEntityQuery::FindEnabledComponent(entity, "SpriteRenderer");
+				if (!spriteRenderer) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"SpriteMotion requires an enabled SpriteRenderer on the same Entity"
+					);
+				}
+				std::unordered_set<std::string> clipIds;
+				bool startClipFound = false;
+				for (const SceneSpriteMotionClip& clip : component.spriteMotionClips) {
+					if (clip.id.empty() || !clipIds.insert(clip.id).second) {
+						addIssue(SceneValidationSeverity::Error, entity.id,
+							"SpriteMotion contains an empty or duplicate clip Id");
+					}
+					if (clip.id == component.spriteMotionStartClipId) {
+						startClipFound = true;
+					}
+					if (clip.keyframes.size() < 2) {
+						addIssue(SceneValidationSeverity::Error, entity.id,
+							"SpriteMotion clip requires at least two keyframes: " + clip.id);
+					}
+					float previousTime = -1.0f;
+					for (const SceneSpriteMotionKeyframe& keyframe : clip.keyframes) {
+						const bool validEasing =
+							keyframe.easingToNext == "Linear" ||
+							keyframe.easingToNext == "EaseIn" ||
+							keyframe.easingToNext == "EaseOut" ||
+							keyframe.easingToNext == "EaseInOut" ||
+							keyframe.easingToNext == "SmoothStep";
+						if (!std::isfinite(keyframe.timeSeconds) ||
+							!std::isfinite(keyframe.positionOffset.x) ||
+							!std::isfinite(keyframe.positionOffset.y) ||
+							!std::isfinite(keyframe.rotationOffset) ||
+							!std::isfinite(keyframe.scaleMultiplier.x) ||
+							!std::isfinite(keyframe.scaleMultiplier.y) ||
+							!std::isfinite(keyframe.opacityMultiplier) ||
+							keyframe.timeSeconds < 0.0f ||
+							keyframe.timeSeconds <= previousTime ||
+							keyframe.scaleMultiplier.x <= 0.0f ||
+							keyframe.scaleMultiplier.y <= 0.0f ||
+							keyframe.opacityMultiplier < 0.0f ||
+							keyframe.opacityMultiplier > 1.0f || !validEasing) {
+							addIssue(SceneValidationSeverity::Error, entity.id,
+								"SpriteMotion clip contains an invalid keyframe: " + clip.id);
+							break;
+						}
+						previousTime = keyframe.timeSeconds;
+					}
+					if (!clip.keyframes.empty() &&
+						(clip.keyframes.front().timeSeconds != 0.0f ||
+							clip.keyframes.back().timeSeconds <= 0.0f)) {
+						addIssue(SceneValidationSeverity::Error, entity.id,
+							"SpriteMotion clip must start at zero and end after zero: " +
+								clip.id);
+					}
+				}
+				if (component.spriteMotionPlayOnStart &&
+					(component.spriteMotionStartClipId.empty() || !startClipFound)) {
+					addIssue(SceneValidationSeverity::Error, entity.id,
+						"SpriteMotion playOnStart requires a valid startClipId");
+				}
 			} else if (component.type == "Light") {
 				if (
 					component.lightType != "Directional" &&

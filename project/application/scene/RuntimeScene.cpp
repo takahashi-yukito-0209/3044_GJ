@@ -620,6 +620,7 @@ void RuntimeScene::Initialize()
 		);
 		if (!fishingResultPresentationSystem_.GetSpriteRequests().empty()) {
 			objectSystem_.ClearSpriteOverrides();
+			objectSystem_.ClearSpritePresentationOverrides();
 			for (const SceneFishingResultPresentationSpriteRequest& request :
 				fishingResultPresentationSystem_.GetSpriteRequests()) {
 				objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
@@ -1353,8 +1354,22 @@ void RuntimeScene::Update(float deltaTime)
 	} else {
 		fishingResultPresentationSystem_.Clear();
 	}
+	if (activeDocument && playing) {
+		spriteMotionSystem_.Update(
+			*activeDocument,
+			worldAnimationPaused ? 0.0f : realDeltaTime,
+			[this, activeDocument](uint64_t entityId) {
+				return pauseSystem_.ShouldProcess(
+					*activeDocument, entityId, ScenePauseDomain::WorldAnimation
+				);
+			}
+		);
+	} else {
+		spriteMotionSystem_.Clear();
+	}
 	runtimeEffectSystem_.SetWorldEffectsPaused(runtimeSceneId, worldEffectsPaused);
 	objectSystem_.ClearSpriteOverrides();
+	objectSystem_.ClearSpritePresentationOverrides();
 	if (activeDocument) {
 		for (const SceneFishingScoreAttackIconRequest& request :
 			fishingScoreAttackSystem_.GetIconRequests()) {
@@ -1432,6 +1447,18 @@ void RuntimeScene::Update(float deltaTime)
 				request.color,
 				request.visible
 			});
+		}
+		for (const auto& [entityId, presentation] :
+			spriteMotionSystem_.GetPresentationOverrides()) {
+			objectSystem_.SetSpritePresentationOverride(
+				SceneSpritePresentationOverride{
+					entityId,
+					presentation.positionOffset,
+					presentation.rotationOffset,
+					presentation.scaleMultiplier,
+					presentation.opacityMultiplier
+				}
+			);
 		}
 	}
 	objectSystem_.SyncSprites(activeDocument);
@@ -1715,6 +1742,11 @@ void RuntimeScene::UpdatePaused()
 		: nullptr;
 	SceneDocument* document = GetSceneDocument();
 	if (document) {
+		spriteMotionSystem_.Update(
+			*document,
+			0.0f,
+			[](uint64_t) { return false; }
+		);
 		fishingResultPresentationSystem_.Update(
 			*document,
 			executionContext && executionContext->IsPlaying()
@@ -1733,6 +1765,7 @@ void RuntimeScene::UpdatePaused()
 		);
 		fishingScoreAttackSystem_.AddSharkNavigationDebugDraw(*document);
 		objectSystem_.ClearSpriteOverrides();
+		objectSystem_.ClearSpritePresentationOverrides();
 		for (const SceneFishingScoreAttackIconRequest& request :
 			fishingScoreAttackSystem_.GetIconRequests()) {
 			objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
@@ -1757,6 +1790,18 @@ void RuntimeScene::UpdatePaused()
 				request.color,
 				request.visible
 			});
+		}
+		for (const auto& [entityId, presentation] :
+			spriteMotionSystem_.GetPresentationOverrides()) {
+			objectSystem_.SetSpritePresentationOverride(
+				SceneSpritePresentationOverride{
+					entityId,
+					presentation.positionOffset,
+					presentation.rotationOffset,
+					presentation.scaleMultiplier,
+					presentation.opacityMultiplier
+				}
+			);
 		}
 		objectSystem_.SyncSprites(document);
 	}
@@ -1966,6 +2011,7 @@ void RuntimeScene::Finalize()
 	postProcessProfileSystem_.Reset();
 	stateMachineSystem_.Clear();
 	attackRunnerSystem_.Clear();
+	spriteMotionSystem_.Clear();
 	physicsSystem_.Clear();
 	prefabAnimationSystem_.Clear();
 	projectileSystem_.Clear();
@@ -2006,6 +2052,7 @@ void RuntimeScene::PrepareForSceneTransition()
 	exitRequested_ = false;
 	pauseSystem_.Clear();
 	pauseMenuSystem_.Clear();
+	spriteMotionSystem_.Clear();
 	textMotionSystem_.Clear();
 	gameFlowSystem_.Clear();
 	fishingResultPresentationSystem_.Clear();

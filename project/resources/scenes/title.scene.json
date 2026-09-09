@@ -29,7 +29,8 @@
           "flipX": false,
           "flipY": false,
           "localId": 1,
-          "renderSpace": "Scene2D",
+          "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             500.0,
             500.0
@@ -40,6 +41,100 @@
             0.0,
             0.0
           ]
+        },
+        {
+          "enabled": true,
+          "localId": 3,
+          "referenceSize": [
+            1280.0,
+            720.0
+          ],
+          "type": "ScreenOverlayCanvas"
+        },
+        {
+          "clips": [
+            {
+              "holdFinalPose": true,
+              "id": "intro",
+              "keyframes": [
+                {
+                  "easingToNext": "EaseOut",
+                  "opacityMultiplier": 0.0,
+                  "positionOffset": [
+                    -1150.0,
+                    -70.0
+                  ],
+                  "rotationOffset": 0.0,
+                  "scaleMultiplier": [
+                    1.2000000476837158,
+                    0.7200000286102295
+                  ],
+                  "timeSeconds": 0.0
+                },
+                {
+                  "easingToNext": "EaseIn",
+                  "opacityMultiplier": 1.0,
+                  "positionOffset": [
+                    70.0,
+                    0.0
+                  ],
+                  "rotationOffset": 0.0,
+                  "scaleMultiplier": [
+                    1.0499999523162842,
+                    0.949999988079071
+                  ],
+                  "timeSeconds": 0.5199999809265137
+                },
+                {
+                  "easingToNext": "EaseOut",
+                  "opacityMultiplier": 1.0,
+                  "positionOffset": [
+                    0.0,
+                    0.0
+                  ],
+                  "rotationOffset": 0.0,
+                  "scaleMultiplier": [
+                    1.25,
+                    0.6499999761581421
+                  ],
+                  "timeSeconds": 0.6800000071525574
+                },
+                {
+                  "easingToNext": "EaseInOut",
+                  "opacityMultiplier": 1.0,
+                  "positionOffset": [
+                    0.0,
+                    -18.0
+                  ],
+                  "rotationOffset": 0.0,
+                  "scaleMultiplier": [
+                    0.8799999952316284,
+                    1.2200000286102295
+                  ],
+                  "timeSeconds": 0.8399999737739563
+                },
+                {
+                  "easingToNext": "SmoothStep",
+                  "opacityMultiplier": 1.0,
+                  "positionOffset": [
+                    0.0,
+                    0.0
+                  ],
+                  "rotationOffset": 0.0,
+                  "scaleMultiplier": [
+                    1.0,
+                    1.0
+                  ],
+                  "timeSeconds": 1.0499999523162842
+                }
+              ]
+            }
+          ],
+          "enabled": true,
+          "localId": 2,
+          "playOnStart": true,
+          "startClipId": "intro",
+          "type": "SpriteMotion"
         }
       ],
       "folder": false,
@@ -336,8 +431,8 @@
               0.5
             ],
             "position": [
-              500.0,
-              150.0
+              1070.0,
+              340.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -346,8 +441,8 @@
             ],
             "sortingOrder": 1,
             "viewportAnchor": [
-              0.5,
-              0.5
+              0.0,
+              0.0
             ]
           },
           "pivot": [
@@ -376,6 +471,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -487,8 +583,8 @@
               0.5
             ],
             "position": [
-              500.0,
-              220.0
+              1070.0,
+              410.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -497,8 +593,8 @@
             ],
             "sortingOrder": 2,
             "viewportAnchor": [
-              0.5,
-              0.5
+              0.0,
+              0.0
             ]
           },
           "pivot": [
@@ -527,6 +623,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -638,8 +735,8 @@
               0.5
             ],
             "position": [
-              500.0,
-              290.0
+              1070.0,
+              480.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -648,8 +745,8 @@
             ],
             "sortingOrder": 3,
             "viewportAnchor": [
-              0.5,
-              0.5
+              0.0,
+              0.0
             ]
           },
           "pivot": [
@@ -678,6 +775,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -789,8 +887,8 @@
               0.5
             ],
             "position": [
-              500.0,
-              360.0
+              1070.0,
+              550.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -799,8 +897,8 @@
             ],
             "sortingOrder": 4,
             "viewportAnchor": [
-              0.5,
-              0.5
+              0.0,
+              0.0
             ]
           },
           "pivot": [
@@ -829,6 +927,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -940,8 +1039,8 @@
               0.5
             ],
             "position": [
-              500.0,
-              430.0
+              1070.0,
+              620.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -950,8 +1049,8 @@
             ],
             "sortingOrder": 5,
             "viewportAnchor": [
-              0.5,
-              0.5
+              0.0,
+              0.0
             ]
           },
           "pivot": [
@@ -980,6 +1079,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,

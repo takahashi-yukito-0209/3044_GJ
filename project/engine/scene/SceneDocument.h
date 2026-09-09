@@ -367,6 +367,21 @@ struct SceneTextMotionClip {
 	std::vector<SceneTextMotionKeyframe> keyframes;
 };
 
+struct SceneSpriteMotionKeyframe {
+	float timeSeconds = 0.0f;
+	Vector2 positionOffset = { 0.0f, 0.0f };
+	float rotationOffset = 0.0f;
+	Vector2 scaleMultiplier = { 1.0f, 1.0f };
+	float opacityMultiplier = 1.0f;
+	std::string easingToNext = "SmoothStep";
+};
+
+struct SceneSpriteMotionClip {
+	std::string id;
+	bool holdFinalPose = false;
+	std::vector<SceneSpriteMotionKeyframe> keyframes;
+};
+
 struct SceneGameFlowWave {
 	uint64_t spawnerEntityId = 0;
 	int count = 1;
@@ -480,6 +495,9 @@ struct SceneComponent {
 	Text2DPlacement textOverlayPlacement{};
 	Text2DPlacement textScene2DPlacement{};
 	std::vector<SceneTextMotionClip> textMotionClips;
+	bool spriteMotionPlayOnStart = false;
+	std::string spriteMotionStartClipId;
+	std::vector<SceneSpriteMotionClip> spriteMotionClips;
 	bool gameFlowAutoStart = true;
 	int gameFlowCountdownStart = 3;
 	float gameFlowCountdownStepSeconds = 1.0f;

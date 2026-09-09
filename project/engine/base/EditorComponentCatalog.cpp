@@ -28,7 +28,7 @@ namespace {
 		EditorComponentTag::Prefab
 	}};
 
-	constexpr std::array<EditorComponentDefinition, 50> kDefinitions = {{
+	constexpr std::array<EditorComponentDefinition, 51> kDefinitions = {{
 		{
 			"MeshRenderer", "3Dモデル表示", "Mesh Renderer",
 			"3DモデルとMaterialをSceneへ表示します。",
@@ -83,6 +83,16 @@ namespace {
 			EditorComponentTagBit(EditorComponentTag::UI) |
 			EditorComponentTagBit(EditorComponentTag::Animation) |
 			EditorComponentTagBit(EditorComponentTag::Event)
+		},
+		{
+			"SpriteMotion", "スプライト演出", "Sprite Motion",
+			"SpriteRendererに対する再利用可能な2D画像演出clipを設定します。",
+			"Configures reusable 2D sprite motion clips for a SpriteRenderer.",
+			EditorComponentCategory::Animation,
+			SceneContext, 38, -1, "SpriteRenderer",
+			EditorComponentTagBit(EditorComponentTag::TwoD) |
+			EditorComponentTagBit(EditorComponentTag::UI) |
+			EditorComponentTagBit(EditorComponentTag::Animation)
 		},
 		{
 			"Camera", "カメラ", "Camera",

@@ -622,6 +622,12 @@ void SceneObjectSystem::SyncSprites(const SceneDocument* document) {
 			overrideIterator != spriteOverrides_.end()
 			? &overrideIterator->second
 			: nullptr;
+		const auto presentationIterator =
+			spritePresentationOverrides_.find(entity.id);
+		const SceneSpritePresentationOverride* presentationOverride =
+			presentationIterator != spritePresentationOverrides_.end()
+			? &presentationIterator->second
+			: nullptr;
 		if (!spriteRenderer) {
 			continue;
 		}
@@ -667,14 +673,31 @@ void SceneObjectSystem::SyncSprites(const SceneDocument* document) {
 		const Vector4 color = runtimeOverride
 			? runtimeOverride->color
 			: spriteRenderer->spriteColor;
-		sprite->SetPosition({ transform.translate.x, transform.translate.y });
-		sprite->SetRotation(transform.rotate.z);
+		const Vector2 positionOffset = presentationOverride
+			? presentationOverride->positionOffset
+			: Vector2{};
+		const float rotationOffset = presentationOverride
+			? presentationOverride->rotationOffset
+			: 0.0f;
+		const Vector2 scaleMultiplier = presentationOverride
+			? presentationOverride->scaleMultiplier
+			: Vector2{ 1.0f, 1.0f };
+		const float opacityMultiplier = presentationOverride
+			? presentationOverride->opacityMultiplier
+			: 1.0f;
+		sprite->SetPosition({
+			transform.translate.x + positionOffset.x,
+			transform.translate.y + positionOffset.y
+		});
+		sprite->SetRotation(transform.rotate.z + rotationOffset);
 		sprite->SetSize({
-			size.x * transform.scale.x,
-			size.y * transform.scale.y
+			size.x * transform.scale.x * scaleMultiplier.x,
+			size.y * transform.scale.y * scaleMultiplier.y
 		});
 		sprite->SetAnchorPoint(spriteRenderer->spriteAnchor);
-		sprite->SetColor(color);
+		Vector4 composedColor = color;
+		composedColor.w *= opacityMultiplier;
+		sprite->SetColor(composedColor);
 		sprite->SetIsFlipX(spriteRenderer->spriteFlipX);
 		sprite->SetIsFlipY(spriteRenderer->spriteFlipY);
 		if (IsEntityActiveInHierarchy(*document, entity)) {
@@ -695,6 +718,10 @@ void SceneObjectSystem::ClearSpriteOverrides() {
 	spriteOverrides_.clear();
 }
 
+void SceneObjectSystem::ClearSpritePresentationOverrides() {
+	spritePresentationOverrides_.clear();
+}
+
 void SceneObjectSystem::SetSpriteRuntimeOverride(
 	const SceneSpriteRuntimeOverride& overrideValue
 ) {
@@ -702,6 +729,15 @@ void SceneObjectSystem::SetSpriteRuntimeOverride(
 		return;
 	}
 	spriteOverrides_[overrideValue.entityId] = overrideValue;
+}
+
+void SceneObjectSystem::SetSpritePresentationOverride(
+	const SceneSpritePresentationOverride& overrideValue
+) {
+	if (overrideValue.entityId == 0) {
+		return;
+	}
+	spritePresentationOverrides_[overrideValue.entityId] = overrideValue;
 }
 
 void SceneObjectSystem::BuildBindings(
@@ -897,6 +933,12 @@ void SceneObjectSystem::DrawScreenOverlaySprites(
 			overrideIterator != spriteOverrides_.end()
 			? &overrideIterator->second
 			: nullptr;
+		const auto presentationIterator =
+			spritePresentationOverrides_.find(entity.id);
+		const SceneSpritePresentationOverride* presentationOverride =
+			presentationIterator != spritePresentationOverrides_.end()
+			? &presentationIterator->second
+			: nullptr;
 		if (runtimeOverride && !runtimeOverride->visible) {
 			continue;
 		}
@@ -907,6 +949,18 @@ void SceneObjectSystem::DrawScreenOverlaySprites(
 		const Vector4 color = runtimeOverride
 			? runtimeOverride->color
 			: spriteRenderer->spriteColor;
+		const Vector2 positionOffset = presentationOverride
+			? presentationOverride->positionOffset
+			: Vector2{};
+		const float rotationOffset = presentationOverride
+			? presentationOverride->rotationOffset
+			: 0.0f;
+		const Vector2 scaleMultiplier = presentationOverride
+			? presentationOverride->scaleMultiplier
+			: Vector2{ 1.0f, 1.0f };
+		const float opacityMultiplier = presentationOverride
+			? presentationOverride->opacityMultiplier
+			: 1.0f;
 		const SceneScreenOverlayCanvasLayout layout =
 			ResolveSceneScreenOverlayCanvasLayout(
 				document,
@@ -914,30 +968,36 @@ void SceneObjectSystem::DrawScreenOverlaySprites(
 				viewportWidth,
 				viewportHeight
 			);
+		const Vector2 scaledMotionOffset = layout.ScalePixelOffset(positionOffset);
 		Sprite* sprite = found->second.sprite.get();
 		if (runtimeOverride && runtimeOverride->hasViewportPositionOverride) {
-			const Vector2 positionOffset = layout.ScalePixelOffset(
+			const Vector2 runtimePositionOffset = layout.ScalePixelOffset(
 				runtimeOverride->positionOffsetPixels
 			);
 			sprite->SetPosition({
 				runtimeOverride->viewportPosition.x * viewportWidth +
-				positionOffset.x,
+				runtimePositionOffset.x + scaledMotionOffset.x,
 				runtimeOverride->viewportPosition.y * viewportHeight +
-				positionOffset.y
+				runtimePositionOffset.y + scaledMotionOffset.y
 			});
 		} else {
 			sprite->SetPosition(layout.ResolvePosition(
 				spriteRenderer->spriteViewportAnchor,
-				{ transform.translate.x, transform.translate.y }
+				{
+					transform.translate.x + positionOffset.x,
+					transform.translate.y + positionOffset.y
+				}
 			));
 		}
-		sprite->SetRotation(transform.rotate.z);
+		sprite->SetRotation(transform.rotate.z + rotationOffset);
 		sprite->SetSize(layout.ScaleSize({
-			size.x * transform.scale.x,
-			size.y * transform.scale.y
+			size.x * transform.scale.x * scaleMultiplier.x,
+			size.y * transform.scale.y * scaleMultiplier.y
 		}));
 		sprite->SetAnchorPoint(spriteRenderer->spriteAnchor);
-		sprite->SetColor(color);
+		Vector4 composedColor = color;
+		composedColor.w *= opacityMultiplier;
+		sprite->SetColor(composedColor);
 		sprite->SetIsFlipX(spriteRenderer->spriteFlipX);
 		sprite->SetIsFlipY(spriteRenderer->spriteFlipY);
 		sprite->Update(viewportWidth, viewportHeight);
@@ -1009,6 +1069,7 @@ void SceneObjectSystem::ClearModels() {
 void SceneObjectSystem::ClearSprites() {
 	sprites_.clear();
 	spriteOverrides_.clear();
+	spritePresentationOverrides_.clear();
 }
 
 void SceneObjectSystem::Finalize() {

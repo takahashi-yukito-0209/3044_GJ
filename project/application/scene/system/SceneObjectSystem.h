@@ -32,6 +32,14 @@ struct SceneSpriteRuntimeOverride {
 	Vector2 positionOffsetPixels = { 0.0f, 0.0f };
 };
 
+struct SceneSpritePresentationOverride {
+	uint64_t entityId = 0;
+	Vector2 positionOffset{};
+	float rotationOffset = 0.0f;
+	Vector2 scaleMultiplier = { 1.0f, 1.0f };
+	float opacityMultiplier = 1.0f;
+};
+
 // Scene由来のObject3dとSpriteを一意に所有する。
 // BuildBindingsが返すポインタは次のSyncModelsまたはFinalizeまでだけ有効。
 class SceneObjectSystem {
@@ -74,8 +82,12 @@ public:
 	);
 	void SyncSprites(const SceneDocument* document);
 	void ClearSpriteOverrides();
+	void ClearSpritePresentationOverrides();
 	void SetSpriteRuntimeOverride(
 		const SceneSpriteRuntimeOverride& overrideValue
+	);
+	void SetSpritePresentationOverride(
+		const SceneSpritePresentationOverride& overrideValue
 	);
 	// Agent・Physics・Environmentへ渡す非所有参照を、Object同期直後に再構築する。
 	void BuildBindings(
@@ -140,4 +152,6 @@ private:
 	std::mt19937 fishingObstacleRandomEngine_{ std::random_device{}() };
 	std::unordered_map<uint64_t, SpriteRuntime> sprites_;
 	std::unordered_map<uint64_t, SceneSpriteRuntimeOverride> spriteOverrides_;
+	std::unordered_map<uint64_t, SceneSpritePresentationOverride>
+		spritePresentationOverrides_;
 };

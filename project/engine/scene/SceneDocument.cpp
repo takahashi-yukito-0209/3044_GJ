@@ -1780,6 +1780,29 @@ namespace {
 				});
 			}
 			result["clips"] = std::move(clips);
+		} else if (component.type == "SpriteMotion") {
+			result["playOnStart"] = component.spriteMotionPlayOnStart;
+			result["startClipId"] = component.spriteMotionStartClipId;
+			json clips = json::array();
+			for (const SceneSpriteMotionClip& clip : component.spriteMotionClips) {
+				json keyframes = json::array();
+				for (const SceneSpriteMotionKeyframe& keyframe : clip.keyframes) {
+					keyframes.push_back({
+						{ "timeSeconds", keyframe.timeSeconds },
+						{ "positionOffset", VectorToJson(keyframe.positionOffset) },
+						{ "rotationOffset", keyframe.rotationOffset },
+						{ "scaleMultiplier", VectorToJson(keyframe.scaleMultiplier) },
+						{ "opacityMultiplier", keyframe.opacityMultiplier },
+						{ "easingToNext", keyframe.easingToNext }
+					});
+				}
+				clips.push_back({
+					{ "id", clip.id },
+					{ "holdFinalPose", clip.holdFinalPose },
+					{ "keyframes", std::move(keyframes) }
+				});
+			}
+			result["clips"] = std::move(clips);
 		} else if (component.type == "GameFlowDirector") {
 			result["autoStart"] = component.gameFlowAutoStart;
 			result["countdownStart"] = component.gameFlowCountdownStart;
@@ -3516,6 +3539,62 @@ namespace {
 								}
 							}
 							component.textMotionClips.push_back(std::move(clip));
+						}
+					}
+				} else if (component.type == "SpriteMotion") {
+					component.spriteMotionPlayOnStart = value.value(
+						"playOnStart", component.spriteMotionPlayOnStart
+					);
+					component.spriteMotionStartClipId = value.value(
+						"startClipId", component.spriteMotionStartClipId
+					);
+					component.spriteMotionClips.clear();
+					const auto clips = value.find("clips");
+					if (clips != value.end() && clips->is_array()) {
+						for (const auto& sourceClip : *clips) {
+							if (!sourceClip.is_object()) {
+								continue;
+							}
+							SceneSpriteMotionClip clip{};
+							clip.id = sourceClip.value("id", std::string{});
+							clip.holdFinalPose = sourceClip.value(
+								"holdFinalPose", false
+							);
+							const auto keyframes = sourceClip.find("keyframes");
+							if (keyframes != sourceClip.end() && keyframes->is_array()) {
+								for (const auto& sourceKeyframe : *keyframes) {
+									if (!sourceKeyframe.is_object()) {
+										continue;
+									}
+									SceneSpriteMotionKeyframe keyframe{};
+									keyframe.timeSeconds = sourceKeyframe.value(
+										"timeSeconds", keyframe.timeSeconds
+									);
+									if (sourceKeyframe.contains("positionOffset")) {
+										keyframe.positionOffset = JsonToVector(
+											sourceKeyframe.at("positionOffset"),
+											keyframe.positionOffset
+										);
+									}
+									keyframe.rotationOffset = sourceKeyframe.value(
+										"rotationOffset", keyframe.rotationOffset
+									);
+									if (sourceKeyframe.contains("scaleMultiplier")) {
+										keyframe.scaleMultiplier = JsonToVector(
+											sourceKeyframe.at("scaleMultiplier"),
+											keyframe.scaleMultiplier
+										);
+									}
+									keyframe.opacityMultiplier = sourceKeyframe.value(
+										"opacityMultiplier", keyframe.opacityMultiplier
+									);
+									keyframe.easingToNext = sourceKeyframe.value(
+										"easingToNext", keyframe.easingToNext
+									);
+									clip.keyframes.push_back(std::move(keyframe));
+								}
+							}
+							component.spriteMotionClips.push_back(std::move(clip));
 						}
 					}
 				}
@@ -9947,6 +10026,16 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.textClipEnabled = false;
 	} else if (type == "TextMotion") {
 		component.textMotionClips.clear();
+	} else if (type == "SpriteMotion") {
+		component.spriteMotionPlayOnStart = false;
+		component.spriteMotionStartClipId.clear();
+		SceneSpriteMotionClip clip{};
+		clip.id = "Clip1";
+		clip.keyframes = {
+			SceneSpriteMotionKeyframe{},
+			SceneSpriteMotionKeyframe{ 0.25f }
+		};
+		component.spriteMotionClips = { std::move(clip) };
 	} else if (type == "GameFlowDirector") {
 		component.gameFlowPhases.clear();
 	} else if (type == "FishingScoreAttackDirector") {
