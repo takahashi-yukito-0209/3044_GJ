@@ -657,7 +657,7 @@ void RuntimeScene::Update(float deltaTime)
 		pauseSystem_.BeginFrame(*activeDocument);
 		if (GetSceneAssetId() == "gameplay") {
 			const ScenePauseMenuResult pauseMenuResult = pauseMenuSystem_.Update(
-				*activeDocument, pauseSystem_, optionMenuSystem_
+				*activeDocument, pauseSystem_, optionMenuSystem_, realDeltaTime
 			);
 			const SceneEntity* pauseController =
 				activeDocument->FindEntityByName("Pause Menu Controller");
@@ -1612,7 +1612,6 @@ void RuntimeScene::Update(float deltaTime)
 			pauseMenuSystem_.ApplyTextOverrides(
 				*activeDocument,
 				textRenderSystem_,
-				pauseActive,
 				optionMenuSystem_
 			);
 		}
