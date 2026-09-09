@@ -41,6 +41,8 @@ public:
 		std::string modelPath;
 		std::string materialOverrideSignature;
 		bool hasRenderer = false;
+		bool isWaterVolume = false; // WaterVolume描画をScene本体から除外するための判定。
+		bool hasPlayerBehavior = false; // 一人称Camera時にPlayer Modelを隠すための判定。
 		bool animatorInitialized = false;
 		bool hasAnimator = false;
 		bool animatorAutoPlayAllowed = false;
