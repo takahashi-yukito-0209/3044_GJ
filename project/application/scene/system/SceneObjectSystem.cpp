@@ -321,6 +321,8 @@ void SceneObjectSystem::SyncModels(
 		const SceneComponent* animator =
 			FindEnabledComponent(entity, "Animator");
 		ModelRuntime& runtime = found->second;
+		runtime.isWaterVolume = HasComponent(entity, "WaterVolume");
+		runtime.hasPlayerBehavior = HasComponent(entity, "PlayerBehavior");
 		const bool hasAnimator = animator && runtime.object->HasAnimation();
 		const size_t clipCount = runtime.object->GetAnimationClipCount();
 		const int defaultClip = clipCount > 0
@@ -399,9 +401,8 @@ void SceneObjectSystem::SyncModels(
 		runtime.object->SetVisualLocalRotation(
 			meshRenderer ? meshRenderer->meshVisualRotation : Vector3{}
 		);
-		const bool isWaterVolume = HasComponent(entity, "WaterVolume");
 		runtime.object->SetCullMode(
-			isWaterVolume
+			runtime.isWaterVolume
 				? Object3dCommon::CullMode::kNone
 				: (
 					meshRenderer
@@ -409,7 +410,7 @@ void SceneObjectSystem::SyncModels(
 						: Object3dCommon::CullMode::kBack
 				)
 		);
-		if (isWaterVolume) {
+		if (runtime.isWaterVolume) {
 			runtime.object->SetColor({ 0.08f, 0.48f, 0.95f, 0.34f });
 			runtime.object->SetEnableLighting(false);
 			runtime.object->SetEnvironmentCoefficient(0.0f);
@@ -478,7 +479,7 @@ void SceneObjectSystem::SyncModels(
 			runtime.object->SetMaterialOverrides(objectOverrides);
 			runtime.materialOverrideSignature = materialOverrideSignature;
 		}
-		if (HasComponent(entity, "PlayerBehavior")) {
+		if (runtime.hasPlayerBehavior) {
 			runtime.object->SetDissolve(0.0f);
 		}
 
@@ -845,15 +846,21 @@ void SceneObjectSystem::DrawModels(
 	for (const SceneEntity& entity : document.GetEntities()) {
 		if (
 			entity.id == skipEntityId ||
-			!IsEntityActiveInHierarchy(document, entity) ||
-			HasComponent(entity, "WaterVolume") ||
-			(hidePlayerModel && HasComponent(entity, "PlayerBehavior"))
+			!IsEntityActiveInHierarchy(document, entity)
 		) {
 			continue;
 		}
-		if (Object3d* object = FindObject(entity.id)) {
-			object->Draw();
+		const ModelRuntime* runtime = FindModelRuntime(entity.id); // 同期済みModel情報。
+		if (!runtime || !runtime->object || !runtime->hasRenderer) {
+			continue;
 		}
+		if (
+			runtime->isWaterVolume ||
+			(hidePlayerModel && runtime->hasPlayerBehavior)
+		) {
+			continue;
+		}
+		runtime->object->Draw();
 	}
 }
 
@@ -889,14 +896,16 @@ bool SceneObjectSystem::HasScreenOverlaySprites(
 	const SceneDocument& document
 ) const {
 	for (const SceneEntity& entity : document.GetEntities()) {
+		const auto found = sprites_.find(entity.id); // 同期済みSprite。
+		if (found == sprites_.end() || !found->second.sprite) {
+			continue;
+		}
 		const SceneComponent* spriteRenderer =
 			FindEnabledComponent(entity, "SpriteRenderer");
 		if (
 			spriteRenderer &&
 			spriteRenderer->spriteRenderSpace == "ScreenOverlay" &&
-			IsEntityActiveInHierarchy(document, entity) &&
-			sprites_.contains(entity.id) &&
-			sprites_.at(entity.id).sprite
+			IsEntityActiveInHierarchy(document, entity)
 		) {
 			return true;
 		}
@@ -1013,19 +1022,23 @@ void SceneObjectSystem::CollectShadowCasters(
 	shadowCasters.clear();
 	shadowCasters.reserve(models_.size());
 	for (const SceneEntity& entity : document.GetEntities()) {
+		if (!IsEntityActiveInHierarchy(document, entity)) {
+			continue;
+		}
+		const ModelRuntime* runtime = FindModelRuntime(entity.id); // 同期済みModel情報。
+		if (!runtime || !runtime->object || !runtime->hasRenderer) {
+			continue;
+		}
 		const SceneComponent* meshRenderer =
-			FindEnabledComponent(entity, "MeshRenderer");
+			FindEnabledComponent(entity, "MeshRenderer"); // Mesh描画設定。
 		if (
-			!IsEntityActiveInHierarchy(document, entity) ||
-			HasComponent(entity, "WaterVolume") ||
+			runtime->isWaterVolume ||
 			(meshRenderer && !meshRenderer->meshCastsShadow) ||
-			(hidePlayerModel && HasComponent(entity, "PlayerBehavior"))
+			(hidePlayerModel && runtime->hasPlayerBehavior)
 		) {
 			continue;
 		}
-		if (Object3d* object = FindObject(entity.id)) {
-			shadowCasters.push_back(object);
-		}
+		shadowCasters.push_back(runtime->object.get());
 	}
 }
 
