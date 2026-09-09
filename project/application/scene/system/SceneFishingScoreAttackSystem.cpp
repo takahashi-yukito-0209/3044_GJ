@@ -1021,6 +1021,7 @@ namespace {
 		float yaw = 0.0f;
 		float radius = 0.0f;
 		float halfSegmentLength = 0.0f;
+		uint32_t activeMemberCount = 0;
 	};
 
 	std::vector<XZPoint> BuildFormationOutlinePoints(
@@ -1390,6 +1391,7 @@ namespace {
 		}
 		capsule.radius = state.radius;
 		capsule.halfSegmentLength = state.halfSegmentLength;
+		capsule.activeMemberCount = state.activeMemberCount;
 		return
 			std::isfinite(capsule.center.x) &&
 			std::isfinite(capsule.center.y) &&
@@ -1559,6 +1561,24 @@ namespace {
 		));
 	}
 
+	bool NormalizePlanarVector(Vector2 value, Vector2& normalized) {
+		const float lengthSquared = value.x * value.x + value.y * value.y;
+		if (!std::isfinite(lengthSquared) ||
+			lengthSquared <= kTransformEpsilon * kTransformEpsilon) {
+			return false;
+		}
+		const float inverseLength = 1.0f / std::sqrt(lengthSquared);
+		normalized = { value.x * inverseLength, value.y * inverseLength };
+		return std::isfinite(normalized.x) && std::isfinite(normalized.y);
+	}
+
+	float MoveTowardsPlanarAngle(float current, float target, float maximumDelta) {
+		const float delta = std::atan2(
+			std::sin(target - current), std::cos(target - current)
+		);
+		return current + std::clamp(delta, -maximumDelta, maximumDelta);
+	}
+
 	std::string FormatOneDecimal(float value) {
 		char buffer[32]{};
 		std::snprintf(buffer, sizeof(buffer), "%.1f", value);
@@ -1707,6 +1727,10 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	if (!std::isfinite(deltaTime) || deltaTime <= 0.0f) {
 		return;
 	}
+	formationContactResponseCooldownSeconds_ = (std::max)(
+		0.0f,
+		formationContactResponseCooldownSeconds_ - deltaTime
+	);
 	const SceneEntity* directorEntity = document.FindEntity(directorEntityId_);
 	const SceneComponent* director = directorEntity
 		? FindEnabledComponent(*directorEntity, "FishingScoreAttackDirector")
@@ -1816,6 +1840,10 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		motionRequest.desiredYaw = formationCapsule.yaw;
 		motionRequest.radius = formationCapsule.radius;
 		motionRequest.halfSegmentLength = formationCapsule.halfSegmentLength;
+		motionRequest.slideAssistStrength =
+			director->fishingFormationSlideAssistStrength;
+		motionRequest.rockVisualClearance =
+			director->fishingFormationRockVisualClearance;
 		motionRequest.bounds = effectiveBounds;
 		FishingFormationMotion::Result motionResult{};
 		if (!FishingFormationMotion::Solve(
@@ -1836,8 +1864,135 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			formationNoProgressReferenceYaw_ = 0.0f;
 			formationNoProgressSeconds_ = 0.0f;
 			hasFormationNoProgressReference_ = false;
+			if (formationContactResponseActive_) {
+				EndFormationContactResponse(
+					director->fishingFormationContactCooldownSeconds
+				);
+			}
 			BuildTextRequests(document, *director);
 			return;
+		}
+		Vector2 incomingDirection{};
+		const Vector2 requestedTranslation = {
+			motionRequest.desiredCenter.x - motionRequest.startCenter.x,
+			motionRequest.desiredCenter.y - motionRequest.startCenter.y
+		};
+		const bool hasIncomingDirection = NormalizePlanarVector(
+			requestedTranslation,
+			incomingDirection
+		) || NormalizePlanarVector(motionRequest.desiredVelocity, incomingDirection);
+		const bool hasEligibleMemberCount =
+			director->fishingFormationContactResponseMaxFishCount > 0 &&
+			formationCapsule.activeMemberCount <= static_cast<uint32_t>(
+				director->fishingFormationContactResponseMaxFishCount
+			);
+		bool runContactResponse = false;
+		bool contactResponseSolveRan = false;
+		if (formationContactResponseActive_) {
+			const float inwardDot = hasIncomingDirection
+				? incomingDirection.x * formationContactResponseNormal_.x +
+					incomingDirection.y * formationContactResponseNormal_.y
+				: 0.0f;
+			if (!hasEligibleMemberCount ||
+				formationContactResponseRemainingSeconds_ <= 0.0f ||
+				!hasIncomingDirection || inwardDot >= -0.05f) {
+				EndFormationContactResponse(
+					director->fishingFormationContactCooldownSeconds
+				);
+			} else {
+				runContactResponse = true;
+			}
+		}
+		if (!formationContactResponseActive_ &&
+			hasEligibleMemberCount &&
+			formationContactResponseCooldownSeconds_ <= 0.0f &&
+			motionResult.translationBlocked &&
+			motionResult.obstacleContact &&
+			hasIncomingDirection) {
+			const float inwardDot = incomingDirection.x *
+				motionResult.obstacleContactNormal.x + incomingDirection.y *
+				motionResult.obstacleContactNormal.y;
+			if (inwardDot < -0.05f) {
+				Vector2 reflectedDirection = {
+					incomingDirection.x - 2.0f * inwardDot *
+						motionResult.obstacleContactNormal.x,
+					incomingDirection.y - 2.0f * inwardDot *
+						motionResult.obstacleContactNormal.y
+				};
+				if (!NormalizePlanarVector(reflectedDirection, reflectedDirection)) {
+					reflectedDirection = motionResult.obstacleContactNormal;
+				}
+				formationContactResponseActive_ =
+					director->fishingFormationContactDurationSeconds > 0.0f;
+				formationContactResponseNormal_ = motionResult.obstacleContactNormal;
+				formationContactResponseTargetYaw_ = std::atan2(
+					reflectedDirection.x, reflectedDirection.y
+				);
+				formationContactResponseRemainingSeconds_ =
+					director->fishingFormationContactDurationSeconds;
+				if (formationContactResponseActive_) {
+					runContactResponse = true;
+				} else {
+					EndFormationContactResponse(
+						director->fishingFormationContactCooldownSeconds
+					);
+				}
+			}
+		}
+		if (runContactResponse) {
+			contactResponseSolveRan = true;
+			FishingFormationMotion::Request responseRequest = motionRequest;
+			responseRequest.startCenter = motionResult.center;
+			responseRequest.startYaw = motionResult.yaw;
+			responseRequest.desiredCenter = {
+				motionResult.center.x + formationContactResponseNormal_.x *
+					director->fishingFormationContactPushSpeed * deltaTime,
+				motionResult.center.y + formationContactResponseNormal_.y *
+					director->fishingFormationContactPushSpeed * deltaTime
+			};
+			const float turnStep = director->fishingFormationContactTurnSpeedDegrees *
+				(kTwoPi / 360.0f) * deltaTime;
+			responseRequest.desiredYaw = MoveTowardsPlanarAngle(
+				motionResult.yaw,
+				formationContactResponseTargetYaw_,
+				turnStep
+			);
+			const float normalVelocity = motionResult.velocity.x *
+				formationContactResponseNormal_.x + motionResult.velocity.y *
+				formationContactResponseNormal_.y;
+			const Vector2 tangentVelocity = {
+				motionResult.velocity.x - formationContactResponseNormal_.x * normalVelocity,
+				motionResult.velocity.y - formationContactResponseNormal_.y * normalVelocity
+			};
+			const float outwardVelocity = (std::max)(
+				director->fishingFormationContactPushSpeed,
+				(std::max)(normalVelocity, 0.0f)
+			);
+			responseRequest.desiredVelocity = {
+				tangentVelocity.x + formationContactResponseNormal_.x * outwardVelocity,
+				tangentVelocity.y + formationContactResponseNormal_.y * outwardVelocity
+			};
+			FishingFormationMotion::Result responseResult{};
+			if (FishingFormationMotion::Solve(
+				responseRequest,
+				obstacles,
+				responseResult
+			)) {
+				motionResult = responseResult;
+				formationContactResponseRemainingSeconds_ = (std::max)(
+					0.0f,
+					formationContactResponseRemainingSeconds_ - deltaTime
+				);
+				if (formationContactResponseRemainingSeconds_ <= 0.0f) {
+					EndFormationContactResponse(
+						director->fishingFormationContactCooldownSeconds
+					);
+				}
+			} else {
+				EndFormationContactResponse(
+					director->fishingFormationContactCooldownSeconds
+				);
+			}
 		}
 		formationCapsule.center.x = motionResult.center.x;
 		formationCapsule.center.z = motionResult.center.y;
@@ -1869,8 +2024,19 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		const bool hasRotationRequest = AngleDistance(
 			motionRequest.desiredYaw, motionRequest.startYaw
 		) > kFormationRecoveryYawProgress;
+		const float translationRequestX =
+			motionRequest.desiredCenter.x - motionRequest.startCenter.x;
+		const float translationRequestZ =
+			motionRequest.desiredCenter.y - motionRequest.startCenter.y;
+		const bool hasTranslationRequest =
+			translationRequestX * translationRequestX +
+			translationRequestZ * translationRequestZ >
+				kTransformEpsilon * kTransformEpsilon;
+		const bool hasBlockedRecoveryRequest =
+			(hasRotationRequest && motionResult.rotationBlocked) ||
+			(hasTranslationRequest && motionResult.translationBlocked);
 		bool shouldRecoverFormation = false;
-		if (hasRotationRequest && motionResult.rotationBlocked) {
+		if (hasBlockedRecoveryRequest) {
 			if (!hasFormationNoProgressReference_) {
 				formationNoProgressReferencePosition_ = previousSafePosition;
 				formationNoProgressReferenceYaw_ = previousSafeYaw;
@@ -1900,7 +2066,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			hasFormationNoProgressReference_ = false;
 		}
 
-		if (shouldRecoverFormation) {
+		if (shouldRecoverFormation && !contactResponseSolveRan) {
 			size_t preferredRecoveryIndex = formationRecoveryPoses_.size();
 			size_t oldestRecoveryIndex = formationRecoveryPoses_.size();
 			const float minimumRecoveryDistance = (std::max)(
@@ -1969,7 +2135,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			};
 			motionResult.yaw = recoveryPose.yaw;
 			motionResult.velocity = {};
-		} else {
+		} else if (!shouldRecoverFormation) {
 			lastSafePlayerPlanarPosition_ = currentSafePosition;
 			lastSafePlayerYaw_ = formationCapsule.yaw;
 			hasLastSafePlayerPlanarPosition_ = true;
@@ -2136,6 +2302,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		if (!ResetSharksForRound(document, *director)) {
 			return;
 		}
+		ResetFormationContactResponse();
 		state_ = SceneFishingScoreAttackState::SelectingNext;
 		SetFishPreview(document, *director);
 		BuildTextRequests(document, *director);
@@ -2256,7 +2423,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		);
 	}
 	long long awardedScore = 0;
-	if (score > 0.0) {
+	if (score) {
 		const long long maximumTotalScore =
 			(std::numeric_limits<long long>::max)();
 		const long long requestedScore = static_cast<long long>((std::min)(
@@ -2296,6 +2463,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	if (!ResetSharksForRound(document, *director)) {
 		return;
 	}
+	ResetFormationContactResponse();
 	state_ = SceneFishingScoreAttackState::SelectingNext;
 	SetFishPreview(document, *director);
 	BuildTextRequests(document, *director);
@@ -2579,8 +2747,29 @@ bool SceneFishingScoreAttackSystem::RequestPlayerRespawn() {
 	}
 	playerConstraintRequest_ = {};
 	hasPlayerConstraintRequest_ = false;
+	ResetFormationContactResponse();
 	hasPlayerResetRequest_ = true;
 	return true;
+}
+
+void SceneFishingScoreAttackSystem::ResetFormationContactResponse() {
+	formationContactResponseActive_ = false;
+	formationContactResponseNormal_ = {};
+	formationContactResponseTargetYaw_ = 0.0f;
+	formationContactResponseRemainingSeconds_ = 0.0f;
+	formationContactResponseCooldownSeconds_ = 0.0f;
+}
+
+void SceneFishingScoreAttackSystem::EndFormationContactResponse(
+	float cooldownSeconds
+) {
+	formationContactResponseActive_ = false;
+	formationContactResponseNormal_ = {};
+	formationContactResponseTargetYaw_ = 0.0f;
+	formationContactResponseRemainingSeconds_ = 0.0f;
+	formationContactResponseCooldownSeconds_ = std::isfinite(cooldownSeconds)
+		? std::clamp(cooldownSeconds, 0.0f, 2.0f)
+		: 0.0f;
 }
 
 bool SceneFishingScoreAttackSystem::ConsumePlayerResetRequest(
@@ -2602,7 +2791,8 @@ bool SceneFishingScoreAttackSystem::ConsumePlayerResetRequest(
 			initialFishTransforms_[index]
 		});
 	}
-	 hasPlayerResetRequest_ = false;
+	ResetFormationContactResponse();
+	hasPlayerResetRequest_ = false;
 	return true;
 }
 
@@ -3596,6 +3786,36 @@ bool SceneFishingScoreAttackSystem::Preflight(
 		director.fishingUseFormationCapsuleCollision ||
 		director.fishingFormationOutlineVisible
 	) {
+		if (
+			!std::isfinite(director.fishingFormationSlideAssistStrength) ||
+			director.fishingFormationSlideAssistStrength < 0.0f ||
+			director.fishingFormationSlideAssistStrength > 1.0f
+		) {
+			diagnostic =
+				"Fishing formation slide assist strength must be between 0 and 1";
+			return false;
+		}
+		if (
+			director.fishingFormationContactResponseMaxFishCount < 0 ||
+			director.fishingFormationContactResponseMaxFishCount >
+				director.fishingMaxSelectableFishCount ||
+			!std::isfinite(director.fishingFormationContactTurnSpeedDegrees) ||
+			director.fishingFormationContactTurnSpeedDegrees < 0.0f ||
+			director.fishingFormationContactTurnSpeedDegrees > 720.0f ||
+			!std::isfinite(director.fishingFormationContactPushSpeed) ||
+			director.fishingFormationContactPushSpeed < 0.0f ||
+			director.fishingFormationContactPushSpeed > 200.0f ||
+			!std::isfinite(director.fishingFormationContactDurationSeconds) ||
+			director.fishingFormationContactDurationSeconds < 0.0f ||
+			director.fishingFormationContactDurationSeconds > 2.0f ||
+			!std::isfinite(director.fishingFormationContactCooldownSeconds) ||
+			director.fishingFormationContactCooldownSeconds < 0.0f ||
+			director.fishingFormationContactCooldownSeconds > 2.0f
+		) {
+			diagnostic =
+				"Fishing formation contact response values are outside their valid ranges";
+			return false;
+		}
 		if (!playerTeam->agentFormationCapsuleEnabled) {
 			diagnostic =
 				"Fishing formation features require an enabled Player Team capsule: " +
@@ -3968,6 +4188,7 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 	const SceneComponent& director,
 	bool tutorialScene
 ) {
+	ResetFormationContactResponse();
 	if (director.fishingRandomizeSeedOnPlay) {
 		std::random_device randomDevice;
 		random_.seed(randomDevice());
@@ -4481,6 +4702,7 @@ void SceneFishingScoreAttackSystem::StartRound(
 	SceneDocument& document,
 	const SceneComponent& director
 ) {
+	ResetFormationContactResponse();
 	const SceneEntity* player = document.FindEntity(director.fishingPlayerEntityId);
 	if (!player) {
 		Fault(document, director, "Fishing player reference became invalid");
@@ -5303,6 +5525,7 @@ void SceneFishingScoreAttackSystem::Finish(
 	SceneDocument& document,
 	const SceneComponent& director
 ) {
+	ResetFormationContactResponse();
 	timerRunning_ = false;
 	pendingFishCountDelta_ = 0;
 	resultInputArmed_ = false;
@@ -5377,6 +5600,7 @@ void SceneFishingScoreAttackSystem::Fault(
 	const SceneComponent& director,
 	std::string diagnostic
 ) {
+	ResetFormationContactResponse();
 	diagnostic_ = std::move(diagnostic);
 	timerRunning_ = false;
 	pendingFishCountDelta_ = 0;
@@ -5624,6 +5848,7 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 }
 
 void SceneFishingScoreAttackSystem::Clear() {
+	ResetFormationContactResponse();
 	state_ = SceneFishingScoreAttackState::Inactive;
 	directorEntityId_ = 0;
 	resultInputArmed_ = false;

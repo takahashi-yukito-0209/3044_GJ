@@ -6150,6 +6150,13 @@
           "timerRunsDuringFishSelection": false,
           "timerTextEntityId": 18,
           "type": "FishingScoreAttackDirector",
+          "formationSlideAssistStrength": 1.0,
+          "formationRockVisualClearance": 1.0,
+          "formationContactResponseMaxFishCount": 3,
+          "formationContactTurnSpeedDegrees": 180.0,
+          "formationContactPushSpeed": 20.0,
+          "formationContactDurationSeconds": 0.5,
+          "formationContactCooldownSeconds": 0.1,
           "useFormationCapsuleCollision": true,
           "useHookBandSettings": true,
           "waterVolumeEntityId": 3

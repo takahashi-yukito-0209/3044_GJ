@@ -38,8 +38,14 @@ struct ObstacleGeometry {
 	double radius = 0.0;
 };
 
+enum class ContactSource {
+	Water,
+	Obstacle
+};
+
 struct Contact {
 	Vec2 normal{};
+	ContactSource source = ContactSource::Water;
 };
 
 struct CastHit {
@@ -370,10 +376,14 @@ bool IsSafePose(
 	return true;
 }
 
-void AddContact(std::vector<Contact>& contacts, Vec2 normal) {
+void AddContact(
+	std::vector<Contact>& contacts,
+	Vec2 normal,
+	ContactSource source
+) {
 	Vec2 normalized{};
 	if (Normalize(normal, normalized)) {
-		contacts.push_back({ normalized });
+		contacts.push_back({ normalized, source });
 	}
 }
 
@@ -427,9 +437,9 @@ void AddWaterCast(
 			hit = {};
 			hit.hit = true;
 			hit.time = clampedParameter;
-			AddContact(hit.contacts, normal);
+			AddContact(hit.contacts, normal, ContactSource::Water);
 		} else if (std::abs(clampedParameter - hit.time) <= kEpsilon) {
-			AddContact(hit.contacts, normal);
+			AddContact(hit.contacts, normal, ContactSource::Water);
 		}
 	}
 }
@@ -438,9 +448,10 @@ bool CastObstacle(
 	Vec2 center,
 	Vec2 delta,
 	double yaw,
-	double radius,
+	double obstacleRadius,
 	double halfSegmentLength,
 	const ObstacleGeometry& obstacle,
+	double skin,
 	double epsilon,
 	CastHit& hit
 ) {
@@ -453,7 +464,7 @@ bool CastObstacle(
 		const DistanceInfo distance = ObstacleDistance(
 			current, yaw, halfSegmentLength, obstacle
 		);
-		if (distance.distance < radius - epsilon) {
+		if (distance.distance < obstacleRadius - epsilon) {
 			if (parameter <= kEpsilon || !hasLastNormal) {
 				return false;
 			}
@@ -475,8 +486,7 @@ bool CastObstacle(
 		}
 		lastNormal = normal;
 		hasLastNormal = true;
-		const double gap = distance.distance - radius -
-			std::clamp(radius * 0.01, 0.001, 0.02);
+		const double gap = distance.distance - obstacleRadius - skin;
 		const double closing = -Dot(delta, normal);
 		if (closing <= kEpsilon) {
 			return false;
@@ -485,7 +495,7 @@ bool CastObstacle(
 			hit = {};
 			hit.hit = true;
 			hit.time = parameter;
-			AddContact(hit.contacts, normal);
+			AddContact(hit.contacts, normal, ContactSource::Obstacle);
 			return true;
 		}
 		const double step = gap / closing;
@@ -493,7 +503,7 @@ bool CastObstacle(
 			hit = {};
 			hit.hit = true;
 			hit.time = parameter;
-			AddContact(hit.contacts, lastNormal);
+			AddContact(hit.contacts, lastNormal, ContactSource::Obstacle);
 			return true;
 		}
 		const double nextParameter = parameter + step;
@@ -509,7 +519,7 @@ bool CastObstacle(
 	hit = {};
 	hit.hit = true;
 	hit.time = std::clamp(lastSafeParameter, 0.0, 1.0);
-	AddContact(hit.contacts, lastNormal);
+	AddContact(hit.contacts, lastNormal, ContactSource::Obstacle);
 	return !hit.contacts.empty();
 }
 
@@ -517,11 +527,12 @@ CastHit Cast(
 	Vec2 center,
 	Vec2 delta,
 	double yaw,
-	double radius,
+	double obstacleRadius,
 	double halfSegmentLength,
 	const std::vector<ObstacleGeometry>& obstacles,
 	const std::vector<size_t>& obstacleOrder,
 	const CenterBounds& bounds,
+	double skin,
 	double epsilon
 ) {
 	CastHit best{};
@@ -529,8 +540,8 @@ CastHit Cast(
 	for (const size_t index : obstacleOrder) {
 		CastHit candidate{};
 		if (!CastObstacle(
-			center, delta, yaw, radius, halfSegmentLength,
-			obstacles[index], epsilon, candidate
+			center, delta, yaw, obstacleRadius, halfSegmentLength,
+			obstacles[index], skin, epsilon, candidate
 		)) {
 			continue;
 		}
@@ -579,6 +590,41 @@ Vec2 ProjectToContactCone(Vec2 value, const std::vector<Contact>& contacts) {
 	return best;
 }
 
+Vec2 ApplySlideAssist(
+	Vec2 value,
+	Vec2 projected,
+	double strength
+) {
+	if (
+		strength <= 0.0 ||
+		LengthSquared(value) <= kSegmentEpsilon ||
+		LengthSquared(projected) <= kSegmentEpsilon
+	) {
+		return projected;
+	}
+	const double inputLength = std::sqrt(LengthSquared(value));
+	const double projectedLength = std::sqrt(LengthSquared(projected));
+	if (
+		!std::isfinite(inputLength) ||
+		!std::isfinite(projectedLength) ||
+		inputLength <= kSegmentEpsilon ||
+		projectedLength <= kSegmentEpsilon
+	) {
+		return projected;
+	}
+	const double tangentRatio = std::clamp(
+		projectedLength / inputLength,
+		0.0,
+		1.0
+	);
+	const double assistedRatio = tangentRatio +
+		(std::sqrt(tangentRatio) - tangentRatio) * strength;
+	return Multiply(
+		projected,
+		inputLength * assistedRatio / projectedLength
+	);
+}
+
 double MaximumTranslationStep(double radius) {
 	return (std::max)(
 		radius * kTranslationStepRadiusScale,
@@ -598,11 +644,12 @@ bool TryFindRotationEscapeCenter(
 	double currentYaw,
 	double nextYaw,
 	Vec2 desiredCenter,
-	double radius,
+	double obstacleRadius,
 	double halfSegmentLength,
 	const std::vector<ObstacleGeometry>& obstacles,
 	const std::vector<size_t>& obstacleOrder,
 	const CenterBounds& bounds,
+	double skin,
 	double epsilon,
 	double remainingEscapeBudget,
 	Vec2& outputCenter,
@@ -642,20 +689,21 @@ bool TryFindRotationEscapeCenter(
 				currentCenter,
 				Subtract(candidateCenter, currentCenter),
 				currentYaw,
-				radius,
+				obstacleRadius,
 				halfSegmentLength,
-				obstacles,
-				obstacleOrder,
-				bounds,
-				epsilon
+			obstacles,
+			obstacleOrder,
+			bounds,
+			skin,
+			epsilon
 			);
 			if (path.hit ||
 				!IsSafePose(
-					candidateCenter, currentYaw, radius, halfSegmentLength,
+					candidateCenter, currentYaw, obstacleRadius, halfSegmentLength,
 					obstacles, bounds, epsilon
 				) ||
 				!IsSafePose(
-					candidateCenter, nextYaw, radius, halfSegmentLength,
+					candidateCenter, nextYaw, obstacleRadius, halfSegmentLength,
 					obstacles, bounds, epsilon
 				)) {
 				continue;
@@ -673,7 +721,8 @@ RotationSolveResult SolveRotationWithEscape(
 	double startYaw,
 	double desiredYaw,
 	Vec2 desiredCenter,
-	double radius,
+	double formationRadius,
+	double obstacleRadius,
 	double halfSegmentLength,
 	const std::vector<ObstacleGeometry>& obstacles,
 	const std::vector<size_t>& obstacleOrder,
@@ -692,7 +741,7 @@ RotationSolveResult SolveRotationWithEscape(
 	}
 	double progress = 0.0;
 	double consumedEscapeDistance = 0.0;
-	const double maximumEscapeDistance = MaximumTranslationStep(radius);
+	const double maximumEscapeDistance = MaximumTranslationStep(formationRadius);
 	for (int iteration = 0; iteration < kRotationIterations; ++iteration) {
 		if (progress >= 1.0 - kEpsilon) {
 			result.yaw = desiredYaw;
@@ -705,7 +754,7 @@ RotationSolveResult SolveRotationWithEscape(
 			const DistanceInfo distance = ObstacleDistance(
 				result.center, currentYaw, halfSegmentLength, obstacle
 			);
-			minimumGap = (std::min)(minimumGap, distance.distance - radius);
+			minimumGap = (std::min)(minimumGap, distance.distance - obstacleRadius);
 		}
 		const double angularTravel = halfSegmentLength * std::abs(deltaYaw);
 		double maximumProgress = minimumGap > epsilon &&
@@ -714,7 +763,7 @@ RotationSolveResult SolveRotationWithEscape(
 			: 0.0;
 		if (maximumProgress <= 1.0e-6) {
 			const double minimumAngularStep =
-				(std::max)(skin, radius * 0.05) / halfSegmentLength;
+				(std::max)(skin, formationRadius * 0.05) / halfSegmentLength;
 			maximumProgress = (std::min)(
 				1.0 - progress,
 				minimumAngularStep / std::abs(deltaYaw)
@@ -728,7 +777,7 @@ RotationSolveResult SolveRotationWithEscape(
 		const double nextProgress = progress + step;
 		const double nextYaw = startYaw + deltaYaw * nextProgress;
 		if (IsSafePose(
-			result.center, nextYaw, radius, halfSegmentLength,
+			result.center, nextYaw, obstacleRadius, halfSegmentLength,
 			obstacles, bounds, epsilon
 		)) {
 			result.yaw = nextYaw;
@@ -742,11 +791,12 @@ RotationSolveResult SolveRotationWithEscape(
 			currentYaw,
 			nextYaw,
 			desiredCenter,
-			radius,
+			obstacleRadius,
 			halfSegmentLength,
 			obstacles,
 			obstacleOrder,
 			bounds,
+			skin,
 			epsilon,
 			maximumEscapeDistance - consumedEscapeDistance,
 			escapeCenter,
@@ -781,7 +831,13 @@ bool ValidateRequest(
 		!IsFinite(request.startCenter.x) || !IsFinite(request.startCenter.y) ||
 		!IsFinite(request.desiredCenter.x) || !IsFinite(request.desiredCenter.y) ||
 		!IsFinite(request.desiredVelocity.x) || !IsFinite(request.desiredVelocity.y) ||
-		request.radius <= 0.0f || request.halfSegmentLength < 0.0f
+		!IsFinite(request.slideAssistStrength) ||
+		!IsFinite(request.rockVisualClearance) ||
+		request.radius <= 0.0f || request.halfSegmentLength < 0.0f ||
+		request.slideAssistStrength < 0.0f ||
+		request.slideAssistStrength > 1.0f ||
+		request.rockVisualClearance < 0.0f ||
+		request.rockVisualClearance > 100.0f
 	) {
 		return false;
 	}
@@ -850,12 +906,17 @@ bool Solve(
 	}
 	const Vec2 startCenter = ToVec2(request.startCenter);
 	const Vec2 desiredCenter = ToVec2(request.desiredCenter);
-	const double radius = static_cast<double>(request.radius);
+	const double formationRadius = static_cast<double>(request.radius);
+	const double obstacleCollisionRadius = formationRadius +
+		static_cast<double>(request.rockVisualClearance);
+	if (!std::isfinite(obstacleCollisionRadius) || obstacleCollisionRadius <= 0.0) {
+		return false;
+	}
 	const double halfSegmentLength = static_cast<double>(request.halfSegmentLength);
-	const double skin = std::clamp(radius * 0.01, 0.001, 0.02);
+	const double skin = std::clamp(formationRadius * 0.01, 0.001, 0.02);
 	const double epsilon = skin * 0.1;
 	if (!IsSafePose(
-		startCenter, request.startYaw, radius, halfSegmentLength,
+		startCenter, request.startYaw, obstacleCollisionRadius, halfSegmentLength,
 		geometries, request.bounds, epsilon
 	)) {
 		return false;
@@ -866,7 +927,8 @@ bool Solve(
 		static_cast<double>(request.startYaw),
 		static_cast<double>(request.desiredYaw),
 		desiredCenter,
-		radius,
+		formationRadius,
+		obstacleCollisionRadius,
 		halfSegmentLength,
 		geometries,
 		obstacleOrder,
@@ -883,9 +945,10 @@ bool Solve(
 	Vec2 remaining = Subtract(desiredCenter, currentCenter);
 	Vec2 solvedVelocity = ToVec2(request.desiredVelocity);
 	std::vector<Contact> activeContacts;
+	Vec2 obstacleContactNormalSum{};
 	bool slideIterationLimited = false;
 	Vec2 lastVerifiedCenter = currentCenter;
-	const double maximumTranslationStep = MaximumTranslationStep(radius);
+	const double maximumTranslationStep = MaximumTranslationStep(formationRadius);
 	for (int iteration = 0; iteration < kSlideIterations; ++iteration) {
 		if (LengthSquared(remaining) <= epsilon * epsilon) {
 			break;
@@ -902,17 +965,18 @@ bool Solve(
 			currentCenter,
 			stepDelta,
 			solvedYaw,
-			radius,
+			obstacleCollisionRadius,
 			halfSegmentLength,
 			geometries,
 			obstacleOrder,
 			request.bounds,
+			skin,
 			epsilon
 		);
 		if (!hit.hit) {
 			currentCenter = Add(currentCenter, stepDelta);
 			if (!IsSafePose(
-				currentCenter, solvedYaw, radius, halfSegmentLength,
+				currentCenter, solvedYaw, obstacleCollisionRadius, halfSegmentLength,
 				geometries, request.bounds, epsilon
 			)) {
 				currentCenter = lastVerifiedCenter;
@@ -926,7 +990,7 @@ bool Solve(
 		const double hitTime = std::clamp(hit.time, 0.0, 1.0);
 		currentCenter = Add(currentCenter, Multiply(stepDelta, hitTime));
 		if (!IsSafePose(
-			currentCenter, solvedYaw, radius, halfSegmentLength,
+			currentCenter, solvedYaw, obstacleCollisionRadius, halfSegmentLength,
 			geometries, request.bounds, epsilon
 		)) {
 			currentCenter = lastVerifiedCenter;
@@ -934,15 +998,28 @@ bool Solve(
 			break;
 		}
 		lastVerifiedCenter = currentCenter;
-		activeContacts.insert(
-			activeContacts.end(), hit.contacts.begin(), hit.contacts.end()
-		);
+		for (const Contact& contact : hit.contacts) {
+			activeContacts.push_back(contact);
+			if (contact.source == ContactSource::Obstacle) {
+				obstacleContactNormalSum = Add(
+					obstacleContactNormalSum, contact.normal
+				);
+			}
+		}
 		const Vec2 leftover = Add(
 			Multiply(stepDelta, 1.0 - hitTime),
 			Subtract(remaining, stepDelta)
 		);
-		remaining = ProjectToContactCone(leftover, activeContacts);
-		solvedVelocity = ProjectToContactCone(solvedVelocity, activeContacts);
+		remaining = ApplySlideAssist(
+			leftover,
+			ProjectToContactCone(leftover, activeContacts),
+			static_cast<double>(request.slideAssistStrength)
+		);
+		solvedVelocity = ApplySlideAssist(
+			solvedVelocity,
+			ProjectToContactCone(solvedVelocity, activeContacts),
+			static_cast<double>(request.slideAssistStrength)
+		);
 	}
 	if (LengthSquared(remaining) > epsilon * epsilon) {
 		slideIterationLimited = true;
@@ -952,7 +1029,7 @@ bool Solve(
 		solvedVelocity = {};
 	}
 	if (!IsSafePose(
-		currentCenter, solvedYaw, radius, halfSegmentLength,
+		currentCenter, solvedYaw, obstacleCollisionRadius, halfSegmentLength,
 		geometries, request.bounds, epsilon
 	)) {
 		currentCenter = lastVerifiedCenter;
@@ -968,6 +1045,11 @@ bool Solve(
 	result.translationBlocked = LengthSquared(
 		Subtract(currentCenter, desiredCenter)
 	) > epsilon * epsilon;
+	Vec2 obstacleContactNormal{};
+	if (Normalize(obstacleContactNormalSum, obstacleContactNormal) &&
+		ToFloat(obstacleContactNormal, result.obstacleContactNormal)) {
+		result.obstacleContact = true;
+	}
 	result.iterationLimited = rotationIterationLimited || slideIterationLimited;
 	return true;
 }
