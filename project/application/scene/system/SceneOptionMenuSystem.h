@@ -21,7 +21,7 @@ public:
 	SceneOptionMenuResult Update(const SceneDocument& document);
 
 	/// <summary>
-	/// 現在の設定値と選択状態をTextRendererへ反映します。
+	/// 選択状態の色だけをTextRendererへ反映します。本文はScene定義を使用します。
 	/// </summary>
 	void ApplyTextOverrides(
 		const SceneDocument& document,
@@ -41,7 +41,7 @@ public:
 
 private:
 	struct MenuItem {
-		uint64_t entityId = 0; // 表示を上書きするTextRenderer Entity ID。
+		uint64_t entityId = 0; // 選択色を反映するTextRenderer Entity ID。
 		std::string actionId; // 入力処理で使う項目種別。
 	};
 
