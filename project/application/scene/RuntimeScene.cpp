@@ -9,6 +9,7 @@
 #include "../../engine/scene/SceneTransformResolver.h"
 #include "../../engine/3d/SrvManager.h"
 #include "../../engine/base/DirectXCommon.h"
+#include "../../engine/io/Input.h"
 
 #include "../../engine/3d/Camera.h"
 #include "../../engine/3d/Object3dCommon.h"
@@ -61,6 +62,24 @@ namespace {
 			sceneId == "TITLE" ||
 			sceneId == "OPTION" ||
 			sceneId == "CREDIT";
+	}
+
+	/// <summary>
+	/// Credit Sceneかを判定します。
+	/// </summary>
+	bool IsCreditScene(const std::string& sceneId) {
+		return sceneId == kCreditSceneId || sceneId == "CREDIT";
+	}
+
+	/// <summary>
+	/// Credit SceneからTitleへ戻る入力が押されているかを判定します。
+	/// </summary>
+	bool IsCreditBackInputHeld() {
+		Input* input = Input::GetInstance(); // 入力状態の参照。
+		return input && (
+			input->PushKey(DIK_SPACE) ||
+			input->PushKey(DIK_ESCAPE)
+		);
 	}
 
 	/// <summary>
@@ -814,10 +833,25 @@ void RuntimeScene::Update(float deltaTime)
 				return;
 			}
 			titleMenuSystem_.Clear();
+			creditBackInputArmed_ = false;
+		} else if (IsCreditScene(GetSceneAssetId())) {
+			ClearTitleStartTransition();
+			titleMenuSystem_.Clear();
+			optionMenuSystem_.Clear();
+
+			const bool creditBackInputHeld = IsCreditBackInputHeld(); // 戻り入力が押されているか。
+			if (!creditBackInputArmed_) {
+				creditBackInputArmed_ = !creditBackInputHeld;
+			} else if (creditBackInputHeld) {
+				creditBackInputArmed_ = false;
+				sceneManager_->RequestSceneTransition(kTitleSceneId, false);
+				return;
+			}
 		} else {
 			ClearTitleStartTransition();
 			titleMenuSystem_.Clear();
 			optionMenuSystem_.Clear();
+			creditBackInputArmed_ = false;
 		}
 		const SceneTransitionRequest transitionRequest =
 			transitionSystem_.Update(*activeDocument);

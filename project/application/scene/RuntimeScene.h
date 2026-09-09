@@ -125,6 +125,7 @@ private:
 	bool exitRequested_ = false; // 上位のGameへ渡すゲーム終了要求。
 	bool titleStartTransitionActive_ = false; // タイトルSTART後の退出演出中か。
 	float titleStartTransitionElapsedSeconds_ = 0.0f; // タイトル退出演出の経過時間。
+	bool creditBackInputArmed_ = false; // Credit Sceneで戻り入力を受け付ける準備ができているか。
 
 	SceneAgentSystem agentSystem_;
 	SceneAudioSystem audioSystem_;
