@@ -15,105 +15,31 @@
       "active": true,
       "components": [
         {
-          "characterSpacing": 0.0,
-          "clipEnabled": false,
+          "anchor": [
+            0.5,
+            0.5
+          ],
           "color": [
-            0.949999988079071,
-            0.9800000190734863,
+            1.0,
+            1.0,
             1.0,
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
-          "fontResourcePath": "",
-          "fontSize": 84.0,
-          "fontSource": "System",
-          "fontStyle": "Normal",
-          "fontWeight": "Bold",
-          "horizontalAlignment": "Center",
-          "layoutSize": [
-            900.0,
-            120.0
-          ],
-          "lineSpacing": 1.0,
+          "flipX": false,
+          "flipY": false,
           "localId": 1,
-          "opacity": 1.0,
-          "outlineColor": [
-            0.0,
-            0.0,
-            0.0,
-            1.0
+          "renderSpace": "Scene2D",
+          "size": [
+            500.0,
+            500.0
           ],
-          "outlineEnabled": true,
-          "outlineWidth": 1.0,
-          "overflowMode": "Overflow",
-          "overlayPlacement": {
-            "clipEnabled": false,
-            "pivot": [
-              0.5,
-              0.5
-            ],
-            "position": [
-              0.0,
-              -170.0
-            ],
-            "rotation": 0.0,
-            "scale": [
-              1.0,
-              1.0
-            ],
-            "sortingOrder": 0,
-            "viewportAnchor": [
-              0.5,
-              0.5
-            ]
-          },
-          "pivot": [
-            0.0,
-            0.0
-          ],
-          "renderSpace": "ScreenOverlay",
-          "scene2DPlacement": {
-            "clipEnabled": false,
-            "pivot": [
-              0.0,
-              0.0
-            ],
-            "position": [
-              0.0,
-              0.0
-            ],
-            "rotation": 0.0,
-            "scale": [
-              1.0,
-              1.0
-            ],
-            "sortingOrder": 0,
-            "viewportAnchor": [
-              0.0,
-              0.0
-            ]
-          },
-          "shadowColor": [
-            0.0,
-            0.0,
-            0.0,
-            1.0
-          ],
-          "shadowEnabled": true,
-          "shadowOffset": [
-            6.0,
-            6.0
-          ],
-          "sortingOrder": 0,
-          "text": "GAME TITLE",
-          "type": "TextRenderer",
-          "verticalAlignment": "Center",
+          "texturePath": "resources/title/title.png",
+          "type": "SpriteRenderer",
           "viewportAnchor": [
             0.0,
             0.0
-          ],
-          "wrapMode": "NoWrap"
+          ]
         }
       ],
       "folder": false,
@@ -137,10 +63,10 @@
         "flipX": false,
         "flipY": false,
         "size": [
-          100.0,
-          100.0
+          500.0,
+          500.0
         ],
-        "texturePath": ""
+        "texturePath": "resources/title/title.png"
       },
       "team": "",
       "transform": {
@@ -151,13 +77,13 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
+          1.8898271322250366,
+          0.9700000286102295,
           1.0
         ],
         "translate": [
-          0.0,
-          0.0,
+          633.0,
+          189.9999237060547,
           0.0
         ]
       }

@@ -1366,6 +1366,31 @@ void RuntimeScene::Update(float deltaTime)
 				request.visible
 			});
 		}
+		if (
+			GetSceneAssetId() == kTitleSceneId &&
+			titleStartTransitionActive_
+		) {
+			const SceneEntity* titleLogo =
+				activeDocument->FindEntityByName("TitleLogoText");
+			const SceneComponent* spriteRenderer = titleLogo
+				? SceneEntityQuery::FindEnabledComponent(*titleLogo, "SpriteRenderer")
+				: nullptr;
+			if (titleLogo && spriteRenderer) {
+				const float fadeProgress = Clamp01(
+					titleStartTransitionElapsedSeconds_ /
+					kTitleStartTextFadeSeconds
+				);
+				Vector4 logoColor = spriteRenderer->spriteColor;
+				logoColor.w *= 1.0f - fadeProgress;
+				objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
+					titleLogo->id,
+					spriteRenderer->texturePath,
+					spriteRenderer->spriteSize,
+					logoColor,
+					true
+				});
+			}
+		}
 		if (GetSceneAssetId() == "gameplay") {
 			if (const SceneEntity* pauseOverlay =
 				activeDocument->FindEntityByName("Pause Dim Overlay")) {
