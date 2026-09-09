@@ -6337,7 +6337,7 @@
           "enabled": true,
           "fontFamily": "Arial Black",
           "fontResourcePath": "",
-          "fontSize": 48.0,
+          "fontSize": 36.0,
           "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
@@ -6360,7 +6360,7 @@
           "overflowMode": "Overflow",
           "pivot": [
             0.5,
-            0.5
+            0.0
           ],
           "renderSpace": "ScreenOverlay",
           "shadowColor": [
@@ -6377,10 +6377,10 @@
           "sortingOrder": 101,
           "text": "",
           "type": "TextRenderer",
-          "verticalAlignment": "Center",
+          "verticalAlignment": "Top",
           "viewportAnchor": [
             0.5,
-            0.5
+            0.0
           ],
           "wrapMode": "NoWrap"
         }
@@ -6426,7 +6426,7 @@
         ],
         "translate": [
           0.0,
-          0.0,
+          48.0,
           0.0
         ]
       }

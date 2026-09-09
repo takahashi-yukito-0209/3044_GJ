@@ -822,6 +822,7 @@ void RuntimeScene::Update(float deltaTime)
 			// Fish選択はObject同期前に確定し、同FrameのCollider生成へ反映する。
 			fishingScoreAttackSystem_.UpdateBeforeSimulation(
 				*activeDocument,
+				GetSceneAssetId(),
 				deltaTime,
 				true
 			);
@@ -1084,7 +1085,8 @@ void RuntimeScene::Update(float deltaTime)
 			deltaTime,
 			playing,
 			playing,
-			!gameplayInputPaused,
+			!gameplayInputPaused &&
+				fishingScoreAttackSystem_.IsCameraControlAllowed(),
 			fishingScoreAttackSystem_.AcceptWheelZoom(),
 			[this, activeDocument](uint64_t entityId) {
 				return pauseSystem_.ShouldProcess(
@@ -1215,6 +1217,7 @@ void RuntimeScene::Update(float deltaTime)
 		// Player Physics後のCollider world transformで釣り針Triggerを判定する。
 		fishingScoreAttackSystem_.UpdateAfterSimulation(
 			*activeDocument,
+			GetSceneAssetId(),
 			runtimeObjectBindings_,
 			agentSystem_,
 			true,

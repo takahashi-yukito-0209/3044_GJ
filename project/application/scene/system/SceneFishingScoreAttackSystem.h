@@ -28,6 +28,21 @@ enum class SceneFishingScoreAttackState {
 	Faulted
 };
 
+enum class SceneFishingScoreAttackTutorialStep {
+	Disabled,
+	Overview,
+	MoveExplanation,
+	MovePractice,
+	HookExplanation,
+	ScoreOnePractice,
+	FishCountExplanation,
+	FishCountPractice,
+	ScoreMultiPractice,
+	ScoreAdjustedPractice,
+	SharkExplanation,
+	FreePlay
+};
+
 struct SceneFishingScoreAttackTextRequest {
 	uint64_t entityId = 0;
 	std::string text;
@@ -120,11 +135,13 @@ class SceneFishingScoreAttackSystem {
 public:
 	void UpdateBeforeSimulation(
 		SceneDocument& document,
+		const std::string& sceneId,
 		float deltaTime,
 		bool playing
 	);
 	void UpdateAfterSimulation(
 		SceneDocument& document,
+		const std::string& sceneId,
 		const std::vector<SceneRuntimeObjectBinding>& bindings,
 		const SceneAgentSystem& agentSystem,
 		bool playing,
@@ -141,6 +158,10 @@ public:
 	);
 
 	bool IsPlayerMovementAllowed() const;
+	/// <summary>
+	/// チュートリアル中にカメラ操作を受け付けるかを判定する。
+	/// </summary>
+	bool IsCameraControlAllowed() const;
 	bool AcceptWheelZoom() const;
 	uint64_t GetResultInputReadyDirectorEntityId() const;
 	void QueueFishCountAdjustment(uint64_t directorEntityId, int delta);
@@ -226,9 +247,52 @@ private:
 		const SceneDocument& document,
 		const SceneComponent& director
 	);
+	/// <summary>
+	/// チュートリアル対象シーンかを判定する。
+	/// </summary>
+	bool IsTutorialScene(const std::string& sceneId) const;
+	/// <summary>
+	/// 現在のチュートリアル段階で説明送り入力を受け付けるかを判定する。
+	/// </summary>
+	bool IsTutorialAdvanceStep() const;
+	/// <summary>
+	/// 現在のチュートリアル段階で魚数選択入力を受け付けるかを判定する。
+	/// </summary>
+	bool IsTutorialFishSelectionAllowed() const;
+	/// <summary>
+	/// 現在のチュートリアル段階で釣り針得点判定を受け付けるかを判定する。
+	/// </summary>
+	bool IsTutorialScoringAllowed() const;
+	/// <summary>
+	/// 現在のチュートリアル段階でサメ処理を動かすかを判定する。
+	/// </summary>
+	bool IsTutorialSharkAllowed() const;
+	/// <summary>
+	/// 現在のチュートリアル段階でタイマーを進めるかを判定する。
+	/// </summary>
+	bool IsTutorialTimerAllowed() const;
+	/// <summary>
+	/// チュートリアル説明送り入力を処理する。
+	/// </summary>
+	bool AdvanceTutorialByInput(SceneDocument& document, const SceneComponent& director);
+	/// <summary>
+	/// チュートリアルの得点成功を段階へ反映する。
+	/// </summary>
+	void NotifyTutorialHookScored();
+	/// <summary>
+	/// 現在のチュートリアル説明文を取得する。
+	/// </summary>
+	std::string GetTutorialMessage() const;
 
 	SceneFishingScoreAttackState state_ = SceneFishingScoreAttackState::Inactive;
 	uint64_t directorEntityId_ = 0;
+	SceneFishingScoreAttackTutorialStep tutorialStep_ =
+		SceneFishingScoreAttackTutorialStep::Disabled; // チュートリアルの現在段階。
+	float tutorialMovePracticeSeconds_ = 0.0f; // 移動練習で入力移動した累計秒数。
+	int tutorialFishCountPracticeStart_ = 1; // 魚数調整練習を始めた時点の魚数。
+	bool tutorialFishCountAdjusted_ = false; // 魚数調整練習で数を変更したか。
+	int tutorialMultiScoreCount_ = 0; // 複数得点練習で得点した回数。
+	bool tutorialAutoStartNextRound_ = false; // 次フレームで1匹ラウンドを自動開始するか。
 	struct ActiveHook {
 		uint64_t entityId = 0;
 		int distanceBand = 0;
