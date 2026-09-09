@@ -49,6 +49,8 @@ namespace {
 	constexpr float kTutorialMoveInputSpeedThreshold = 0.25f; // 移動入力とみなす最低速度。
 	constexpr int kTutorialMultiScoreRequiredCount = 3; // 複数得点練習で必要な得点回数。
 	constexpr int kTutorialMinimumHookDistanceBand = 3; // チュートリアル中に釣り針を出し始める遠距離帯。
+	constexpr float kHookDropHeight = 8.0f; // 釣り針を出現させる上方距離。
+	constexpr float kHookDropDurationSeconds = 0.65f; // 釣り針が水面位置へ到達する時間。
 	constexpr const char* kTutorialMessageTextEntityName =
 		"Fishing Tutorial Message"; // チュートリアル説明専用Text Entity名。
 
@@ -1693,6 +1695,7 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 			UpdateSelection(document, *director);
 		}
 	}
+	UpdateHookDrops(document, safeDeltaTime);
 	if (state_ == SceneFishingScoreAttackState::Navigating &&
 		(!tutorialScene || IsTutorialSharkAllowed())) {
 		UpdateSharks(document, *director, deltaTime);
@@ -2157,6 +2160,9 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	const SceneComponent* hitHookComponent = nullptr;
 	const SceneRuntimeObjectBinding* hitHookBinding = nullptr;
 	for (const ActiveHook& activeHook : activeHooks_) {
+		if (activeHook.isDropping) {
+			continue;
+		}
 		const SceneRuntimeObjectBinding* hookBinding = FindBinding(bindings, activeHook.entityId);
 		if (!hookBinding || !hookBinding->entity || !hookBinding->collider ||
 			!IsEntityActiveInHierarchy(document, *hookBinding->entity)) {
@@ -5073,6 +5079,7 @@ bool SceneFishingScoreAttackSystem::SpawnHooks(
 			}
 			SceneEntity* hookEntity = document.FindEntity(selectedEntry->hookEntityId);
 			hookEntity->transform.translate = spawnPosition;
+			hookEntity->transform.translate.y += kHookDropHeight;
 			hookEntity->active = true;
 			usedHookIds.insert(hookEntity->id);
 			Transform placedHookTransform = hookTransform;
@@ -5087,11 +5094,52 @@ bool SceneFishingScoreAttackSystem::SpawnHooks(
 				? director.fishingHookBands[static_cast<size_t>(bandIndex)].distanceMultiplier
 				: director.fishingDistanceMultiplierBase +
 					director.fishingDistanceMultiplierStep * static_cast<float>(bandIndex);
-			activeHooks_.push_back({ hookEntity->id, bandIndex, distanceMultiplier, hookMultiplierTier });
+			activeHooks_.push_back({
+				hookEntity->id,
+				bandIndex,
+				distanceMultiplier,
+				hookMultiplierTier,
+				spawnPosition,
+				0.0f,
+				true
+			});
 			++spawnedHookCount;
 		}
 	}
 	return true;
+}
+
+void SceneFishingScoreAttackSystem::UpdateHookDrops(
+	SceneDocument& document,
+	float deltaTime
+) {
+	const float safeDeltaTime = (std::max)(deltaTime, 0.0f);
+	for (ActiveHook& activeHook : activeHooks_) {
+		if (!activeHook.isDropping) {
+			continue;
+		}
+		SceneEntity* hook = document.FindEntity(activeHook.entityId);
+		if (!hook || !hook->active) {
+			activeHook.isDropping = false;
+			continue;
+		}
+		activeHook.dropElapsedSeconds = (std::min)(
+			activeHook.dropElapsedSeconds + safeDeltaTime,
+			kHookDropDurationSeconds
+		);
+		const float normalizedTime = std::clamp(
+			activeHook.dropElapsedSeconds / kHookDropDurationSeconds,
+			0.0f,
+			1.0f
+		);
+		// 等加速度で落下させ、最後のフレームで必ず生成先へ一致させる。
+		hook->transform.translate = activeHook.landingPosition;
+		hook->transform.translate.y +=
+			kHookDropHeight * (1.0f - normalizedTime * normalizedTime);
+		if (normalizedTime >= 1.0f) {
+			activeHook.isDropping = false;
+		}
+	}
 }
 
 void SceneFishingScoreAttackSystem::StartRound(
