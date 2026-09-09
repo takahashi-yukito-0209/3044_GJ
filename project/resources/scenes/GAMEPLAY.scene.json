@@ -6134,8 +6134,8 @@
           "scorePrefix": "SCORE ",
           "scoreTextEntityId": 19,
           "sharkRouteDebugVisible": true,
-          "timerRunsDuringFishSelection": false,
           "timerPrefix": "TIME ",
+          "timerRunsDuringFishSelection": false,
           "timerTextEntityId": 18,
           "type": "FishingScoreAttackDirector",
           "useFormationCapsuleCollision": true,
@@ -16009,8 +16009,8 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
-          "fontResourcePath": "",
+          "fontFamily": "なぎの",
+          "fontResourcePath": "resources/fonts/nagino.otf",
           "fontSize": 80.0,
           "fontSource": "System",
           "fontStyle": "Normal",
@@ -16018,7 +16018,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             700.0,
-            84.0
+            111.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16091,7 +16091,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "PAUSE",
+          "text": "ポーズ",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -17057,26 +17057,77 @@
       "active": true,
       "components": [
         {
-          "anchor": [0.0, 0.0],
-          "color": [0.0, 0.0, 0.0, 0.58],
+          "anchor": [
+            0.0,
+            0.0
+          ],
+          "color": [
+            0.0,
+            0.0,
+            0.0,
+            0.5799999833106995
+          ],
           "enabled": true,
           "flipX": false,
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
-          "size": [4096.0, 4096.0],
+          "size": [
+            4096.0,
+            4096.0
+          ],
           "texturePath": "human/white.png",
           "type": "SpriteRenderer",
-          "viewportAnchor": [0.0, 0.0]
+          "viewportAnchor": [
+            0.0,
+            0.0
+          ]
         }
       ],
+      "folder": false,
+      "folderTeamEnabled": false,
       "id": 145,
+      "locked": false,
+      "modelPath": "",
       "name": "Pause Dim Overlay",
       "parentId": 144,
+      "sprite": {
+        "anchor": [
+          0.0,
+          0.0
+        ],
+        "color": [
+          0.0,
+          0.0,
+          0.0,
+          0.5799999833106995
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          4096.0,
+          4096.0
+        ],
+        "texturePath": "human/white.png"
+      },
+      "team": "",
       "transform": {
-        "rotation": [0.0, 0.0, 0.0, 1.0],
-        "scale": [1.0, 1.0, 1.0],
-        "translate": [0.0, 0.0, 0.0]
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
       }
     },
     {
