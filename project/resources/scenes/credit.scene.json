@@ -55,7 +55,7 @@
             "viewportAnchor": [0.5, 0.5]
           },
           "renderSpace": "ScreenOverlay",
-          "text": "制作クレジットはここへ追加する",
+          "text": "効果音：効果音ラボ",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "wrapMode": "NoWrap"
