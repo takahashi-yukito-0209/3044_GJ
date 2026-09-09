@@ -26,6 +26,21 @@ namespace {
 		return AudioBus::SFX;
 	}
 
+	/// <summary>
+	/// Scene定義上のAudioSource設定から、実際に使用するAudio Busを決定します。
+	/// </summary>
+	AudioBus ResolveAudioSourceBus(const SceneComponent& component) {
+		const bool looksLikeSceneBgm =
+			component.audioBus == "UI" &&
+			component.audioSpatialMode == "TwoD" &&
+			component.audioPlayOnStart &&
+			component.audioLoop; // 既存SceneでUI Busに置かれた開始ループ音源をBGM扱いにする判定。
+		if (looksLikeSceneBgm) {
+			return AudioBus::BGM;
+		}
+		return ToAudioBus(component.audioBus);
+	}
+
 	Vector3 NormalizeOr(const Vector3& value, const Vector3& fallback) {
 		return Math::Length(value) > 0.0001f
 			? Math::Normalize(value)
@@ -152,7 +167,7 @@ Audio::PlaybackHandle SceneAudioSystem::Play(
 		return Audio::GetInstance()->PlayAudioStream(
 			component.audioClipPath.c_str(),
 			{
-				ToAudioBus(component.audioBus), component.audioVolume,
+				ResolveAudioSourceBus(component), component.audioVolume,
 				component.audioPitch, component.audioLoop, true
 			},
 			&error
@@ -171,7 +186,7 @@ Audio::PlaybackHandle SceneAudioSystem::Play(
 		return {};
 	}
 	return Audio::GetInstance()->PlayAudioClip(clip, {
-		ToAudioBus(component.audioBus), component.audioVolume,
+		ResolveAudioSourceBus(component), component.audioVolume,
 		component.audioPitch, component.audioLoop, true
 	});
 }
@@ -260,7 +275,7 @@ void SceneAudioSystem::Sync(
 				persistentPlayOnStartKey,
 				persistentPlayOnStart->audioClipPath,
 				{
-					ToAudioBus(persistentPlayOnStart->audioBus),
+					ResolveAudioSourceBus(*persistentPlayOnStart),
 					persistentPlayOnStart->audioVolume,
 					persistentPlayOnStart->audioPitch,
 					persistentPlayOnStart->audioLoop,
@@ -408,7 +423,7 @@ void SceneAudioSystem::ApplyRequests(const SceneDocument& document, const std::v
 				Audio::GetInstance()->ResolvePersistentBgm({
 					sceneOwnerId_, bindingKey, component->audioClipPath,
 					{
-						ToAudioBus(component->audioBus), component->audioVolume,
+						ResolveAudioSourceBus(*component), component->audioVolume,
 						component->audioPitch, component->audioLoop, true
 					},
 					component->audioBgmFadeSeconds

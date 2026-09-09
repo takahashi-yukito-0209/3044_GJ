@@ -497,6 +497,9 @@
 	<ClInclude Include="application\scene\system\FishingFormationMotion.h">
 		<Filter>Application\Scene\System</Filter>
 	</ClInclude>
+	<ClInclude Include="application\scene\system\SceneSoundEffectPlayer.h">
+		<Filter>Application\Scene\System</Filter>
+	</ClInclude>
 	<ClInclude Include="application\scene\system\SceneAudioSystem.h">
 		<Filter>Application\Scene\System</Filter>
 	</ClInclude>

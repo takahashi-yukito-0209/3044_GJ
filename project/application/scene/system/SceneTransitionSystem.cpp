@@ -59,23 +59,26 @@ SceneTransitionRequest SceneTransitionSystem::Update(
 		if (!SceneEntityQuery::IsEntityActiveInHierarchy(document, entity)) {
 			continue;
 		}
-		const SceneComponent* transition =
-			SceneEntityQuery::FindEnabledComponent(entity, "SceneTransition");
-		if (!transition ||
-			transition->sceneTransitionTriggerType != "Key" ||
-			transition->sceneTransitionTargetSceneId.empty()) {
-			continue;
-		}
+		for (const SceneComponent& transition : entity.components) { // 同一Entity内の遷移候補。
+			if (
+				!transition.enabled ||
+				transition.type != "SceneTransition" ||
+				transition.sceneTransitionTriggerType != "Key" ||
+				transition.sceneTransitionTargetSceneId.empty()
+			) {
+				continue;
+			}
 
-		BYTE keyCode = 0;
-		if (ResolveTriggerKey(
-			transition->sceneTransitionTriggerKey,
-			keyCode
-		) && input->TriggerKey(keyCode)) {
-			return {
-				transition->sceneTransitionTargetSceneId,
-				transition->sceneTransitionUseEffect
-			};
+			BYTE keyCode = 0; // 遷移入力に対応するDirectInputキーコード。
+			if (ResolveTriggerKey(
+				transition.sceneTransitionTriggerKey,
+				keyCode
+			) && input->TriggerKey(keyCode)) {
+				return {
+					transition.sceneTransitionTargetSceneId,
+					transition.sceneTransitionUseEffect
+				};
+			}
 		}
 	}
 	return {};

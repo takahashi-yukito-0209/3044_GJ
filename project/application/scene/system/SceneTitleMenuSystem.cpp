@@ -1,6 +1,7 @@
 // 役割: Title Sceneのメニュー入力、遷移要求、選択中表示を処理する。
 #include "SceneTitleMenuSystem.h"
 
+#include "SceneSoundEffectPlayer.h"
 #include "SceneTextRenderSystem.h"
 #include "../../../engine/io/Input.h"
 #include "../../../engine/scene/SceneDocument.h"
@@ -59,13 +60,18 @@ SceneTitleMenuResult SceneTitleMenuSystem::Update(
 	selectedIndex_ = std::clamp(selectedIndex_, 0, itemCount - 1);
 
 	Input* input = Input::GetInstance(); // 入力状態の参照。
+	const int previousSelectedIndex = selectedIndex_; // 入力前の選択項目Index。
 	if (TriggerAnyKey(input, { DIK_UP, DIK_W })) {
 		selectedIndex_ = (selectedIndex_ + itemCount - 1) % itemCount;
 	} else if (TriggerAnyKey(input, { DIK_DOWN, DIK_S })) {
 		selectedIndex_ = (selectedIndex_ + 1) % itemCount;
 	}
+	if (selectedIndex_ != previousSelectedIndex) {
+		SceneSoundEffectPlayer::PlaySelect();
+	}
 
 	if (TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })) {
+		SceneSoundEffectPlayer::PlayDecision();
 		const MenuItem& selectedItem = menuItems[selectedIndex_]; // 決定されたメニュー項目。
 		if (selectedItem.exitRequested) {
 			result.exitRequested = true;

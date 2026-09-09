@@ -501,6 +501,7 @@
 	<ClInclude Include="application\scene\system\SceneFishingScoreAttackSystem.h" />
 	<ClInclude Include="application\scene\system\SceneFishingResultPresentationSystem.h" />
 	<ClInclude Include="application\scene\system\FishingFormationMotion.h" />
+	<ClInclude Include="application\scene\system\SceneSoundEffectPlayer.h" />
 	<ClInclude Include="application\scene\system\SceneAudioSystem.h" />
     <ClInclude Include="application\scene\system\SceneDebugSystem.h" />
     <ClInclude Include="application\scene\system\SceneEnemySystem.h" />
