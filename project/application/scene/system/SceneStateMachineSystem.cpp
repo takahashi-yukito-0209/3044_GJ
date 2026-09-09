@@ -923,7 +923,7 @@ void SceneStateMachineSystem::Update(
 		const auto found = std::find_if(
 			bindings.begin(), bindings.end(),
 			[entityId](const SceneRuntimeObjectBinding& binding) {
-				return binding.entity && binding.entity->id == entityId;
+				return binding.entityId == entityId;
 			}
 		);
 		return found == bindings.end() ? nullptr : &*found;

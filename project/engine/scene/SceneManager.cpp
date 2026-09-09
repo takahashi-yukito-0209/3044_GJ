@@ -544,6 +544,9 @@ void SceneManager::ActivatePendingScene()
 			DiscardPendingScene();
 			return;
 		}
+		pendingSceneInstance_->BindDocument(
+			&executionContext_->GetActiveDocument()
+		);
 	}
 	if (pendingSceneLoadMode_ == SceneLoadMode::Additive) {
 		if (!descriptor) {

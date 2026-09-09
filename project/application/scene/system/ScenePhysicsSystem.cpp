@@ -132,7 +132,7 @@ namespace {
 		uint64_t entityId
 	) {
 		for (const SceneRuntimeObjectBinding& binding : bindings) {
-			if (binding.entity && binding.entity->id == entityId) {
+			if (binding.entityId == entityId) {
 				return &binding;
 			}
 		}
@@ -182,6 +182,7 @@ void ScenePhysicsSystem::SyncSceneSettings(
 }
 
 void ScenePhysicsSystem::Step(
+	SceneDocument& document,
 	Player* player,
 	const std::vector<SceneRuntimeObjectBinding>& bindings,
 	float deltaTime,
@@ -206,11 +207,13 @@ void ScenePhysicsSystem::Step(
 		}
 	}
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
+		const SceneEntity* entity =
+			document.FindEntity(binding.entityId); // 現在のSceneDocument上のEntity。
 		if (
-			!binding.entity ||
+			!entity ||
 			!binding.object ||
 			!binding.body ||
-			SceneEntityQuery::HasComponent(*binding.entity, "PlayerBehavior")
+			SceneEntityQuery::HasComponent(*entity, "PlayerBehavior")
 		) {
 			continue;
 		}
@@ -220,36 +223,41 @@ void ScenePhysicsSystem::Step(
 	physicsWorld_.Step(deltaTime);
 
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
+		SceneEntity* entity =
+			document.FindEntity(binding.entityId); // 物理結果を書き戻すEntity。
 		if (
-			!binding.entity ||
+			!entity ||
 			!binding.object ||
 			!binding.body ||
-			SceneEntityQuery::HasComponent(*binding.entity, "PlayerBehavior")
+			SceneEntityQuery::HasComponent(*entity, "PlayerBehavior")
 		) {
 			continue;
 		}
 		binding.object->Update();
 		const Transform& runtimeTransform = binding.object->GetTransform();
-		binding.entity->transform.scale = runtimeTransform.scale;
-		binding.entity->transform.rotate = runtimeTransform.useQuaternionRotation
+		entity->transform.scale = runtimeTransform.scale;
+		entity->transform.rotate = runtimeTransform.useQuaternionRotation
 			? runtimeTransform.quaternionRotate
 			: MakeQuaternionFromEuler(runtimeTransform.rotate);
-		binding.entity->transform.translate = runtimeTransform.translate;
+		entity->transform.translate = runtimeTransform.translate;
 	}
 }
 
 void ScenePhysicsSystem::ResetBodies(
+	const SceneDocument& document,
 	const std::vector<SceneRuntimeObjectBinding>& bindings,
 	const std::vector<uint64_t>& entityIds
 ) const {
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
-		if (!binding.entity || !binding.body ||
-			std::find(entityIds.begin(), entityIds.end(), binding.entity->id) ==
+		const SceneEntity* entity =
+			document.FindEntity(binding.entityId); // 現在のSceneDocument上のEntity。
+		if (!entity || !binding.body ||
+			std::find(entityIds.begin(), entityIds.end(), binding.entityId) ==
 				entityIds.end()) {
 			continue;
 		}
 		const SceneComponent* component =
-			SceneEntityQuery::FindEnabledComponent(*binding.entity, "PhysicsBody");
+			SceneEntityQuery::FindEnabledComponent(*entity, "PhysicsBody");
 		if (component) {
 			binding.body->velocity = component->physicsVelocity;
 		}
@@ -446,23 +454,25 @@ void ScenePhysicsSystem::RebuildStaticColliders(
 		}
 	}
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
+		const SceneEntity* entity =
+			document.FindEntity(binding.entityId); // 現在のSceneDocument上のEntity。
 		if (
-			!binding.entity ||
+			!entity ||
 			!binding.collider ||
 			SceneEntityQuery::HasComponent(
-				*binding.entity,
+				*entity,
 				"PlayerBehavior"
 			) ||
 			!SceneEntityQuery::IsEntityActiveInHierarchy(
 				document,
-				*binding.entity
+				*entity
 			)
 		) {
 			continue;
 		}
 		const SceneComponent* fishingObstacle =
 			SceneEntityQuery::FindEnabledComponent(
-				*binding.entity,
+				*entity,
 				"FishingObstacle"
 			);
 		if (
