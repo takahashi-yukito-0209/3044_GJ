@@ -37,6 +37,8 @@ struct Request {
 	float desiredYaw = 0.0f;
 	float radius = 0.0f;
 	float halfSegmentLength = 0.0f;
+	float slideAssistStrength = 0.0f;
+	float rockVisualClearance = 0.0f;
 	CenterBounds bounds{};
 };
 
@@ -47,6 +49,8 @@ struct Result {
 	bool translationBlocked = false;
 	bool rotationBlocked = false;
 	bool iterationLimited = false;
+	bool obstacleContact = false;
+	Vector2 obstacleContactNormal{};
 };
 
 bool Solve(

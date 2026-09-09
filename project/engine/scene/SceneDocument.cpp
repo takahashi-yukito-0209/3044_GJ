@@ -1938,6 +1938,20 @@ namespace {
 			result["finishText"] = component.fishingFinishText;
 			result["useFormationCapsuleCollision"] =
 				component.fishingUseFormationCapsuleCollision;
+			result["formationSlideAssistStrength"] =
+				component.fishingFormationSlideAssistStrength;
+			result["formationRockVisualClearance"] =
+				component.fishingFormationRockVisualClearance;
+			result["formationContactResponseMaxFishCount"] =
+				component.fishingFormationContactResponseMaxFishCount;
+			result["formationContactTurnSpeedDegrees"] =
+				component.fishingFormationContactTurnSpeedDegrees;
+			result["formationContactPushSpeed"] =
+				component.fishingFormationContactPushSpeed;
+			result["formationContactDurationSeconds"] =
+				component.fishingFormationContactDurationSeconds;
+			result["formationContactCooldownSeconds"] =
+				component.fishingFormationContactCooldownSeconds;
 			result["formationOutlineVisible"] =
 				component.fishingFormationOutlineVisible;
 			result["formationOutlineColor"] =
@@ -3957,6 +3971,62 @@ namespace {
 						"useFormationCapsuleCollision",
 						component.fishingUseFormationCapsuleCollision
 					);
+					const float slideAssistStrength = value.value(
+						"formationSlideAssistStrength",
+						component.fishingFormationSlideAssistStrength
+					);
+					component.fishingFormationSlideAssistStrength =
+						std::isfinite(slideAssistStrength)
+							? std::clamp(slideAssistStrength, 0.0f, 1.0f)
+							: 0.0f;
+					const float rockVisualClearance = value.value(
+						"formationRockVisualClearance",
+						component.fishingFormationRockVisualClearance
+					);
+					component.fishingFormationRockVisualClearance =
+						std::isfinite(rockVisualClearance)
+							? std::clamp(rockVisualClearance, 0.0f, 100.0f)
+							: 0.0f;
+					component.fishingFormationContactResponseMaxFishCount = std::clamp(
+						value.value(
+							"formationContactResponseMaxFishCount",
+							component.fishingFormationContactResponseMaxFishCount
+						),
+						0,
+						(std::max)(0, component.fishingMaxSelectableFishCount)
+					);
+					const float contactTurnSpeedDegrees = value.value(
+						"formationContactTurnSpeedDegrees",
+						component.fishingFormationContactTurnSpeedDegrees
+					);
+					component.fishingFormationContactTurnSpeedDegrees =
+						std::isfinite(contactTurnSpeedDegrees)
+							? std::clamp(contactTurnSpeedDegrees, 0.0f, 720.0f)
+							: 180.0f;
+					const float contactPushSpeed = value.value(
+						"formationContactPushSpeed",
+						component.fishingFormationContactPushSpeed
+					);
+					component.fishingFormationContactPushSpeed =
+						std::isfinite(contactPushSpeed)
+							? std::clamp(contactPushSpeed, 0.0f, 200.0f)
+							: 20.0f;
+					const float contactDurationSeconds = value.value(
+						"formationContactDurationSeconds",
+						component.fishingFormationContactDurationSeconds
+					);
+					component.fishingFormationContactDurationSeconds =
+						std::isfinite(contactDurationSeconds)
+							? std::clamp(contactDurationSeconds, 0.0f, 2.0f)
+							: 0.5f;
+					const float contactCooldownSeconds = value.value(
+						"formationContactCooldownSeconds",
+						component.fishingFormationContactCooldownSeconds
+					);
+					component.fishingFormationContactCooldownSeconds =
+						std::isfinite(contactCooldownSeconds)
+							? std::clamp(contactCooldownSeconds, 0.0f, 2.0f)
+							: 0.1f;
 					component.fishingFormationOutlineVisible = value.value(
 						"formationOutlineVisible",
 						component.fishingFormationOutlineVisible
@@ -10120,6 +10190,13 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingResultPrefix = "RESULT ";
 		component.fishingFinishText.clear();
 		component.fishingUseFormationCapsuleCollision = false;
+		component.fishingFormationSlideAssistStrength = 0.0f;
+		component.fishingFormationRockVisualClearance = 0.0f;
+		component.fishingFormationContactResponseMaxFishCount = 0;
+		component.fishingFormationContactTurnSpeedDegrees = 180.0f;
+		component.fishingFormationContactPushSpeed = 20.0f;
+		component.fishingFormationContactDurationSeconds = 0.5f;
+		component.fishingFormationContactCooldownSeconds = 0.1f;
 		component.fishingFormationOutlineVisible = false;
 		component.fishingFormationOutlineColor = { 0.1f, 0.9f, 1.0f, 1.0f };
 		component.fishingFormationOutlineBloomIntensity = 1.0f;
