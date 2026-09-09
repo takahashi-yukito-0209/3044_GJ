@@ -1799,6 +1799,8 @@ namespace {
 				clips.push_back({
 					{ "id", clip.id },
 					{ "holdFinalPose", clip.holdFinalPose },
+					{ "loop", clip.loop },
+					{ "loopStartTimeSeconds", clip.loopStartTimeSeconds },
 					{ "keyframes", std::move(keyframes) }
 				});
 			}
@@ -3559,6 +3561,10 @@ namespace {
 							clip.id = sourceClip.value("id", std::string{});
 							clip.holdFinalPose = sourceClip.value(
 								"holdFinalPose", false
+							);
+							clip.loop = sourceClip.value("loop", false);
+							clip.loopStartTimeSeconds = sourceClip.value(
+								"loopStartTimeSeconds", 0.0f
 							);
 							const auto keyframes = sourceClip.find("keyframes");
 							if (keyframes != sourceClip.end() && keyframes->is_array()) {

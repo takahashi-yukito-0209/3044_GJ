@@ -1274,7 +1274,7 @@
           "enabled": true,
           "fontFamily": "なぎの",
           "fontResourcePath": "",
-          "fontSize": 24.0,
+          "fontSize": 30.0,
           "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
@@ -1342,6 +1342,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -1425,7 +1426,7 @@
           "enabled": true,
           "fontFamily": "なぎの",
           "fontResourcePath": "",
-          "fontSize": 22.0,
+          "fontSize": 30.0,
           "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
@@ -1493,6 +1494,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -1576,7 +1578,7 @@
           "enabled": true,
           "fontFamily": "なぎの",
           "fontResourcePath": "",
-          "fontSize": 22.0,
+          "fontSize": 30.0,
           "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
@@ -1644,6 +1646,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -1727,7 +1730,7 @@
           "enabled": true,
           "fontFamily": "なぎの",
           "fontResourcePath": "",
-          "fontSize": 22.0,
+          "fontSize": 30.0,
           "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
@@ -1795,6 +1798,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -1878,7 +1882,7 @@
           "enabled": true,
           "fontFamily": "なぎの",
           "fontResourcePath": "",
-          "fontSize": 22.0,
+          "fontSize": 30.0,
           "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
@@ -1946,6 +1950,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -2097,6 +2102,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -2248,6 +2254,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -2399,6 +2406,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -2550,6 +2558,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -2701,6 +2710,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -2852,6 +2862,7 @@
               1.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -6991,6 +7002,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -7142,6 +7154,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -7293,6 +7306,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -7444,6 +7458,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -7595,6 +7610,7 @@
               0.5
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -12761,6 +12777,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -12838,6 +12855,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -12915,6 +12933,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -12992,6 +13011,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -13069,6 +13089,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -13146,6 +13167,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -13223,6 +13245,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -13300,6 +13323,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -13377,6 +13401,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -13454,6 +13479,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             24.0,
             24.0
@@ -13597,6 +13623,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -13674,6 +13701,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -13751,6 +13779,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -13828,6 +13857,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -13905,6 +13935,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -13982,6 +14013,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14059,6 +14091,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14136,6 +14169,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14213,6 +14247,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14290,6 +14325,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14367,6 +14403,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14444,6 +14481,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14521,6 +14559,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14598,6 +14637,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14675,6 +14715,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             128.0,
             128.0
@@ -14752,6 +14793,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -14829,6 +14871,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -14906,6 +14949,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -14983,6 +15027,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15060,6 +15105,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15137,6 +15183,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15214,6 +15261,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15291,6 +15339,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15368,6 +15417,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15445,6 +15495,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15522,6 +15573,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15599,6 +15651,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15676,6 +15729,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15753,6 +15807,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -15830,6 +15885,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             64.0,
             64.0
@@ -16088,6 +16144,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16239,6 +16296,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16390,6 +16448,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16541,6 +16600,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16692,6 +16752,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16843,6 +16904,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16994,6 +17056,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -17145,6 +17208,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -17232,6 +17296,7 @@
           "flipY": false,
           "localId": 1,
           "renderSpace": "ScreenOverlay",
+          "screenOverlayScaleMode": "Inherit",
           "size": [
             4096.0,
             4096.0

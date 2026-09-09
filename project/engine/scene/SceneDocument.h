@@ -379,6 +379,9 @@ struct SceneSpriteMotionKeyframe {
 struct SceneSpriteMotionClip {
 	std::string id;
 	bool holdFinalPose = false;
+	// 0秒以降の任意区間を繰り返せるため、導入演出後の待機モーションに使える。
+	bool loop = false;
+	float loopStartTimeSeconds = 0.0f;
 	std::vector<SceneSpriteMotionKeyframe> keyframes;
 };
 
