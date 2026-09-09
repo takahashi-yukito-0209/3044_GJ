@@ -109,8 +109,7 @@ Object3d* SceneMonitorSystem::FindObject(
 ) const {
 	for (const SceneRuntimeObjectBinding& binding : bindings) {
 		if (
-			binding.entity &&
-			binding.entity->id == entityId
+			binding.entityId == entityId
 		) {
 			return binding.object;
 		}

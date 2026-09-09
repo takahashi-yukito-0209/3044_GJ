@@ -1032,6 +1032,7 @@ void RuntimeScene::Update(float deltaTime)
 			editing
 		);
 		physicsSystem_.ResetBodies(
+			*activeDocument,
 			runtimeObjectBindings_,
 			spawnerResetEntityIds
 		);
@@ -1185,6 +1186,7 @@ void RuntimeScene::Update(float deltaTime)
 		}
 		if (physicsBindingsValid) {
 			physicsSystem_.Step(
+				*activeDocument,
 				player_,
 				runtimeObjectBindings_,
 				physicsDeltaTime,
@@ -1285,15 +1287,19 @@ void RuntimeScene::Update(float deltaTime)
 				resetRequest.entityResets) {
 				for (const SceneRuntimeObjectBinding& binding : runtimeObjectBindings_) {
 					if (
-						!binding.entity ||
-						binding.entity->id != entityReset.entityId ||
+						binding.entityId != entityReset.entityId ||
 						!binding.object
 					) {
 						continue;
 					}
+					SceneEntity* entity =
+						activeDocument->FindEntity(binding.entityId); // 現在のSceneDocument上のEntity。
+					if (!entity) {
+						continue;
+					}
 					SynchronizeSceneTransform(
 						*activeDocument,
-						*binding.entity,
+						*entity,
 						*binding.object,
 						entityReset.transform
 					);
