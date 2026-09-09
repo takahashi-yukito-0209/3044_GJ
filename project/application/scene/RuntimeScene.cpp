@@ -1760,6 +1760,7 @@ void RuntimeScene::UpdatePaused()
 		executionContext,
 		GetSceneAssetId()
 	);
+	textRenderSystem_.Sync(document);
 }
 
 void RuntimeScene::Draw()

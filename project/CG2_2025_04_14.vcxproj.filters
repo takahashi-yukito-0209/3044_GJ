@@ -216,6 +216,9 @@
     <ClCompile Include="application\scene\system\SceneObjectSystem.cpp">
       <Filter>Application\Scene\System</Filter>
     </ClCompile>
+	<ClCompile Include="application\scene\system\SceneScreenOverlayCanvasLayout.cpp">
+		<Filter>Application\Scene\System</Filter>
+	</ClCompile>
 	<ClCompile Include="application\scene\system\SceneOptionMenuSystem.cpp">
 	  <Filter>Application\Scene\System</Filter>
 	</ClCompile>
@@ -533,6 +536,9 @@
     <ClInclude Include="application\scene\system\SceneObjectSystem.h">
       <Filter>Application\Scene\System</Filter>
     </ClInclude>
+	<ClInclude Include="application\scene\system\SceneScreenOverlayCanvasLayout.h">
+		<Filter>Application\Scene\System</Filter>
+	</ClInclude>
 	<ClInclude Include="application\scene\system\SceneOptionMenuSystem.h">
 	  <Filter>Application\Scene\System</Filter>
 	</ClInclude>

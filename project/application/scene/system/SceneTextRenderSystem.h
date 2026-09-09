@@ -35,7 +35,7 @@ public:
 	void ClearPresentationOverrides();
 	void Sync(SceneDocument* document);
 	void DrawScene2D(const SceneDocument& document, uint32_t width, uint32_t height) const;
-	void DrawScreenOverlay(const SceneDocument& document, uint32_t width, uint32_t height) const;
+	void DrawScreenOverlay(const SceneDocument& document, uint32_t width, uint32_t height);
 	bool HasScreenOverlay(const SceneDocument& document) const;
 	void Finalize();
 
@@ -48,6 +48,8 @@ private:
 		std::string fontResolutionKey;
 		std::string fontDiagnostic;
 		Vector2 bitmapSize{};
+		float rasterScale = 1.0f;
+		float screenOverlayScale = 1.0f;
 		bool spriteInitialized = false;
 	};
 	struct PresentationOverride {
@@ -68,4 +70,6 @@ private:
 	std::unordered_map<uint64_t, Vector4> textColorOverrides_;
 	std::unordered_map<uint64_t, Vector2> viewportPositionOverrides_;
 	std::unordered_map<uint64_t, PresentationOverride> presentationOverrides_;
+	uint32_t lastScreenOverlayViewportWidth_ = 0;
+	uint32_t lastScreenOverlayViewportHeight_ = 0;
 };

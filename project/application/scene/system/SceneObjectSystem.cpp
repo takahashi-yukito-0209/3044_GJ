@@ -13,6 +13,7 @@
 #include "../../../engine/scene/SceneDocument.h"
 #include "../../../engine/scene/SceneEntityQuery.h"
 #include "../../../engine/scene/SceneTransformResolver.h"
+#include "SceneScreenOverlayCanvasLayout.h"
 
 #include <algorithm>
 #include <array>
@@ -906,27 +907,35 @@ void SceneObjectSystem::DrawScreenOverlaySprites(
 		const Vector4 color = runtimeOverride
 			? runtimeOverride->color
 			: spriteRenderer->spriteColor;
+		const SceneScreenOverlayCanvasLayout layout =
+			ResolveSceneScreenOverlayCanvasLayout(
+				document,
+				*spriteRenderer,
+				viewportWidth,
+				viewportHeight
+			);
 		Sprite* sprite = found->second.sprite.get();
 		if (runtimeOverride && runtimeOverride->hasViewportPositionOverride) {
+			const Vector2 positionOffset = layout.ScalePixelOffset(
+				runtimeOverride->positionOffsetPixels
+			);
 			sprite->SetPosition({
 				runtimeOverride->viewportPosition.x * viewportWidth +
-				runtimeOverride->positionOffsetPixels.x,
+				positionOffset.x,
 				runtimeOverride->viewportPosition.y * viewportHeight +
-				runtimeOverride->positionOffsetPixels.y
+				positionOffset.y
 			});
 		} else {
-			sprite->SetPosition({
-				spriteRenderer->spriteViewportAnchor.x * viewportWidth +
-					transform.translate.x,
-				spriteRenderer->spriteViewportAnchor.y * viewportHeight +
-					transform.translate.y
-			});
+			sprite->SetPosition(layout.ResolvePosition(
+				spriteRenderer->spriteViewportAnchor,
+				{ transform.translate.x, transform.translate.y }
+			));
 		}
 		sprite->SetRotation(transform.rotate.z);
-		sprite->SetSize({
+		sprite->SetSize(layout.ScaleSize({
 			size.x * transform.scale.x,
 			size.y * transform.scale.y
-		});
+		}));
 		sprite->SetAnchorPoint(spriteRenderer->spriteAnchor);
 		sprite->SetColor(color);
 		sprite->SetIsFlipX(spriteRenderer->spriteFlipX);
