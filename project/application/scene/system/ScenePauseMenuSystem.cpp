@@ -17,8 +17,8 @@ namespace {
 	constexpr const char* kPauseControllerName = "Pause Menu Controller";
 	constexpr const char* kPauseProfileId = "PauseMenu";
 	constexpr const char* kPauseRequestId = "PauseMenu";
-	constexpr std::array<const char*, 3> kMainMenuEntityNames = { {
-		"PauseTitleText", "PauseRestartText", "PauseOptionText"
+	constexpr std::array<const char*, 4> kMainMenuEntityNames = { {
+		"PauseTitleText", "PauseRespawnText", "PauseRestartText", "PauseOptionText"
 	} };
 	constexpr std::array<const char*, 3> kOptionMenuEntityNames = { {
 		"PauseOptionBgmText", "PauseOptionSeText", "PauseOptionBackText"
@@ -123,9 +123,12 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 			selectedIndex_ = 0;
 		}
 	} else if (TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })) {
-		if (selectedIndex_ == 2) {
+		if (selectedItem.action == MenuItem::Action::OpenOptions) {
 			optionOpen_ = true;
 			selectedIndex_ = 0;
+		} else if (selectedItem.action == MenuItem::Action::Respawn) {
+			result.respawnRequested = true;
+			result.resumeRequested = true;
 		} else {
 			result.requestedSceneId = selectedItem.targetSceneId;
 		}
@@ -243,19 +246,35 @@ float ScenePauseMenuSystem::GetPresentationProgress(int animationOrder) const {
 
 std::vector<ScenePauseMenuSystem::MenuItem>
 ScenePauseMenuSystem::CollectMenuItems(const SceneDocument& document) const {
-	constexpr std::array<const char*, 3> kTargetSceneIds = { {
-		"title", "gameplay", "option"
-	} };
 	std::vector<MenuItem> items;
-	const auto& names = optionOpen_ ? kOptionMenuEntityNames : kMainMenuEntityNames;
-	items.reserve(names.size());
-	for (size_t index = 0; index < names.size(); ++index) {
+	const char* const* names = optionOpen_
+		? kOptionMenuEntityNames.data()
+		: kMainMenuEntityNames.data();
+	const size_t itemCount = optionOpen_
+		? kOptionMenuEntityNames.size()
+		: kMainMenuEntityNames.size();
+	items.reserve(itemCount);
+	for (size_t index = 0; index < itemCount; ++index) {
 		const SceneEntity* entity = document.FindEntityByName(names[index]);
 		if (!entity || !SceneEntityQuery::IsEntityActiveInHierarchy(document, *entity) ||
 			!SceneEntityQuery::FindEnabledComponent(*entity, "TextRenderer")) {
 			continue;
 		}
-		items.push_back({ entity->id, kTargetSceneIds[index] });
+		MenuItem item{};
+		item.entityId = entity->id;
+		if (optionOpen_) {
+			item.targetSceneId = index == 0 ? "title" :
+				(index == 1 ? "gameplay" : "option");
+		} else if (index == 0) {
+			item.targetSceneId = "title";
+		} else if (index == 1) {
+			item.action = MenuItem::Action::Respawn;
+		} else if (index == 2) {
+			item.targetSceneId = "gameplay";
+		} else {
+			item.action = MenuItem::Action::OpenOptions;
+		}
+		items.push_back(item);
 	}
 	return items;
 }

@@ -34,6 +34,7 @@
 #include "system/SceneRuntimeEffectSystem.h"
 #include "system/SceneStatSystem.h"
 #include "system/SceneStateMachineSystem.h"
+#include "system/SceneSpriteMotionSystem.h"
 #include "system/SceneTextRenderSystem.h"
 #include "system/SceneTextMotionSystem.h"
 #include "system/SceneTitleBoatMotionSystem.h"
@@ -158,6 +159,7 @@ private:
 	SceneRuntimeEffectSystem runtimeEffectSystem_;
 	SceneStatSystem statSystem_;
 	SceneStateMachineSystem stateMachineSystem_;
+	SceneSpriteMotionSystem spriteMotionSystem_;
 	SceneTextMotionSystem textMotionSystem_;
 	SceneTextRenderSystem textRenderSystem_;
 	SceneTitleBoatMotionSystem titleBoatMotionSystem_;

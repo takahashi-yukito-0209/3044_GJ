@@ -159,6 +159,9 @@
 	<ClCompile Include="application\scene\system\SceneTextMotionSystem.cpp">
 		<Filter>Application\Scene\System</Filter>
 	</ClCompile>
+	<ClCompile Include="application\scene\system\SceneSpriteMotionSystem.cpp">
+		<Filter>Application\Scene\System</Filter>
+	</ClCompile>
 	<ClCompile Include="application\scene\system\SceneTitleBoatMotionSystem.cpp">
 		<Filter>Application\Scene\System</Filter>
 	</ClCompile>
@@ -474,6 +477,9 @@
 		<Filter>Application\Scene\System</Filter>
 	</ClInclude>
 	<ClInclude Include="application\scene\system\SceneTextMotionSystem.h">
+		<Filter>Application\Scene\System</Filter>
+	</ClInclude>
+	<ClInclude Include="application\scene\system\SceneSpriteMotionSystem.h">
 		<Filter>Application\Scene\System</Filter>
 	</ClInclude>
 	<ClInclude Include="application\scene\system\SceneTitleBoatMotionSystem.h">

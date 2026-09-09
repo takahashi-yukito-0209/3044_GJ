@@ -11939,6 +11939,154 @@ void ImGuiManager::DrawInspectorWindow() {
 					document.MarkDirty();
 				}
 				ImGui::EndDisabled();
+			} else if (component.type == "SpriteMotion") {
+				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
+				bool spriteMotionChanged = false;
+				spriteMotionChanged |= ImGui::Checkbox(
+					LocalizedComponentWidgetLabel(editorLanguage_, "開始時に再生###SpriteMotionPlayOnStart"),
+					&component.spriteMotionPlayOnStart
+				);
+				spriteMotionChanged |= InputTextString(
+					LocalizedComponentWidgetLabel(editorLanguage_, "開始Clip ID###SpriteMotionStartClipId"),
+					component.spriteMotionStartClipId
+				);
+				ImGui::TextDisabled("%s", SelectEditorText(
+					editorLanguage_,
+					"同じEntityのSpriteRendererへ位置・回転・拡縮・透明度を合成します。",
+					"Composes position, rotation, scale, and opacity onto the SpriteRenderer on this Entity."
+				));
+				int removeClipIndex = -1;
+				for (size_t clipIndex = 0;
+					clipIndex < component.spriteMotionClips.size();
+					++clipIndex) {
+					SceneSpriteMotionClip& clip = component.spriteMotionClips[clipIndex];
+					ImGui::PushID(static_cast<int>(clipIndex));
+					if (ImGui::TreeNodeEx(
+						"SpriteMotionClip",
+						ImGuiTreeNodeFlags_DefaultOpen,
+						"Clip %zu: %s",
+						clipIndex + 1,
+						clip.id.empty() ? "<empty>" : clip.id.c_str()
+					)) {
+						spriteMotionChanged |= InputTextString(
+							LocalizedComponentWidgetLabel(editorLanguage_, "Clip Id###SpriteMotionClipId"),
+							clip.id
+						);
+						spriteMotionChanged |= ImGui::Checkbox(
+							LocalizedComponentWidgetLabel(editorLanguage_, "最終姿勢を保持###SpriteMotionHoldFinalPose"),
+							&clip.holdFinalPose
+						);
+						int removeKeyframeIndex = -1;
+						for (size_t keyframeIndex = 0;
+							keyframeIndex < clip.keyframes.size();
+							++keyframeIndex) {
+							SceneSpriteMotionKeyframe& keyframe = clip.keyframes[keyframeIndex];
+							ImGui::PushID(static_cast<int>(keyframeIndex));
+							if (ImGui::TreeNodeEx(
+								"SpriteMotionKeyframe",
+								ImGuiTreeNodeFlags_DefaultOpen,
+								"Keyframe %zu", keyframeIndex + 1
+							)) {
+								spriteMotionChanged |= ImGui::DragFloat(
+									LocalizedComponentWidgetLabel(editorLanguage_, "時間（秒）###SpriteMotionTimeSeconds"),
+									&keyframe.timeSeconds,
+									0.01f
+								);
+								spriteMotionChanged |= ImGui::DragFloat2(
+									LocalizedComponentWidgetLabel(editorLanguage_, "位置オフセット###SpriteMotionPositionOffset"),
+									&keyframe.positionOffset.x,
+									0.5f
+								);
+								spriteMotionChanged |= ImGui::DragFloat(
+									LocalizedComponentWidgetLabel(editorLanguage_, "回転オフセット###SpriteMotionRotationOffset"),
+									&keyframe.rotationOffset,
+									0.5f
+								);
+								spriteMotionChanged |= ImGui::DragFloat2(
+									LocalizedComponentWidgetLabel(editorLanguage_, "スケール倍率###SpriteMotionScaleMultiplier"),
+									&keyframe.scaleMultiplier.x,
+									0.01f
+								);
+								spriteMotionChanged |= ImGui::DragFloat(
+									LocalizedComponentWidgetLabel(editorLanguage_, "透明度倍率###SpriteMotionOpacityMultiplier"),
+									&keyframe.opacityMultiplier,
+									0.01f
+								);
+								if (ImGui::BeginCombo(
+									LocalizedComponentWidgetLabel(editorLanguage_, "次への補間###SpriteMotionEasingToNext"),
+									keyframe.easingToNext.c_str()
+								)) {
+									for (const char* easing : {
+										"Linear", "EaseIn", "EaseOut", "EaseInOut", "SmoothStep"
+									}) {
+										if (ImGui::Selectable(easing, keyframe.easingToNext == easing)) {
+											keyframe.easingToNext = easing;
+											spriteMotionChanged = true;
+										}
+									}
+									ImGui::EndCombo();
+								}
+								if (ImGui::SmallButton(SelectEditorText(
+									editorLanguage_, "Keyframeを削除###RemoveSpriteMotionKeyframe",
+									"Remove Keyframe###RemoveSpriteMotionKeyframe"
+								))) {
+									removeKeyframeIndex = static_cast<int>(keyframeIndex);
+								}
+								ImGui::TreePop();
+							}
+							ImGui::PopID();
+						}
+						if (removeKeyframeIndex >= 0) {
+							clip.keyframes.erase(
+								clip.keyframes.begin() + removeKeyframeIndex
+							);
+							spriteMotionChanged = true;
+						}
+						if (ImGui::SmallButton(SelectEditorText(
+							editorLanguage_, "Keyframeを追加###AddSpriteMotionKeyframe",
+							"Add Keyframe###AddSpriteMotionKeyframe"
+						))) {
+							SceneSpriteMotionKeyframe keyframe{};
+							keyframe.timeSeconds = clip.keyframes.empty()
+								? 0.0f : clip.keyframes.back().timeSeconds + 0.25f;
+							clip.keyframes.push_back(std::move(keyframe));
+							spriteMotionChanged = true;
+						}
+						if (ImGui::SmallButton(SelectEditorText(
+							editorLanguage_, "Clipを削除###RemoveSpriteMotionClip",
+							"Remove Clip###RemoveSpriteMotionClip"
+						))) {
+							removeClipIndex = static_cast<int>(clipIndex);
+						}
+						ImGui::TreePop();
+					}
+					ImGui::PopID();
+				}
+				if (removeClipIndex >= 0) {
+					component.spriteMotionClips.erase(
+						component.spriteMotionClips.begin() + removeClipIndex
+					);
+					spriteMotionChanged = true;
+				}
+				if (ImGui::Button(SelectEditorText(
+					editorLanguage_, "Clipを追加###AddSpriteMotionClip",
+					"Add Clip###AddSpriteMotionClip"
+				))) {
+					SceneSpriteMotionClip clip{};
+					clip.id = "Clip" + std::to_string(
+						component.spriteMotionClips.size() + 1
+					);
+					clip.keyframes = {
+						SceneSpriteMotionKeyframe{},
+						SceneSpriteMotionKeyframe{ 0.25f }
+					};
+					component.spriteMotionClips.push_back(std::move(clip));
+					spriteMotionChanged = true;
+				}
+				if (spriteMotionChanged) {
+					document.MarkDirty();
+				}
+				ImGui::EndDisabled();
 			} else if (component.type == "EventTrigger") {
 				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
 				bool eventsChanged = false;
