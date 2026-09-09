@@ -13,6 +13,7 @@ class SceneTextRenderSystem;
 struct ScenePauseMenuResult {
 	bool pauseRequested = false;
 	bool resumeRequested = false;
+	bool respawnRequested = false;
 	std::string requestedSceneId;
 };
 
@@ -33,7 +34,14 @@ public:
 
 private:
 	struct MenuItem {
+		enum class Action {
+			SceneTransition,
+			Respawn,
+			OpenOptions
+		};
+
 		uint64_t entityId = 0;
+		Action action = Action::SceneTransition;
 		std::string targetSceneId;
 	};
 

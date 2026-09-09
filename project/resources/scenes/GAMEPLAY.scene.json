@@ -53,9 +53,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -104,9 +104,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -157,9 +157,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -208,9 +208,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -261,9 +261,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -312,9 +312,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -365,9 +365,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -416,9 +416,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -469,9 +469,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -520,9 +520,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -573,9 +573,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -624,9 +624,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -677,9 +677,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -728,9 +728,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -781,9 +781,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -832,9 +832,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -885,9 +885,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -936,9 +936,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -989,9 +989,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -1040,9 +1040,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -1093,9 +1093,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -1144,9 +1144,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -1197,9 +1197,9 @@
           ],
           "shape": "Box",
           "sizeMultiplier": [
-            0.800000011920929,
+            0.5,
             2.4000000953674316,
-            0.800000011920929
+            0.5
           ],
           "sphereRadius": 0.5,
           "type": "OBBCollider"
@@ -1248,9 +1248,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -4837,9 +4837,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -4.0,
@@ -5012,9 +5012,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           4.0,
@@ -5187,9 +5187,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -2.0,
@@ -5399,9 +5399,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           3.0,
@@ -5574,9 +5574,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -5593,18 +5593,18 @@
           "boundaryNegativeZWallEntityId": 42,
           "boundaryPositiveXWallEntityId": 41,
           "boundaryPositiveZWallEntityId": 43,
-          "confirmInput": "Mouse Left",
+          "confirmInput": "SPACE",
           "confirmInputExpression": {
             "groups": [
               {
                 "mode": "Any",
                 "terms": [
                   {
-                    "input": "Mouse Left",
+                    "input": "SPACE",
                     "phase": "Pressed"
                   },
                   {
-                    "input": "Gamepad A",
+                    "input": "ENTER",
                     "phase": "Pressed"
                   }
                 ]
@@ -5617,7 +5617,7 @@
           "distanceMultiplierStep": 0.20000000298023224,
           "durationSeconds": 60.0,
           "enabled": true,
-          "finishText": "FINISH",
+          "finishText": "しゅーりょー",
           "fishCountPrefix": "さかな ",
           "fishCountTextEntityId": 17,
           "fishEntityIds": [
@@ -6185,8 +6185,12 @@
                     "mode": "Any",
                     "terms": [
                       {
-                        "input": "Gamepad DPad Up",
-                        "phase": "Pressed"
+                        "input": "W",
+                        "phase": "Held"
+                      },
+                      {
+                        "input": "UP",
+                        "phase": "Held"
                       }
                     ]
                   }
@@ -6207,7 +6211,7 @@
                 0.0
               ],
               "textMotionClipId": "",
-              "triggerKey": "Gamepad DPad Up",
+              "triggerKey": "W",
               "triggerOnce": false,
               "triggerType": "OnKeyPressed"
             },
@@ -6244,8 +6248,12 @@
                     "mode": "Any",
                     "terms": [
                       {
-                        "input": "Gamepad DPad Down",
-                        "phase": "Pressed"
+                        "input": "S",
+                        "phase": "Held"
+                      },
+                      {
+                        "input": "DOWN",
+                        "phase": "Held"
                       }
                     ]
                   }
@@ -6266,7 +6274,7 @@
                 0.0
               ],
               "textMotionClipId": "",
-              "triggerKey": "Gamepad DPad Down",
+              "triggerKey": "S",
               "triggerOnce": false,
               "triggerType": "OnKeyPressed"
             }
@@ -6681,9 +6689,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -6785,9 +6793,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -6889,9 +6897,9 @@
           1.0
         ],
         "scale": [
-          0.800000011920929,
-          2.4000000953674316,
-          0.800000011920929
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -7819,9 +7827,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -12.0,
@@ -7994,9 +8002,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -6.0,
@@ -8169,9 +8177,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -8344,9 +8352,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           6.0,
@@ -8519,9 +8527,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           12.0,
@@ -8694,9 +8702,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -12.0,
@@ -8869,9 +8877,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -6.0,
@@ -9044,9 +9052,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -9219,9 +9227,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           6.0,
@@ -9394,9 +9402,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           12.0,
@@ -9569,9 +9577,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -12.0,
@@ -9744,9 +9752,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -6.0,
@@ -9919,9 +9927,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -10094,9 +10102,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           6.0,
@@ -10269,9 +10277,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           12.0,
@@ -10444,9 +10452,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -12.0,
@@ -10619,9 +10627,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -6.0,
@@ -10794,9 +10802,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -10969,9 +10977,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           6.0,
@@ -11144,9 +11152,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           12.0,
@@ -11319,9 +11327,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -12.0,
@@ -11494,9 +11502,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           -6.0,
@@ -11669,9 +11677,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           0.0,
@@ -11844,9 +11852,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           6.0,
@@ -12019,9 +12027,9 @@
           1.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          2.0,
+          2.0,
+          2.0
         ],
         "translate": [
           12.0,
@@ -12524,9 +12532,9 @@
           1.0
         ],
         "scale": [
-          2.0,
-          2.0,
-          2.0
+          5.0,
+          5.0,
+          5.0
         ],
         "translate": [
           0.0,
@@ -16012,14 +16020,14 @@
           "enabled": true,
           "fontFamily": "なぎの",
           "fontResourcePath": "resources/fonts/nagino.otf",
-          "fontSize": 80.0,
+          "fontSize": 100.0,
           "fontSource": "System",
           "fontStyle": "Normal",
           "fontWeight": "Bold",
           "horizontalAlignment": "Center",
           "layoutSize": [
             700.0,
-            111.0
+            131.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16321,7 +16329,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            74.0
+            60.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16344,6 +16352,157 @@
             "position": [
               0.0,
               0.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 102,
+            "viewportAnchor": [
+              0.5,
+              0.5
+            ]
+          },
+          "pivot": [
+            0.0,
+            0.0
+          ],
+          "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              0.0,
+              0.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 0,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
+          "shadowColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "shadowEnabled": true,
+          "shadowOffset": [
+            3.0,
+            3.0
+          ],
+          "sortingOrder": 0,
+          "text": "りすぽーん",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "viewportAnchor": [
+            0.0,
+            0.0
+          ],
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 147,
+      "locked": false,
+      "modelPath": "",
+      "name": "PauseRespawnText",
+      "parentId": 144,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "characterSpacing": 0.0,
+          "clipEnabled": false,
+          "color": [
+            0.7799999713897705,
+            0.8600000143051147,
+            0.9399999976158142,
+            1.0
+          ],
+          "enabled": true,
+          "fontFamily": "なぎの",
+          "fontResourcePath": "",
+          "fontSize": 50.0,
+          "fontSource": "System",
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [
+            560.0,
+            74.0
+          ],
+          "lineSpacing": 1.0,
+          "localId": 1,
+          "opacity": 1.0,
+          "outlineColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "outlineEnabled": false,
+          "outlineWidth": 2.0,
+          "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.5,
+              0.5
+            ],
+            "position": [
+              0.0,
+              80.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -16494,7 +16653,7 @@
             ],
             "position": [
               0.0,
-              80.0
+              160.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -17415,11 +17574,11 @@
     "underwaterDistortion": 0.012000000104308128,
     "underwaterEnabled": true,
     "underwaterFogDensity": 0.03500000014901161,
-    "underwaterIntensity": 0.6499999761581421,
+    "underwaterIntensity": 0.5109999775886536,
     "underwaterTintColor": [
-      0.02978670224547386,
-      0.22847217321395874,
-      0.33474576473236084,
+      0.2304294854402542,
+      0.4612722098827362,
+      0.5847457647323608,
       1.0
     ],
     "vignetteEnabled": false,
