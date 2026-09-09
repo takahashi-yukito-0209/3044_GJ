@@ -66,7 +66,11 @@ namespace {
 			previousTime = keyframe.timeSeconds;
 		}
 		return clip.keyframes.front().timeSeconds == 0.0f &&
-			clip.keyframes.back().timeSeconds > 0.0f;
+			clip.keyframes.back().timeSeconds > 0.0f &&
+			(!clip.loop ||
+				(std::isfinite(clip.loopStartTimeSeconds) &&
+					clip.loopStartTimeSeconds >= 0.0f &&
+					clip.loopStartTimeSeconds < clip.keyframes.back().timeSeconds));
 	}
 
 	const SceneSpriteMotionClip* FindClip(
@@ -192,17 +196,27 @@ void SceneSpriteMotionSystem::Update(
 		}
 
 		const float duration = clip->keyframes.back().timeSeconds;
-		const float previousElapsed = runtime.elapsedSeconds;
-		runtime.elapsedSeconds = (std::min)(
-			runtime.elapsedSeconds + elapsedDelta,
-			duration
-		);
+		if (clip->loop) {
+			runtime.elapsedSeconds += elapsedDelta;
+			const float loopDuration = duration - clip->loopStartTimeSeconds;
+			if (runtime.elapsedSeconds > duration) {
+				runtime.elapsedSeconds = clip->loopStartTimeSeconds + std::fmod(
+					runtime.elapsedSeconds - clip->loopStartTimeSeconds,
+					loopDuration
+				);
+			}
+		} else {
+			runtime.elapsedSeconds = (std::min)(
+				runtime.elapsedSeconds + elapsedDelta,
+				duration
+			);
+		}
 		presentationOverrides_[entity.id] = SampleClip(
 			entity.id,
 			*clip,
 			runtime.elapsedSeconds
 		);
-		if (previousElapsed < duration && runtime.elapsedSeconds >= duration) {
+		if (!clip->loop && runtime.elapsedSeconds >= duration) {
 			runtime.clearAfterPresent = !clip->holdFinalPose;
 		}
 	}

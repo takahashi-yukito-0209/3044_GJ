@@ -1046,6 +1046,16 @@ bool SceneValidator::ValidateDocument(
 							"SpriteMotion clip must start at zero and end after zero: " +
 								clip.id);
 					}
+					if (clip.loop &&
+						(!std::isfinite(clip.loopStartTimeSeconds) ||
+							clip.loopStartTimeSeconds < 0.0f ||
+							clip.keyframes.empty() ||
+							clip.loopStartTimeSeconds >=
+								clip.keyframes.back().timeSeconds)) {
+						addIssue(SceneValidationSeverity::Error, entity.id,
+							"SpriteMotion loop start must be within the clip duration: " +
+								clip.id);
+					}
 				}
 				if (component.spriteMotionPlayOnStart &&
 					(component.spriteMotionStartClipId.empty() || !startClipFound)) {

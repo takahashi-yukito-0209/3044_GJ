@@ -11976,6 +11976,18 @@ void ImGuiManager::DrawInspectorWindow() {
 							LocalizedComponentWidgetLabel(editorLanguage_, "最終姿勢を保持###SpriteMotionHoldFinalPose"),
 							&clip.holdFinalPose
 						);
+						spriteMotionChanged |= ImGui::Checkbox(
+							LocalizedComponentWidgetLabel(editorLanguage_, "ループ###SpriteMotionLoop"),
+							&clip.loop
+						);
+						ImGui::BeginDisabled(!clip.loop);
+						spriteMotionChanged |= ImGui::DragFloat(
+							LocalizedComponentWidgetLabel(editorLanguage_, "ループ開始時間（秒）###SpriteMotionLoopStartTimeSeconds"),
+							&clip.loopStartTimeSeconds,
+							0.01f,
+							0.0f
+						);
+						ImGui::EndDisabled();
 						int removeKeyframeIndex = -1;
 						for (size_t keyframeIndex = 0;
 							keyframeIndex < clip.keyframes.size();
