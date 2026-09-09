@@ -5765,7 +5765,7 @@
               ]
             }
           ],
-          "hookColorEmissiveIntensity": 0.3499999940395355,
+          "hookColorEmissiveIntensity": 100.0,
           "hookLegendAutoLayout": true,
           "hookLegendColumnSpacing": 88.0,
           "hookLegendIconEntityIds": [
@@ -5915,7 +5915,7 @@
               "displayName": "Rank 1",
               "iconTexturePath": "resources/sashimi.png",
               "id": "rank_1",
-              "modelPath": "",
+              "modelPath": "Cube.obj",
               "scoreMultiplier": 1.0
             },
             {
@@ -5936,7 +5936,7 @@
               "displayName": "Rank 2",
               "iconTexturePath": "resources/yukke.png",
               "id": "rank_2",
-              "modelPath": "",
+              "modelPath": "Cube.obj",
               "scoreMultiplier": 2.0
             },
             {
@@ -5957,7 +5957,7 @@
               "displayName": "Rank 3",
               "iconTexturePath": "resources/negitoro.png",
               "id": "rank_3",
-              "modelPath": "",
+              "modelPath": "Cube.obj",
               "scoreMultiplier": 3.0
             },
             {
@@ -5978,7 +5978,7 @@
               "displayName": "Rank 4",
               "iconTexturePath": "resources/tunacanTex.png",
               "id": "rank_4",
-              "modelPath": "",
+              "modelPath": "Cube.obj",
               "scoreMultiplier": 4.0
             },
             {
