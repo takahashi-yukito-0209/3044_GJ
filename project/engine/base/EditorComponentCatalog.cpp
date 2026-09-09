@@ -28,7 +28,7 @@ namespace {
 		EditorComponentTag::Prefab
 	}};
 
-	constexpr std::array<EditorComponentDefinition, 48> kDefinitions = {{
+	constexpr std::array<EditorComponentDefinition, 49> kDefinitions = {{
 		{
 			"MeshRenderer", "3Dモデル表示", "Mesh Renderer",
 			"3DモデルとMaterialをSceneへ表示します。",
@@ -399,6 +399,15 @@ namespace {
 			"Stores the fishing result channel and tie-break policy for rank outcomes.",
 			EditorComponentCategory::Gameplay,
 			SceneContext, 34, -1, "FishingScoreAttackDirector",
+			EditorComponentTagBit(EditorComponentTag::UI) |
+			EditorComponentTagBit(EditorComponentTag::Reference)
+		},
+		{
+			"FishingResultPresenter", "釣り結果表示", "Fishing Result Presenter",
+			"釣り結果に応じた背景、中央Score、周囲の装飾を設定します。",
+			"Configures the result background, center score, and surrounding decorations.",
+			EditorComponentCategory::Gameplay,
+			SceneContext, 34, -1, "",
 			EditorComponentTagBit(EditorComponentTag::UI) |
 			EditorComponentTagBit(EditorComponentTag::Reference)
 		},

@@ -608,6 +608,38 @@ void RuntimeScene::Initialize()
 		Object3dCommon::GetInstance()->GetDxCommon(),
 		GetSceneAssetId() + "_" + std::to_string(GetSceneInstanceId())
 	);
+	if (initialDocument) {
+		fishingResultPresentationSystem_.Update(
+			*initialDocument,
+			initialExecutionContext && initialExecutionContext->IsPlaying()
+				? &initialExecutionContext->GetRuntimeSessionState()
+				: nullptr,
+			0.0f,
+			initialPlaying
+		);
+		if (!fishingResultPresentationSystem_.GetSpriteRequests().empty()) {
+			objectSystem_.ClearSpriteOverrides();
+			for (const SceneFishingResultPresentationSpriteRequest& request :
+				fishingResultPresentationSystem_.GetSpriteRequests()) {
+				objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
+					request.entityId,
+					request.texturePath,
+					request.size,
+					request.color,
+					request.visible
+				});
+			}
+			objectSystem_.SyncSprites(initialDocument);
+		}
+		if (!fishingResultPresentationSystem_.GetTextRequests().empty()) {
+			textRenderSystem_.ClearTextOverrides();
+			for (const SceneFishingResultPresentationTextRequest& request :
+				fishingResultPresentationSystem_.GetTextRequests()) {
+				textRenderSystem_.SetTextOverride(request.entityId, request.text);
+			}
+			textRenderSystem_.Sync(initialDocument);
+		}
+	}
 
 }
 
@@ -1246,6 +1278,18 @@ void RuntimeScene::Update(float deltaTime)
 			runtimeObjectBindings_
 		);
 	}
+	if (activeDocument) {
+		fishingResultPresentationSystem_.Update(
+			*activeDocument,
+			executionContext
+				? &executionContext->GetRuntimeSessionState()
+				: nullptr,
+			realDeltaTime,
+			playing
+		);
+	} else {
+		fishingResultPresentationSystem_.Clear();
+	}
 	runtimeEffectSystem_.SetWorldEffectsPaused(runtimeSceneId, worldEffectsPaused);
 	objectSystem_.ClearSpriteOverrides();
 	if (activeDocument) {
@@ -1291,6 +1335,16 @@ void RuntimeScene::Update(float deltaTime)
 			fishingScoreAttackSystem_,
 			GetSceneViewCamera()
 		);
+		for (const SceneFishingResultPresentationSpriteRequest& request :
+			fishingResultPresentationSystem_.GetSpriteRequests()) {
+			objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
+				request.entityId,
+				request.texturePath,
+				request.size,
+				request.color,
+				request.visible
+			});
+		}
 	}
 	objectSystem_.SyncSprites(activeDocument);
 	// Transform確定後に環境設定とDebug形状を登録し、描画時の状態を揃える。
@@ -1443,6 +1497,10 @@ void RuntimeScene::Update(float deltaTime)
 				textRenderSystem_.SetTextColorOverride(request.entityId, request.color);
 			}
 		}
+		for (const SceneFishingResultPresentationTextRequest& request :
+			fishingResultPresentationSystem_.GetTextRequests()) {
+			textRenderSystem_.SetTextOverride(request.entityId, request.text);
+		}
 		SceneEntity* statusText = postProcessProfileSystem_.GetStatusTextEntityId() != 0
 			? activeDocument->FindEntity(
 				postProcessProfileSystem_.GetStatusTextEntityId()
@@ -1571,6 +1629,14 @@ void RuntimeScene::UpdatePaused()
 		: nullptr;
 	SceneDocument* document = GetSceneDocument();
 	if (document) {
+		fishingResultPresentationSystem_.Update(
+			*document,
+			executionContext && executionContext->IsPlaying()
+				? &executionContext->GetRuntimeSessionState()
+				: nullptr,
+			0.0f,
+			executionContext && executionContext->IsPlaying()
+		);
 		fishingScoreAttackSystem_.ApplyHookVisualOverrides(
 			*document,
 			runtimeObjectBindings_
@@ -1596,6 +1662,16 @@ void RuntimeScene::UpdatePaused()
 			fishingScoreAttackSystem_,
 			GetSceneViewCamera()
 		);
+		for (const SceneFishingResultPresentationSpriteRequest& request :
+			fishingResultPresentationSystem_.GetSpriteRequests()) {
+			objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
+				request.entityId,
+				request.texturePath,
+				request.size,
+				request.color,
+				request.visible
+			});
+		}
 		objectSystem_.SyncSprites(document);
 	}
 	lightingSystem_.Sync(document);
@@ -1797,6 +1873,7 @@ void RuntimeScene::Finalize()
 	pauseMenuSystem_.Clear();
 	textMotionSystem_.Clear();
 	gameFlowSystem_.Clear();
+	fishingResultPresentationSystem_.Clear();
 	ClearTitleStartTransition();
 	audioSystem_.Clear();
 	postProcessProfileSystem_.Reset();
@@ -1836,6 +1913,7 @@ void RuntimeScene::PrepareForSceneTransition()
 	pauseMenuSystem_.Clear();
 	textMotionSystem_.Clear();
 	gameFlowSystem_.Clear();
+	fishingResultPresentationSystem_.Clear();
 	ClearTitleStartTransition();
 	SceneExecutionContext* executionContext = sceneManager_
 		? sceneManager_->GetExecutionContext()

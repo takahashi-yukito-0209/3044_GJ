@@ -6130,6 +6130,7 @@
           "randomSeed": 20260902,
           "randomizeSeedOnPlay": true,
           "resultPrefix": "RESULT ",
+          "finishText": "FINISH",
           "resultTextEntityId": 21,
           "scorePrefix": "SCORE ",
           "scoreTextEntityId": 19,

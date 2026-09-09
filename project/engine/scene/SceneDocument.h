@@ -401,6 +401,20 @@ struct SceneFishingHookBandSettings {
 	std::vector<float> hookMultiplierWeights;
 };
 
+struct SceneFishingResultVisualVariant {
+	std::string id;
+	std::string backgroundTexturePath;
+	std::string decorationTexturePath;
+};
+
+struct SceneFishingResultDecorationEntry {
+	uint64_t spriteEntityId = 0;
+	float minScaleMultiplier = 0.85f;
+	float maxScaleMultiplier = 1.15f;
+	float periodSeconds = 2.0f;
+	float phaseOffset = 0.0f;
+};
+
 struct SceneComponent {
 	SceneComponent() = default;
 	SceneComponent(const char* componentType) : type(componentType ? componentType : "") {}
@@ -546,8 +560,19 @@ struct SceneComponent {
 	std::string fishingScorePrefix = "SCORE ";
 	std::string fishingMultiplierPrefix = "MULTIPLIER ";
 	std::string fishingResultPrefix = "RESULT ";
+	std::string fishingFinishText;
 	std::string fishingResultChannelId = "fishing.score_attack";
 	std::string fishingResultTieBreakMode = "HigherRank";
+	std::string fishingResultPresentationChannelId = "fishing.score_attack";
+	uint64_t fishingResultPresentationBackgroundEntityId = 0;
+	uint64_t fishingResultPresentationScoreTextEntityId = 0;
+	std::string fishingResultPresentationScorePrefix = "SCORE ";
+	std::string fishingResultPresentationFallbackVariantId = "rank_1";
+	bool fishingResultPresentationIncludeSharkInWinnerSelection = false;
+	std::string fishingResultPresentationSharkVariantId = "shark";
+	std::vector<SceneFishingResultVisualVariant> fishingResultPresentationVariants;
+	std::vector<SceneFishingResultDecorationEntry>
+		fishingResultPresentationDecorations;
 	bool fishingUseFormationCapsuleCollision = false;
 	bool fishingFormationOutlineVisible = false;
 	Vector4 fishingFormationOutlineColor = { 0.1f, 0.9f, 1.0f, 1.0f };

@@ -16,6 +16,7 @@
 #include "system/SceneHitStopSystem.h"
 #include "system/SceneGameFlowSystem.h"
 #include "system/SceneFishingScoreAttackSystem.h"
+#include "system/SceneFishingResultPresentationSystem.h"
 #include "system/SceneEffectRenderSystem.h"
 #include "system/SceneEnvironmentSystem.h"
 #include "system/SceneLightingSystem.h"
@@ -130,6 +131,7 @@ private:
 	SceneEnemySpawnerSystem enemySpawnerSystem_;
 	SceneGameFlowSystem gameFlowSystem_;
 	SceneFishingScoreAttackSystem fishingScoreAttackSystem_;
+	SceneFishingResultPresentationSystem fishingResultPresentationSystem_;
 	SceneEventSystem eventSystem_;
 	SceneHitReactionSystem hitReactionSystem_;
 	SceneHitStopSystem hitStopSystem_;

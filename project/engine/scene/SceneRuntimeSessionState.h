@@ -31,6 +31,8 @@ struct SceneFishingResultRecord {
 	std::string winningRankId;
 	int winningRankIndex = -1;
 	uint64_t winningFishWeightedCount = 0;
+	uint64_t sharkHitCount = 0;
+	uint64_t sharkFishWeightedCount = 0;
 	std::vector<SceneFishingResultRankRecord> ranks;
 };
 

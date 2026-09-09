@@ -2005,6 +2005,18 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 				shark->fishingSharkHitCooldownSeconds,
 				0.0f
 			);
+			const uint64_t maximumCount = (std::numeric_limits<uint64_t>::max)();
+			if (sharkHitCount_ < maximumCount) {
+				++sharkHitCount_;
+			}
+			const uint64_t fishWeightedCount = static_cast<uint64_t>(
+				(std::max)(roundFishCount_, 0)
+			);
+			if (fishWeightedCount > maximumCount - sharkFishWeightedCount_) {
+				sharkFishWeightedCount_ = maximumCount;
+			} else {
+				sharkFishWeightedCount_ += fishWeightedCount;
+			}
 			if (!hasSharkPenaltyWorldPosition && sharkBinding->object) {
 				const Matrix4x4& sharkWorld = sharkBinding->object->GetWorldMatrix();
 				sharkPenaltyWorldPosition = {
@@ -3579,6 +3591,8 @@ void SceneFishingScoreAttackSystem::InitializeResultTracking(
 	resultChannelId_.clear();
 	resultTieBreakMode_ = "HigherRank";
 	resultRankRecords_.clear();
+	sharkHitCount_ = 0;
+	sharkFishWeightedCount_ = 0;
 	resultSessionBeginRequested_ = false;
 	resultSessionBeginRequest_ = {};
 	resultSessionPublishRequested_ = false;
@@ -4934,6 +4948,8 @@ void SceneFishingScoreAttackSystem::Finish(
 		);
 		record.totalScore = totalScore_;
 		record.elapsedSeconds = elapsedSeconds_;
+		record.sharkHitCount = sharkHitCount_;
+		record.sharkFishWeightedCount = sharkFishWeightedCount_;
 		record.ranks.assign(
 			resultRankRecords_.begin(),
 			resultRankRecords_.begin() + record.activeRankCount
@@ -5127,7 +5143,9 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 	if (state_ == SceneFishingScoreAttackState::Result) {
 		addText(
 			director.fishingResultTextEntityId,
-			director.fishingResultPrefix + std::to_string(totalScore_)
+			director.fishingFinishText.empty()
+				? director.fishingResultPrefix + std::to_string(totalScore_)
+				: director.fishingFinishText
 		);
 	} else if (scorePopup_.active && scorePopup_.entityId != 0) {
 		textRequests_.push_back({
@@ -5241,6 +5259,8 @@ void SceneFishingScoreAttackSystem::Clear() {
 	resultChannelId_.clear();
 	resultTieBreakMode_ = "HigherRank";
 	resultRankRecords_.clear();
+	sharkHitCount_ = 0;
+	sharkFishWeightedCount_ = 0;
 	resultSessionBeginRequested_ = false;
 	resultSessionBeginRequest_ = {};
 	resultSessionPublishRequested_ = false;
