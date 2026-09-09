@@ -1557,7 +1557,7 @@
           1.0
         ],
         "translate": [
-          -68.0,
+          -120.0,
           -144.0,
           0.0
         ]
@@ -1709,7 +1709,7 @@
           1.0
         ],
         "translate": [
-          -68.0,
+          -120.0,
           -112.0,
           0.0
         ]
@@ -1861,7 +1861,7 @@
           1.0
         ],
         "translate": [
-          -68.0,
+          -120.0,
           -80.0,
           0.0
         ]
@@ -2013,7 +2013,7 @@
           1.0
         ],
         "translate": [
-          -68.0,
+          -120.0,
           -48.0,
           0.0
         ]
@@ -5665,6 +5665,11 @@
           ],
           "fishMultiplierBase": 1.0,
           "fishMultiplierPerAdditionalFish": 0.30000001192092896,
+          "formationContactCooldownSeconds": 0.10000000149011612,
+          "formationContactDurationSeconds": 0.5,
+          "formationContactPushSpeed": 20.0,
+          "formationContactResponseMaxFishCount": 3,
+          "formationContactTurnSpeedDegrees": 180.0,
           "formationOutlineBloomIntensity": 3.0,
           "formationOutlineColor": [
             1.0,
@@ -5694,6 +5699,8 @@
             0.6499999761581421
           ],
           "formationParticleStartSize": 2.0,
+          "formationRockVisualClearance": 1.0,
+          "formationSlideAssistStrength": 1.0,
           "hookBands": [
             {
               "distanceMultiplier": 0.0,
@@ -5800,7 +5807,7 @@
             24.0
           ],
           "hookLegendLayoutCenter": [
-            -68.0,
+            -120.0,
             -96.0
           ],
           "hookLegendPrefix": "x",
@@ -6150,13 +6157,6 @@
           "timerRunsDuringFishSelection": false,
           "timerTextEntityId": 18,
           "type": "FishingScoreAttackDirector",
-          "formationSlideAssistStrength": 1.0,
-          "formationRockVisualClearance": 1.0,
-          "formationContactResponseMaxFishCount": 3,
-          "formationContactTurnSpeedDegrees": 180.0,
-          "formationContactPushSpeed": 20.0,
-          "formationContactDurationSeconds": 0.5,
-          "formationContactCooldownSeconds": 0.1,
           "useFormationCapsuleCollision": true,
           "useHookBandSettings": true,
           "waterVolumeEntityId": 3
@@ -12559,7 +12559,7 @@
       }
     },
     {
-      "active": false,
+      "active": true,
       "components": [
         {
           "bgmFadeSeconds": 0.5,
@@ -12829,7 +12829,7 @@
           1.0
         ],
         "translate": [
-          -164.0,
+          -216.0,
           -177.0,
           0.0
         ]
@@ -12907,7 +12907,7 @@
           1.0
         ],
         "translate": [
-          -164.0,
+          -216.0,
           -145.0,
           0.0
         ]
@@ -12985,7 +12985,7 @@
           1.0
         ],
         "translate": [
-          -164.0,
+          -216.0,
           -113.0,
           0.0
         ]
@@ -13063,7 +13063,7 @@
           1.0
         ],
         "translate": [
-          -164.0,
+          -216.0,
           -81.0,
           0.0
         ]
