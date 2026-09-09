@@ -1901,7 +1901,28 @@ void SceneAgentSystem::Update(
 			turnLerp
 		);
 
-		position = Math::Add(position, Math::Multiply(runtime.velocity, dt));
+		const Vector3 movement = Math::Multiply(runtime.velocity, dt);
+		const bool isFishingCatchEffect =
+			behavior.agentGroupName.rfind("FishingCatchEffect", 0) == 0;
+		if (hasAttractor && isFishingCatchEffect) {
+			const Vector3 toAttractor = Math::Subtract(
+				attractor.position, position
+			);
+			const float distanceToAttractor = Math::Length(toAttractor);
+			const float movementDistance = Math::Length(movement);
+			if (
+				distanceToAttractor <= movementDistance &&
+				Math::Dot(movement, toAttractor) > 0.0f
+			) {
+				// 演出魚は高速でも個別追従先を通り越さず、隊形を保つ。
+				position = attractor.position;
+				runtime.velocity = {};
+			} else {
+				position = Math::Add(position, movement);
+			}
+		} else {
+			position = Math::Add(position, movement);
+		}
 		if (bounds.valid) {
 			position = ClampToBounds(position, bounds);
 		}
@@ -2142,6 +2163,11 @@ void SceneAgentSystem::ResetTeam(
 	}
 }
 
+void SceneAgentSystem::ResetAgent(uint64_t entityId) {
+	if (entityId != 0) {
+		agentRuntimes_.erase(entityId);
+	}
+}
 
 void SceneAgentSystem::Clear() {
 	agentRuntimes_.clear();

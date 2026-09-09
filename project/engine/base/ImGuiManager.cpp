@@ -981,6 +981,13 @@ namespace {
 			, { "Flock Decision Interval", "Flock判断間隔" }, { "Flock Acceleration", "Flock加速度" }
 			, { "Flock Max Turn Rate", "Flock最大旋回速度" }, { "Return Strength", "復帰の強さ" }
 			, { "Shark Route Debug Visible", "サメの予定ルートを表示" }
+			, { "Formation Slide Assist Strength", "岩沿いスライド補助" }
+			, { "Formation Rock Visual Clearance", "岩見た目安全余白" }
+			, { "Formation Contact Response Max Fish Count", "岩接触反発 最大魚数" }
+			, { "Formation Contact Turn Speed Degrees", "岩接触反発 旋回速度（度/秒）" }
+			, { "Formation Contact Push Speed", "岩接触反発 押し出し速度" }
+			, { "Formation Contact Duration Seconds", "岩接触反発 継続時間（秒）" }
+			, { "Formation Contact Cooldown Seconds", "岩接触反発 再作動待ち（秒）" }
 			, { "Max Distance", "最大距離" }, { "Use Team Heading", "Team Headingを使用" }
 			, { "Team Heading Direction", "Team Heading方向" }, { "Team Heading Weight", "Team Headingの強さ" }
 			, { "Team Heading Follow Speed", "Team Heading追従速度" }, { "Pitch From Vertical Velocity", "垂直速度からPitchを設定" }
@@ -14333,6 +14340,76 @@ void ImGuiManager::DrawInspectorWindow() {
 					),
 					&component.fishingUseFormationCapsuleCollision
 				);
+				fishingChanged |= ImGui::SliderFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Slide Assist Strength"
+					),
+					&component.fishingFormationSlideAssistStrength,
+					0.0f,
+					1.0f
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Rock Visual Clearance"
+					),
+					&component.fishingFormationRockVisualClearance,
+					0.05f,
+					0.0f,
+					100.0f
+				);
+				const int contactResponseMaxFishCount = (std::max)(
+					0, component.fishingMaxSelectableFishCount
+				);
+				if (component.fishingFormationContactResponseMaxFishCount >
+					contactResponseMaxFishCount) {
+					component.fishingFormationContactResponseMaxFishCount =
+						contactResponseMaxFishCount;
+					fishingChanged = true;
+				}
+				fishingChanged |= ImGui::SliderInt(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Contact Response Max Fish Count"
+					),
+					&component.fishingFormationContactResponseMaxFishCount,
+					0,
+					contactResponseMaxFishCount
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Contact Turn Speed Degrees"
+					),
+					&component.fishingFormationContactTurnSpeedDegrees,
+					1.0f,
+					0.0f,
+					720.0f
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Contact Push Speed"
+					),
+					&component.fishingFormationContactPushSpeed,
+					0.1f,
+					0.0f,
+					200.0f
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Contact Duration Seconds"
+					),
+					&component.fishingFormationContactDurationSeconds,
+					0.01f,
+					0.0f,
+					2.0f
+				);
+				fishingChanged |= ImGui::DragFloat(
+					LocalizedComponentWidgetLabel(
+						editorLanguage_, "Formation Contact Cooldown Seconds"
+					),
+					&component.fishingFormationContactCooldownSeconds,
+					0.01f,
+					0.0f,
+					2.0f
+				);
 				fishingChanged |= ImGui::Checkbox(
 					LocalizedComponentWidgetLabel(
 						editorLanguage_, "Formation Outline Visible"
@@ -23600,6 +23677,22 @@ void ImGuiManager::DrawFishingScoreAttackConsoleWindow() {
 	}
 
 	if (ImGui::TreeNodeEx("HudFormation###FishingConsoleHudFormation", ImGuiTreeNodeFlags_DefaultOpen, text("HUD・群れ", "HUD & Formation"))) {
+		changed |= ImGui::SliderFloat(text("岩沿いスライド補助", "Formation Slide Assist Strength"), &director->fishingFormationSlideAssistStrength, 0.0f, 1.0f);
+		changed |= ImGui::DragFloat(text("岩見た目安全余白", "Formation Rock Visual Clearance"), &director->fishingFormationRockVisualClearance, 0.05f, 0.0f, 100.0f);
+		const int contactResponseMaxFishCount = (std::max)(
+			0, director->fishingMaxSelectableFishCount
+		);
+		if (director->fishingFormationContactResponseMaxFishCount >
+			contactResponseMaxFishCount) {
+			director->fishingFormationContactResponseMaxFishCount =
+				contactResponseMaxFishCount;
+			changed = true;
+		}
+		changed |= ImGui::SliderInt(text("岩接触反発 最大魚数", "Formation Contact Response Max Fish Count"), &director->fishingFormationContactResponseMaxFishCount, 0, contactResponseMaxFishCount);
+		changed |= ImGui::DragFloat(text("岩接触反発 旋回速度（度/秒）", "Formation Contact Turn Speed Degrees"), &director->fishingFormationContactTurnSpeedDegrees, 1.0f, 0.0f, 720.0f);
+		changed |= ImGui::DragFloat(text("岩接触反発 押し出し速度", "Formation Contact Push Speed"), &director->fishingFormationContactPushSpeed, 0.1f, 0.0f, 200.0f);
+		changed |= ImGui::DragFloat(text("岩接触反発 継続時間（秒）", "Formation Contact Duration Seconds"), &director->fishingFormationContactDurationSeconds, 0.01f, 0.0f, 2.0f);
+		changed |= ImGui::DragFloat(text("岩接触反発 再作動待ち（秒）", "Formation Contact Cooldown Seconds"), &director->fishingFormationContactCooldownSeconds, 0.01f, 0.0f, 2.0f);
 		changed |= ImGui::Checkbox(text("群れのアウトラインを表示", "Formation Outline Visible"), &director->fishingFormationOutlineVisible);
 		changed |= ImGui::ColorEdit4(text("群れのアウトライン色", "Formation Outline Color"), &director->fishingFormationOutlineColor.x);
 		changed |= ImGui::DragFloat(text("枠の発光強度", "Formation Outline Bloom Intensity"), &director->fishingFormationOutlineBloomIntensity, 0.1f, 0.0f, 32.0f);

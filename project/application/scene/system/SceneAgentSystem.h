@@ -32,6 +32,8 @@ public:
 		SceneAgentFormationCapsuleState& state
 	) const;
 	void ResetTeam(SceneDocument& document, const std::string& teamName);
+	/// <summary>指定した個体の移動Runtimeを破棄し、次回更新で初期化し直す。</summary>
+	void ResetAgent(uint64_t entityId);
 	void Clear();
 
 private:

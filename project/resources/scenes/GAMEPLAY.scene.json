@@ -6150,6 +6150,13 @@
           "timerRunsDuringFishSelection": false,
           "timerTextEntityId": 18,
           "type": "FishingScoreAttackDirector",
+          "formationSlideAssistStrength": 1.0,
+          "formationRockVisualClearance": 1.0,
+          "formationContactResponseMaxFishCount": 3,
+          "formationContactTurnSpeedDegrees": 180.0,
+          "formationContactPushSpeed": 20.0,
+          "formationContactDurationSeconds": 0.5,
+          "formationContactCooldownSeconds": 0.1,
           "useFormationCapsuleCollision": true,
           "useHookBandSettings": true,
           "waterVolumeEntityId": 3
@@ -6196,10 +6203,6 @@
                     "mode": "Any",
                     "terms": [
                       {
-                        "input": "W",
-                        "phase": "Held"
-                      },
-                      {
                         "input": "UP",
                         "phase": "Held"
                       }
@@ -6222,7 +6225,7 @@
                 0.0
               ],
               "textMotionClipId": "",
-              "triggerKey": "W",
+              "triggerKey": "UP",
               "triggerOnce": false,
               "triggerType": "OnKeyPressed"
             },
@@ -6259,10 +6262,6 @@
                     "mode": "Any",
                     "terms": [
                       {
-                        "input": "S",
-                        "phase": "Held"
-                      },
-                      {
                         "input": "DOWN",
                         "phase": "Held"
                       }
@@ -6285,7 +6284,7 @@
                 0.0
               ],
               "textMotionClipId": "",
-              "triggerKey": "S",
+              "triggerKey": "DOWN",
               "triggerOnce": false,
               "triggerType": "OnKeyPressed"
             }
