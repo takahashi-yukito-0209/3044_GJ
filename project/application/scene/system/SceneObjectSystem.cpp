@@ -727,6 +727,65 @@ void SceneObjectSystem::BuildBindings(
 	}
 }
 
+bool SceneObjectSystem::ValidateBindings(
+	const SceneDocument& document,
+	const std::vector<SceneRuntimeObjectBinding>& bindings,
+	std::string& diagnostic
+) const {
+	diagnostic.clear();
+	const std::vector<SceneEntity>& entities = document.GetEntities();
+	if (bindings.size() != entities.size()) {
+		diagnostic = "binding count=" + std::to_string(bindings.size()) +
+			" entity count=" + std::to_string(entities.size());
+		return false;
+	}
+
+	std::unordered_set<uint64_t> entityIds;
+	entityIds.reserve(bindings.size());
+	for (const SceneRuntimeObjectBinding& binding : bindings) {
+		if (binding.entityId == 0) {
+			diagnostic = "binding entityId is zero";
+			return false;
+		}
+		if (!entityIds.insert(binding.entityId).second) {
+			diagnostic = "duplicate binding entityId=" +
+				std::to_string(binding.entityId);
+			return false;
+		}
+
+		const SceneEntity* entity = document.FindEntity(binding.entityId);
+		if (!entity || entity != binding.entity) {
+			diagnostic = "entity pointer mismatch entityId=" +
+				std::to_string(binding.entityId);
+			return false;
+		}
+
+		const ModelRuntime* runtime = FindModelRuntime(binding.entityId);
+		if (!runtime || binding.object != runtime->object.get()) {
+			diagnostic = "object pointer mismatch entityId=" +
+				std::to_string(binding.entityId);
+			return false;
+		}
+		const Collider* expectedCollider = runtime->hasCollider
+			? runtime->collider
+			: nullptr;
+		if (binding.collider != expectedCollider) {
+			diagnostic = "collider pointer mismatch entityId=" +
+				std::to_string(binding.entityId);
+			return false;
+		}
+		const PhysicsBody* expectedBody = runtime->hasPhysicsBody
+			? &runtime->physicsBody
+			: nullptr;
+		if (binding.body != expectedBody) {
+			diagnostic = "body pointer mismatch entityId=" +
+				std::to_string(binding.entityId);
+			return false;
+		}
+	}
+	return true;
+}
+
 void SceneObjectSystem::ApplyRenderCamera(Camera* camera) {
 	Object3dCommon::GetInstance()->SetDefaultCamera(camera);
 	for (auto& [entityId, runtime] : models_) {

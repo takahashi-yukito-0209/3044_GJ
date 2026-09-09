@@ -15,6 +15,7 @@
 #include "../../engine/3d/Object3d.h"
 #include "../../engine/math/Math.h"
 #include "../../engine/particle/ParticleManager.h"
+#include "../../engine/utility/Logger.h"
 #include "../player/Player.h"
 
 #include <algorithm>
@@ -957,6 +958,7 @@ void RuntimeScene::Update(float deltaTime)
 	}
 
 	// Objectが実体を所有し、以降のSystemは再構築したbindingsだけを借用する。
+	bool runtimeBindingsValid = true;
 	objectSystem_.SyncModels(
 		activeDocument,
 		physicsSystem_,
@@ -969,6 +971,33 @@ void RuntimeScene::Update(float deltaTime)
 			*activeDocument,
 			runtimeObjectBindings_
 		);
+		std::string bindingDiagnostic;
+		if (!objectSystem_.ValidateBindings(
+			*activeDocument,
+			runtimeObjectBindings_,
+			bindingDiagnostic
+		)) {
+			Logger::Log(
+				"Runtime binding validation failed after BuildBindings: " +
+				bindingDiagnostic + "\n"
+			);
+			objectSystem_.BuildBindings(
+				*activeDocument,
+				runtimeObjectBindings_
+			);
+			bindingDiagnostic.clear();
+			if (!objectSystem_.ValidateBindings(
+				*activeDocument,
+				runtimeObjectBindings_,
+				bindingDiagnostic
+			)) {
+				Logger::Log(
+					"Runtime binding rebuild failed after BuildBindings: " +
+					bindingDiagnostic + "\n"
+				);
+				runtimeBindingsValid = false;
+			}
+		}
 		if (playing && GetSceneAssetId() == "title") {
 			titleBoatMotionSystem_.Update(
 				*activeDocument,
@@ -1116,12 +1145,42 @@ void RuntimeScene::Update(float deltaTime)
 		);
 	}
 	if (activeDocument && (!playing || physicsDeltaTime > 0.0f)) {
-		physicsSystem_.Step(
-			player_,
+		bool physicsBindingsValid = runtimeBindingsValid;
+		std::string bindingDiagnostic;
+		if (!objectSystem_.ValidateBindings(
+			*activeDocument,
 			runtimeObjectBindings_,
-			physicsDeltaTime,
-			playing
-		);
+			bindingDiagnostic
+		)) {
+			Logger::Log(
+				"Runtime binding validation failed before Physics Step: " +
+				bindingDiagnostic + "\n"
+			);
+			objectSystem_.BuildBindings(
+				*activeDocument,
+				runtimeObjectBindings_
+			);
+			bindingDiagnostic.clear();
+			physicsBindingsValid = objectSystem_.ValidateBindings(
+				*activeDocument,
+				runtimeObjectBindings_,
+				bindingDiagnostic
+			);
+			if (!physicsBindingsValid) {
+				Logger::Log(
+					"Runtime binding rebuild failed before Physics Step: " +
+					bindingDiagnostic + "\n"
+				);
+			}
+		}
+		if (physicsBindingsValid) {
+			physicsSystem_.Step(
+				player_,
+				runtimeObjectBindings_,
+				physicsDeltaTime,
+				playing
+			);
+		}
 	}
 	if (player_ && playing && physicsDeltaTime > 0.0f) {
 		player_->PostPhysicsUpdate();
