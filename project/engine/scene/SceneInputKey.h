@@ -80,6 +80,7 @@ inline constexpr SceneInputKeyDefinition kSceneInputKeyDefinitions[] = {
 	{ "F9", DIK_F9 }, { "F10", DIK_F10 },
 	{ "ENTER", DIK_RETURN },
 	{ "SPACE", DIK_SPACE }, { "ESCAPE", DIK_ESCAPE }, { "TAB", DIK_TAB },
+	{ "UP", DIK_UP }, { "DOWN", DIK_DOWN },
 	{ "A", DIK_A }, { "B", DIK_B }, { "C", DIK_C }, { "D", DIK_D },
 	{ "E", DIK_E }, { "F", DIK_F }, { "G", DIK_G }, { "H", DIK_H },
 	{ "I", DIK_I }, { "J", DIK_J }, { "K", DIK_K }, { "L", DIK_L },

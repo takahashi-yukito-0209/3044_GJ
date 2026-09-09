@@ -673,6 +673,9 @@ void RuntimeScene::Update(float deltaTime)
 						: ScenePauseOperation::Resume
 				} });
 			}
+			if (pauseMenuResult.respawnRequested) {
+				fishingScoreAttackSystem_.RequestPlayerRespawn();
+			}
 			if (!pauseMenuResult.requestedSceneId.empty()) {
 				sceneManager_->RequestSceneTransition(
 					pauseMenuResult.requestedSceneId
