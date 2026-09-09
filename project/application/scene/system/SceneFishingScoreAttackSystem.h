@@ -255,6 +255,8 @@ private:
 	);
 	void Finish(SceneDocument& document, const SceneComponent& director);
 	void Fault(SceneDocument& document, const SceneComponent& director, std::string diagnostic);
+	void ResetFormationContactResponse();
+	void EndFormationContactResponse(float cooldownSeconds);
 	void SetFishPreview(SceneDocument& document, const SceneComponent& director);
 	void DeactivatePoolHooks(SceneDocument& document, const SceneComponent& director);
 	void LoadFormationParticleTuning(const SceneComponent& director);
@@ -437,6 +439,11 @@ private:
 	float formationNoProgressReferenceYaw_ = 0.0f;
 	float formationNoProgressSeconds_ = 0.0f;
 	bool hasFormationNoProgressReference_ = false;
+	bool formationContactResponseActive_ = false;
+	Vector2 formationContactResponseNormal_{};
+	float formationContactResponseTargetYaw_ = 0.0f;
+	float formationContactResponseRemainingSeconds_ = 0.0f;
+	float formationContactResponseCooldownSeconds_ = 0.0f;
 	SceneFishingScoreAttackPlayerConstraintRequest playerConstraintRequest_{};
 	bool hasPlayerConstraintRequest_ = false;
 	bool hasPlayerResetRequest_ = false;

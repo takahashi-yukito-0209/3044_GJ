@@ -599,6 +599,13 @@ struct SceneComponent {
 	std::vector<SceneFishingResultDecorationEntry>
 		fishingResultPresentationDecorations;
 	bool fishingUseFormationCapsuleCollision = false;
+	float fishingFormationSlideAssistStrength = 0.0f;
+	float fishingFormationRockVisualClearance = 0.0f;
+	int fishingFormationContactResponseMaxFishCount = 0;
+	float fishingFormationContactTurnSpeedDegrees = 180.0f;
+	float fishingFormationContactPushSpeed = 20.0f;
+	float fishingFormationContactDurationSeconds = 0.5f;
+	float fishingFormationContactCooldownSeconds = 0.1f;
 	bool fishingFormationOutlineVisible = false;
 	Vector4 fishingFormationOutlineColor = { 0.1f, 0.9f, 1.0f, 1.0f };
 	float fishingFormationOutlineBloomIntensity = 1.0f;
