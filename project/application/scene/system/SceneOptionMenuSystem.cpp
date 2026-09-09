@@ -59,18 +59,6 @@ namespace {
 		return static_cast<float>(clampedPercent) / 100.0f;
 	}
 
-	/// <summary>
-	/// 選択表示を含む音量表示文字列を作成します。
-	/// </summary>
-	std::string BuildVolumeText(
-		bool selected,
-		const char* label,
-		int volumePercent
-	) {
-		const char* marker = selected ? "> " : "  "; // 選択中を示す接頭辞。
-		return std::string(marker) + label + " < " +
-			std::to_string(volumePercent) + "% >";
-	}
 }
 
 SceneOptionMenuResult SceneOptionMenuSystem::Update(
@@ -125,25 +113,9 @@ void SceneOptionMenuSystem::ApplyTextOverrides(
 
 	const int itemCount = static_cast<int>(menuItems.size()); // 選択可能な項目数。
 	const int selectedIndex = std::clamp(selectedIndex_, 0, itemCount - 1); // 表示用の選択Index。
-	for (int index = 0; index < itemCount; ++index) { // 表示を更新する項目Index。
+	for (int index = 0; index < itemCount; ++index) { // 選択色を更新する項目Index。
 		const MenuItem& item = menuItems[index]; // 表示対象のメニュー項目。
 		const bool selected = index == selectedIndex; // この項目が選択中か。
-		if (item.actionId == "BGM") {
-			textRenderSystem.SetTextOverride(
-				item.entityId,
-				BuildVolumeText(selected, "BGM VOLUME", gBgmVolumePercent)
-			);
-		} else if (item.actionId == "SE") {
-			textRenderSystem.SetTextOverride(
-				item.entityId,
-				BuildVolumeText(selected, "SE  VOLUME", gSeVolumePercent)
-			);
-		} else {
-			textRenderSystem.SetTextOverride(
-				item.entityId,
-				selected ? "> BACK" : "  BACK"
-			);
-		}
 		textRenderSystem.SetTextColorOverride(
 			item.entityId,
 			selected ? kSelectedColor : kNormalColor

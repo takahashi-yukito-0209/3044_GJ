@@ -27,8 +27,7 @@ public:
 	);
 	void ApplyTextOverrides(
 		const SceneDocument& document,
-		SceneTextRenderSystem& textRenderSystem,
-		const SceneOptionMenuSystem& optionMenuSystem
+		SceneTextRenderSystem& textRenderSystem
 	) const;
 	void Clear();
 

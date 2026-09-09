@@ -135,8 +135,7 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 
 void ScenePauseMenuSystem::ApplyTextOverrides(
 	const SceneDocument& document,
-	SceneTextRenderSystem& textRenderSystem,
-	const SceneOptionMenuSystem& optionMenuSystem
+	SceneTextRenderSystem& textRenderSystem
 ) const {
 	const auto applyVisibility = [this, &document, &textRenderSystem](
 		const char* name,
@@ -161,22 +160,12 @@ void ScenePauseMenuSystem::ApplyTextOverrides(
 			visible ? presentationProgress : 0.0f
 		);
 	};
-	const SceneEntity* header = document.FindEntityByName("PauseMenuHeaderText");
-	if (header && SceneEntityQuery::IsEntityActiveInHierarchy(document, *header) &&
-		SceneEntityQuery::FindEnabledComponent(*header, "TextRenderer")) {
-		textRenderSystem.SetTextOverride(
-			header->id, optionOpen_ ? "OPTION" : "PAUSE"
-		);
-	}
-	const SceneEntity* guide = document.FindEntityByName("PauseMenuGuideText");
-	if (guide && SceneEntityQuery::IsEntityActiveInHierarchy(document, *guide) &&
-		SceneEntityQuery::FindEnabledComponent(*guide, "TextRenderer")) {
-		textRenderSystem.SetTextOverride(
-			guide->id,
-			optionOpen_
-				? "W/S or UP/DOWN : SELECT    A/D or LEFT/RIGHT : CHANGE    ESCAPE : BACK"
-				: "W/S or UP/DOWN : SELECT    ENTER : CONFIRM    ESCAPE : RESUME"
-		);
+	if (optionOpen_) {
+		const SceneEntity* header = document.FindEntityByName("PauseMenuHeaderText");
+		if (header && SceneEntityQuery::IsEntityActiveInHierarchy(document, *header) &&
+			SceneEntityQuery::FindEnabledComponent(*header, "TextRenderer")) {
+			textRenderSystem.SetTextOverride(header->id, "おぷしょん");
+		}
 	}
 	applyVisibility("PauseMenuHeaderText", true, 0);
 	applyVisibility("PauseMenuGuideText", true, 4);
@@ -211,17 +200,6 @@ void ScenePauseMenuSystem::ApplyTextOverrides(
 		textRenderSystem.SetTextColorOverride(
 			menuItems[index].entityId, selected ? kSelectedColor : kNormalColor
 		);
-		if (optionOpen_ && index == 0) {
-			textRenderSystem.SetTextOverride(
-				menuItems[index].entityId,
-				"BGM VOLUME < " + std::to_string(optionMenuSystem.GetBgmVolumePercent()) + "% >"
-			);
-		} else if (optionOpen_ && index == 1) {
-			textRenderSystem.SetTextOverride(
-				menuItems[index].entityId,
-				"SE  VOLUME < " + std::to_string(optionMenuSystem.GetSeVolumePercent()) + "% >"
-			);
-		}
 	}
 }
 

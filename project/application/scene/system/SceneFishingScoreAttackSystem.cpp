@@ -5137,7 +5137,7 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 		state_ == SceneFishingScoreAttackState::Navigating &&
 			hasCurrentPositionMultiplier_
 			? director.fishingMultiplierPrefix +
-				FormatOneDecimal(currentPositionMultiplier_) + "x"
+				FormatOneDecimal(currentPositionMultiplier_)
 			: std::string{}
 	);
 	if (state_ == SceneFishingScoreAttackState::Result) {

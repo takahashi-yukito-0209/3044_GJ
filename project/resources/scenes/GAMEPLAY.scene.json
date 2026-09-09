@@ -1272,7 +1272,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 24.0,
           "fontSource": "System",
@@ -1423,7 +1423,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1574,7 +1574,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1725,7 +1725,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -1876,7 +1876,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2027,7 +2027,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2178,7 +2178,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2329,7 +2329,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2480,7 +2480,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2631,7 +2631,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -2782,7 +2782,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 22.0,
           "fontSource": "System",
@@ -5617,7 +5617,8 @@
           "distanceMultiplierStep": 0.20000000298023224,
           "durationSeconds": 60.0,
           "enabled": true,
-          "fishCountPrefix": "FISH ",
+          "finishText": "FINISH",
+          "fishCountPrefix": "さかな ",
           "fishCountTextEntityId": 17,
           "fishEntityIds": [
             6,
@@ -6124,18 +6125,17 @@
           "hooksPerDistanceBand": 2,
           "localId": 1,
           "maxSelectableFishCount": 30,
-          "multiplierPrefix": "MULTIPLIER ",
+          "multiplierPrefix": "ばいりつ ",
           "multiplierTextEntityId": 20,
           "playerEntityId": 5,
           "randomSeed": 20260902,
           "randomizeSeedOnPlay": true,
           "resultPrefix": "RESULT ",
-          "finishText": "FINISH",
           "resultTextEntityId": 21,
-          "scorePrefix": "SCORE ",
+          "scorePrefix": "すこあ ",
           "scoreTextEntityId": 19,
           "sharkRouteDebugVisible": true,
-          "timerPrefix": "TIME ",
+          "timerPrefix": "じかん ",
           "timerRunsDuringFishSelection": false,
           "timerTextEntityId": 18,
           "type": "FishingScoreAttackDirector",
@@ -6913,7 +6913,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -6995,7 +6995,7 @@
             3.0
           ],
           "sortingOrder": 100,
-          "text": "FISH 0",
+          "text": "さかな 0",
           "type": "TextRenderer",
           "verticalAlignment": "Top",
           "viewportAnchor": [
@@ -7064,7 +7064,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -7146,7 +7146,7 @@
             3.0
           ],
           "sortingOrder": 100,
-          "text": "TIME 60.0",
+          "text": "じかん 60.0",
           "type": "TextRenderer",
           "verticalAlignment": "Top",
           "viewportAnchor": [
@@ -7215,7 +7215,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -7297,7 +7297,7 @@
             3.0
           ],
           "sortingOrder": 100,
-          "text": "SCORE 0",
+          "text": "すこあ 0",
           "type": "TextRenderer",
           "verticalAlignment": "Top",
           "viewportAnchor": [
@@ -7366,7 +7366,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 30.0,
           "fontSource": "System",
@@ -7448,7 +7448,7 @@
             3.0
           ],
           "sortingOrder": 100,
-          "text": "MULTIPLIER 1.0",
+          "text": "ばいりつ 1.0",
           "type": "TextRenderer",
           "verticalAlignment": "Top",
           "viewportAnchor": [
@@ -7517,7 +7517,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial Black",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 48.0,
           "fontSource": "System",
@@ -16092,7 +16092,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "ポーズ",
+          "text": "ぽーず",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16161,7 +16161,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16170,7 +16170,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            70.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16243,7 +16243,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "TITLE",
+          "text": "たいとる",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16312,7 +16312,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16321,7 +16321,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            74.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16394,7 +16394,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "RESTART",
+          "text": "りすたーと",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16463,7 +16463,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16472,7 +16472,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            139.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16545,7 +16545,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "OPTION",
+          "text": "おぷしょん",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16614,7 +16614,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 40.0,
           "fontSource": "System",
@@ -16623,7 +16623,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            84.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16696,7 +16696,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "BGM VOLUME < 100% >",
+          "text": "BGM 音量 < 100% >",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16765,7 +16765,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 40.0,
           "fontSource": "System",
@@ -16774,7 +16774,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            82.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16847,7 +16847,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "SE  VOLUME < 100% >",
+          "text": "SE  音量 < 100% >",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16916,7 +16916,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16925,7 +16925,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            137.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16998,7 +16998,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "BACK",
+          "text": "もどる",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
