@@ -25,6 +25,8 @@
 namespace {
 	constexpr const char* kTitleSceneId = "title";
 	constexpr const char* kTitleStartTargetSceneId = "gameplay";
+	constexpr const char* kGameplaySceneId = "gameplay"; // 通常Gameplay SceneのID。
+	constexpr const char* kTutorialSceneId = "tutorial"; // Tutorial SceneのID。
 	constexpr float kTitleStartTransitionSeconds = 0.85f;
 	constexpr float kTitleStartTextFadeSeconds = 0.25f;
 
@@ -33,6 +35,17 @@ namespace {
 	/// </summary>
 	float Clamp01(float value) {
 		return std::clamp(value, 0.0f, 1.0f);
+	}
+
+	/// <summary>
+	/// Gameplay用Runtime機能を使うSceneかを判定します。
+	/// </summary>
+	bool IsGameplayRuntimeScene(const std::string& sceneId) {
+		return
+			sceneId == kGameplaySceneId ||
+			sceneId == kTutorialSceneId ||
+			sceneId == "GAMEPLAY" ||
+			sceneId == "TUTORIAL";
 	}
 
 	/// <summary>
@@ -654,11 +667,17 @@ void RuntimeScene::Update(float deltaTime)
 	const bool playing = !executionContext || executionContext->IsPlaying();
 	SceneDocument* activeDocument = GetSceneDocument();
 	const float realDeltaTime = (std::max)(deltaTime, 0.0f);
+	const bool gameplayRuntimeScene =
+		IsGameplayRuntimeScene(GetSceneAssetId()); // Gameplay系Runtime機能を使うSceneか。
 	if (activeDocument && playing) {
 		pauseSystem_.BeginFrame(*activeDocument);
-		if (GetSceneAssetId() == "gameplay") {
+		if (gameplayRuntimeScene) {
 			const ScenePauseMenuResult pauseMenuResult = pauseMenuSystem_.Update(
-				*activeDocument, pauseSystem_, optionMenuSystem_, realDeltaTime
+				*activeDocument,
+				pauseSystem_,
+				optionMenuSystem_,
+				GetSceneAssetId(),
+				realDeltaTime
 			);
 			const SceneEntity* pauseController =
 				activeDocument->FindEntityByName("Pause Menu Controller");
@@ -1418,7 +1437,7 @@ void RuntimeScene::Update(float deltaTime)
 				});
 			}
 		}
-		if (GetSceneAssetId() == "gameplay") {
+		if (gameplayRuntimeScene) {
 			if (const SceneEntity* pauseOverlay =
 				activeDocument->FindEntityByName("Pause Dim Overlay")) {
 				objectSystem_.SetSpriteRuntimeOverride(SceneSpriteRuntimeOverride{
@@ -1656,7 +1675,7 @@ void RuntimeScene::Update(float deltaTime)
 				*activeDocument,
 				textRenderSystem_
 			);
-		} else if (playing && GetSceneAssetId() == "gameplay") {
+		} else if (playing && gameplayRuntimeScene) {
 			const bool pauseActive =
 				pauseSystem_.IsDomainPaused(ScenePauseDomain::Gameplay);
 			if (pauseActive) {
@@ -1679,6 +1698,7 @@ void RuntimeScene::Update(float deltaTime)
 			}
 			pauseMenuSystem_.ApplyTextOverrides(
 				*activeDocument,
+				GetSceneAssetId(),
 				textRenderSystem_
 			);
 		}

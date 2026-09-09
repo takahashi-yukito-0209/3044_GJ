@@ -1,4 +1,4 @@
-// 役割: Gameplay Sceneのポーズメニュー操作とTextRenderer表示を実装する。
+// 役割: Gameplay系Sceneのポーズメニュー操作とTextRenderer表示を実装する。
 #include "ScenePauseMenuSystem.h"
 
 #include "SceneOptionMenuSystem.h"
@@ -49,10 +49,14 @@ namespace {
 	}
 }
 
+/// <summary>
+/// ポーズメニュー入力を処理し、現在Sceneに対応した遷移要求を作ります。
+/// </summary>
 ScenePauseMenuResult ScenePauseMenuSystem::Update(
 	const SceneDocument& document,
 	const ScenePauseSystem& pauseSystem,
 	SceneOptionMenuSystem& optionMenuSystem,
+	const std::string& currentSceneId,
 	float deltaTime
 ) {
 	ScenePauseMenuResult result{};
@@ -90,7 +94,8 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 		return result;
 	}
 
-	const std::vector<MenuItem> menuItems = CollectMenuItems(document);
+	const std::vector<MenuItem> menuItems =
+		CollectMenuItems(document, currentSceneId); // 現在のScene用メニュー項目。
 	if (menuItems.empty()) {
 		selectedIndex_ = 0;
 		return result;
@@ -136,8 +141,12 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 	return result;
 }
 
+/// <summary>
+/// ポーズメニューの表示状態と選択色をTextRendererへ反映します。
+/// </summary>
 void ScenePauseMenuSystem::ApplyTextOverrides(
 	const SceneDocument& document,
+	const std::string& currentSceneId,
 	SceneTextRenderSystem& textRenderSystem
 ) const {
 	const auto applyVisibility = [this, &document, &textRenderSystem](
@@ -181,7 +190,8 @@ void ScenePauseMenuSystem::ApplyTextOverrides(
 			static_cast<int>(index) + 1);
 	}
 
-	const std::vector<MenuItem> menuItems = CollectMenuItems(document);
+	const std::vector<MenuItem> menuItems =
+		CollectMenuItems(document, currentSceneId); // 現在のScene用メニュー項目。
 	const int itemCount = static_cast<int>(menuItems.size());
 	const int selectedIndex = itemCount > 0
 		? std::clamp(selectedIndex_, 0, itemCount - 1)
@@ -244,8 +254,14 @@ float ScenePauseMenuSystem::GetPresentationProgress(int animationOrder) const {
 	);
 }
 
+/// <summary>
+/// Scene上に存在するポーズメニュー項目から操作対象を作ります。
+/// </summary>
 std::vector<ScenePauseMenuSystem::MenuItem>
-ScenePauseMenuSystem::CollectMenuItems(const SceneDocument& document) const {
+ScenePauseMenuSystem::CollectMenuItems(
+	const SceneDocument& document,
+	const std::string& currentSceneId
+) const {
 	std::vector<MenuItem> items;
 	const char* const* names = optionOpen_
 		? kOptionMenuEntityNames.data()
@@ -270,7 +286,9 @@ ScenePauseMenuSystem::CollectMenuItems(const SceneDocument& document) const {
 		} else if (index == 1) {
 			item.action = MenuItem::Action::Respawn;
 		} else if (index == 2) {
-			item.targetSceneId = "gameplay";
+			item.targetSceneId = currentSceneId.empty()
+				? "gameplay"
+				: currentSceneId;
 		} else {
 			item.action = MenuItem::Action::OpenOptions;
 		}

@@ -15881,7 +15881,7 @@
       }
     },
     {
-      "active": false,
+      "active": true,
       "components": [],
       "folder": true,
       "folderTeamEnabled": false,
@@ -16161,7 +16161,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16170,7 +16170,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            70.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16231,6 +16231,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16243,7 +16244,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "TITLE",
+          "text": "たいとる",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16312,7 +16313,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16321,7 +16322,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            60.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16382,6 +16383,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16394,7 +16396,159 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "RESTART",
+          "text": "りすぽーん",
+          "type": "TextRenderer",
+          "verticalAlignment": "Center",
+          "viewportAnchor": [
+            0.0,
+            0.0
+          ],
+          "wrapMode": "NoWrap"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 148,
+      "locked": false,
+      "modelPath": "",
+      "name": "PauseRespawnText",
+      "parentId": 144,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "characterSpacing": 0.0,
+          "clipEnabled": false,
+          "color": [
+            0.7799999713897705,
+            0.8600000143051147,
+            0.9399999976158142,
+            1.0
+          ],
+          "enabled": true,
+          "fontFamily": "なぎの",
+          "fontResourcePath": "",
+          "fontSize": 50.0,
+          "fontSource": "System",
+          "fontStyle": "Normal",
+          "fontWeight": "Bold",
+          "horizontalAlignment": "Center",
+          "layoutSize": [
+            560.0,
+            74.0
+          ],
+          "lineSpacing": 1.0,
+          "localId": 1,
+          "opacity": 1.0,
+          "outlineColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "outlineEnabled": false,
+          "outlineWidth": 2.0,
+          "overflowMode": "Overflow",
+          "overlayPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.5,
+              0.5
+            ],
+            "position": [
+              0.0,
+              80.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 102,
+            "viewportAnchor": [
+              0.5,
+              0.5
+            ]
+          },
+          "pivot": [
+            0.0,
+            0.0
+          ],
+          "renderSpace": "ScreenOverlay",
+          "scene2DPlacement": {
+            "clipEnabled": false,
+            "pivot": [
+              0.0,
+              0.0
+            ],
+            "position": [
+              0.0,
+              0.0
+            ],
+            "rotation": 0.0,
+            "scale": [
+              1.0,
+              1.0
+            ],
+            "sortingOrder": 0,
+            "viewportAnchor": [
+              0.0,
+              0.0
+            ]
+          },
+          "screenOverlayScaleMode": "Inherit",
+          "shadowColor": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "shadowEnabled": true,
+          "shadowOffset": [
+            3.0,
+            3.0
+          ],
+          "sortingOrder": 0,
+          "text": "りすたーと",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16463,7 +16617,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16472,7 +16626,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            139.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16494,7 +16648,7 @@
             ],
             "position": [
               0.0,
-              80.0
+              160.0
             ],
             "rotation": 0.0,
             "scale": [
@@ -16533,6 +16687,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16545,7 +16700,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "OPTION",
+          "text": "おぷしょん",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16614,7 +16769,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 40.0,
           "fontSource": "System",
@@ -16623,7 +16778,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            84.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16684,6 +16839,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16696,7 +16852,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "BGM VOLUME < 100% >",
+          "text": "BGM 音量 < 100% >",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16765,7 +16921,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 40.0,
           "fontSource": "System",
@@ -16774,7 +16930,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            82.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16835,6 +16991,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16847,7 +17004,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "SE  VOLUME < 100% >",
+          "text": "SE  音量 < 100% >",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [
@@ -16916,7 +17073,7 @@
             1.0
           ],
           "enabled": true,
-          "fontFamily": "Arial",
+          "fontFamily": "なぎの",
           "fontResourcePath": "",
           "fontSize": 50.0,
           "fontSource": "System",
@@ -16925,7 +17082,7 @@
           "horizontalAlignment": "Center",
           "layoutSize": [
             560.0,
-            52.0
+            137.0
           ],
           "lineSpacing": 1.0,
           "localId": 1,
@@ -16986,6 +17143,7 @@
               0.0
             ]
           },
+          "screenOverlayScaleMode": "Inherit",
           "shadowColor": [
             0.0,
             0.0,
@@ -16998,7 +17156,7 @@
             3.0
           ],
           "sortingOrder": 0,
-          "text": "BACK",
+          "text": "もどる",
           "type": "TextRenderer",
           "verticalAlignment": "Center",
           "viewportAnchor": [

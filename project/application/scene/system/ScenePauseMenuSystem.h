@@ -1,4 +1,4 @@
-// 役割: Gameplay Sceneのポーズ入力、選択状態、表示上書きを管理する。
+// 役割: Gameplay系Sceneのポーズ入力、選択状態、表示上書きを管理する。
 #pragma once
 
 #include <cstdint>
@@ -17,17 +17,19 @@ struct ScenePauseMenuResult {
 	std::string requestedSceneId;
 };
 
-// Gameplay中にだけ使う、Escで開閉するポーズメニュー。
+// Gameplay系Sceneで使う、Escで開閉するポーズメニュー。
 class ScenePauseMenuSystem {
 public:
 	ScenePauseMenuResult Update(
 		const SceneDocument& document,
 		const ScenePauseSystem& pauseSystem,
 		SceneOptionMenuSystem& optionMenuSystem,
+		const std::string& currentSceneId,
 		float deltaTime
 	);
 	void ApplyTextOverrides(
 		const SceneDocument& document,
+		const std::string& currentSceneId,
 		SceneTextRenderSystem& textRenderSystem
 	) const;
 	void Clear();
@@ -45,7 +47,10 @@ private:
 		std::string targetSceneId;
 	};
 
-	std::vector<MenuItem> CollectMenuItems(const SceneDocument& document) const;
+	std::vector<MenuItem> CollectMenuItems(
+		const SceneDocument& document,
+		const std::string& currentSceneId
+	) const;
 	uint64_t FindControllerEntityId(const SceneDocument& document) const;
 	void UpdateVisibility(bool visible, float deltaTime);
 	float GetPresentationProgress(int animationOrder) const;
