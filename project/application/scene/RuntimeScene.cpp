@@ -711,6 +711,10 @@ void RuntimeScene::Update(float deltaTime)
 			} else {
 				const SceneTitleMenuResult titleMenuResult =
 					titleMenuSystem_.Update(*activeDocument);
+				if (titleMenuResult.exitRequested) {
+					exitRequested_ = true;
+					return;
+				}
 				if (!titleMenuResult.requestedSceneId.empty()) {
 					if (
 						titleMenuResult.requestedSceneId ==
@@ -1830,8 +1834,16 @@ void RuntimeScene::Finalize()
 	debugCamera_ = nullptr;
 }
 
+bool RuntimeScene::ConsumeExitRequest()
+{
+	const bool exitRequested = exitRequested_; // 今回消費する終了要求。
+	exitRequested_ = false;
+	return exitRequested;
+}
+
 void RuntimeScene::PrepareForSceneTransition()
 {
+	exitRequested_ = false;
 	pauseSystem_.Clear();
 	pauseMenuSystem_.Clear();
 	textMotionSystem_.Clear();

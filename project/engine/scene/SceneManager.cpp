@@ -397,6 +397,18 @@ void SceneManager::Update(float deltaTime)
 	}
 }
 
+bool SceneManager::ConsumeExitRequest()
+{
+	for (const std::unique_ptr<SceneInstance>& instance : sceneInstances_) {
+		if (BaseScene* scene = instance->GetScene()) {
+			if (scene->ConsumeExitRequest()) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 bool SceneManager::PreloadPendingSceneForTransition()
 {
 	if (!pendingSceneInstance_) {

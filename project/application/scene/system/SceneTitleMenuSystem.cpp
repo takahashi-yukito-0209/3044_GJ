@@ -14,13 +14,15 @@ namespace {
 	struct MenuDefinition {
 		const char* entityName; // Scene上で対応するTextRenderer Entity名。
 		const char* targetSceneId; // 決定時に要求するScene ID。
+		bool exitRequested; // 決定時にゲーム終了を要求する項目か。
 	};
 
-	constexpr std::array<MenuDefinition, 4> kMenuDefinitions = { {
-		{ "TitleMenuStartText", "gameplay" },
-		{ "TitleMenuTutorialText", "tutorial" },
-		{ "TitleMenuOptionText", "option" },
-		{ "TitleMenuCreditText", "credit" },
+	constexpr std::array<MenuDefinition, 5> kMenuDefinitions = { {
+		{ "TitleMenuStartText", "gameplay", false },
+		{ "TitleMenuTutorialText", "tutorial", false },
+		{ "TitleMenuOptionText", "option", false },
+		{ "TitleMenuCreditText", "credit", false },
+		{ "TitleMenuExitText", "", true },
 	} };
 
 	constexpr Vector4 kSelectedColor = { 1.0f, 0.92f, 0.55f, 1.0f };
@@ -63,7 +65,12 @@ SceneTitleMenuResult SceneTitleMenuSystem::Update(
 	}
 
 	if (TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })) {
-		result.requestedSceneId = menuItems[selectedIndex_].targetSceneId;
+		const MenuItem& selectedItem = menuItems[selectedIndex_]; // 決定されたメニュー項目。
+		if (selectedItem.exitRequested) {
+			result.exitRequested = true;
+		} else {
+			result.requestedSceneId = selectedItem.targetSceneId;
+		}
 	}
 	return result;
 }
@@ -115,7 +122,8 @@ SceneTitleMenuSystem::CollectMenuItems(const SceneDocument& document) const {
 		menuItems.push_back({
 			entity->id,
 			textRenderer->textValue,
-			definition.targetSceneId
+			definition.targetSceneId,
+			definition.exitRequested
 		});
 	}
 	return menuItems;

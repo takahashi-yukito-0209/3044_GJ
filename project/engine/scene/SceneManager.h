@@ -29,6 +29,10 @@ public:
 
 	void Update(float deltaTime);
 	void UpdatePaused();
+	/// <summary>
+	/// Scene内で発生したアプリ終了要求を呼び出し元へ渡します。
+	/// </summary>
+	bool ConsumeExitRequest();
 
 	void Draw();
 	void DrawForegroundEffects();
