@@ -111,9 +111,13 @@ void SceneFishingResultPresentationSystem::Update(
 	auto appendSpriteRequest = [
 		&document,
 		this
-	](uint64_t entityId, const std::string& texturePath, float scaleMultiplier) {
-		if (texturePath.empty() || !std::isfinite(scaleMultiplier) ||
+	](uint64_t entityId, const std::string& texturePath, float scaleMultiplier,
+		bool visible) {
+		if ((!visible && entityId == 0) || !std::isfinite(scaleMultiplier) ||
 			scaleMultiplier <= 0.0f) {
+			return;
+		}
+		if (visible && texturePath.empty()) {
 			return;
 		}
 		const SceneEntity* entity = document.FindEntity(entityId);
@@ -131,14 +135,23 @@ void SceneFishingResultPresentationSystem::Update(
 				spriteRenderer->spriteSize.y * scaleMultiplier
 			},
 			spriteRenderer->spriteColor,
-			true
+			visible
 		});
 	};
 	appendSpriteRequest(
 		presenter->fishingResultPresentationBackgroundEntityId,
 		selectedVariant->backgroundTexturePath,
-		1.0f
+		1.0f,
+		true
 	);
+	if (presenter->fishingResultPresentationCenterPanelEntityId != 0) {
+		appendSpriteRequest(
+			presenter->fishingResultPresentationCenterPanelEntityId,
+			selectedVariant->centerPanelTexturePath,
+			1.0f,
+			!selectedVariant->centerPanelTexturePath.empty()
+		);
+	}
 	constexpr float kTwoPi = 6.28318530717958647692f;
 	for (const SceneFishingResultDecorationEntry& decoration :
 		presenter->fishingResultPresentationDecorations) {
@@ -158,7 +171,8 @@ void SceneFishingResultPresentationSystem::Update(
 		appendSpriteRequest(
 			decoration.spriteEntityId,
 			selectedVariant->decorationTexturePath,
-			scaleMultiplier
+			scaleMultiplier,
+			!selectedVariant->decorationTexturePath.empty()
 		);
 	}
 }

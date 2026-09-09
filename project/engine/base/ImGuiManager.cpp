@@ -839,6 +839,7 @@ namespace {
 			{ "Skybox Intensity", "Skyboxの強さ" }, { "Drop DDS Skybox Here", "DDS Skyboxをここへドロップ" },
 			{ "Size", "サイズ" },
 			{ "Anchor", "アンカー" }, { "Flip X", "X反転" }, { "Flip Y", "Y反転" },
+			{ "Reference Size", "基準サイズ" }, { "Scale Mode", "拡縮モード" },
 			{ "Text", "テキスト" }, { "Font Family", "フォント" },
 			{ "Font Size", "フォントサイズ" }, { "Render Space", "描画空間" },
 			{ "Weight", "太さ" }, { "Style", "スタイル" },
@@ -9568,6 +9569,23 @@ void ImGuiManager::DrawInspectorWindow() {
 					document.MarkDirty();
 				}
 				ImGui::EndDisabled();
+			} else if (component.type == "ScreenOverlayCanvas") {
+				ImGui::BeginDisabled(!editorSession_->IsEditing() || entityLocked);
+				bool canvasChanged = ImGui::DragFloat2(
+					LocalizedComponentWidgetLabel(editorLanguage_, "Reference Size"),
+					&component.screenOverlayCanvasReferenceSize.x,
+					1.0f,
+					1.0f,
+					8192.0f
+				);
+				if (canvasChanged) {
+					component.screenOverlayCanvasReferenceSize.x =
+						(std::max)(component.screenOverlayCanvasReferenceSize.x, 1.0f);
+					component.screenOverlayCanvasReferenceSize.y =
+						(std::max)(component.screenOverlayCanvasReferenceSize.y, 1.0f);
+					document.MarkDirty();
+				}
+				ImGui::EndDisabled();
 			} else if (component.type == "SpriteRenderer") {
 				const char* currentTexture = component.texturePath.empty()
 					? "None"
@@ -9628,6 +9646,23 @@ void ImGuiManager::DrawInspectorWindow() {
 				)) {
 					component.spriteRenderSpace = renderSpaces[renderSpaceIndex];
 					spriteChanged = true;
+				}
+				if (component.spriteRenderSpace == "ScreenOverlay") {
+					const char* scaleModes[] = { "Inherit", "Legacy", "Fit", "Cover" };
+					int scaleModeIndex = component.screenOverlayScaleMode == "Legacy"
+						? 1
+						: component.screenOverlayScaleMode == "Fit"
+							? 2
+							: component.screenOverlayScaleMode == "Cover" ? 3 : 0;
+					if (ImGui::Combo(
+						LocalizedComponentWidgetLabel(editorLanguage_, "Scale Mode"),
+						&scaleModeIndex,
+						scaleModes,
+						IM_ARRAYSIZE(scaleModes)
+					)) {
+						component.screenOverlayScaleMode = scaleModes[scaleModeIndex];
+						spriteChanged = true;
+					}
 				}
 				spriteChanged |= ImGui::DragFloat2(
 					LocalizedComponentWidgetLabel(editorLanguage_, "Viewport Anchor"),
@@ -9798,6 +9833,21 @@ void ImGuiManager::DrawInspectorWindow() {
 				)) {
 					component.textRenderSpace = renderSpaces[renderSpaceIndex];
 					textChanged = true;
+				}
+				if (component.textRenderSpace == "ScreenOverlay") {
+					const char* scaleModes[] = { "Inherit", "Legacy", "Fit" };
+					int scaleModeIndex = component.screenOverlayScaleMode == "Legacy"
+						? 1
+						: component.screenOverlayScaleMode == "Fit" ? 2 : 0;
+					if (ImGui::Combo(
+						LocalizedComponentWidgetLabel(editorLanguage_, "Scale Mode"),
+						&scaleModeIndex,
+						scaleModes,
+						IM_ARRAYSIZE(scaleModes)
+					)) {
+						component.screenOverlayScaleMode = scaleModes[scaleModeIndex];
+						textChanged = true;
+					}
 				}
 				const char* weights[] = { "Regular", "Bold" };
 				int weightIndex = component.textFontWeight == "Bold" ? 1 : 0;
@@ -14527,6 +14577,12 @@ void ImGuiManager::DrawInspectorWindow() {
 					component.fishingResultPresentationScoreTextEntityId,
 					"TextRenderer"
 				);
+				drawResultEntityReference(
+					"中央枠Sprite###FishingResultPresenterCenterPanel",
+					"Center Panel Sprite###FishingResultPresenterCenterPanel",
+					component.fishingResultPresentationCenterPanelEntityId,
+					"SpriteRenderer"
+				);
 				resultPresenterChanged |= InputTextString(
 					SelectEditorText(
 						editorLanguage_,
@@ -14561,8 +14617,13 @@ void ImGuiManager::DrawInspectorWindow() {
 				);
 				ImGui::TextDisabled("%s", SelectEditorText(
 					editorLanguage_,
-					"背景／中央Score／装飾Spriteを指定し、VariantごとにTextureを設定します。",
-					"Assign background, center score, and decoration sprites, then set textures per variant."
+					"背景／中央Score／中央枠／装飾Spriteを指定し、VariantごとにTextureを設定します。",
+					"Assign background, center score, center panel, and decoration sprites, then set textures per variant."
+				));
+				ImGui::TextDisabled("%s", SelectEditorText(
+					editorLanguage_,
+					"装飾または中央枠のTexture Pathが空なら、その表示先を非表示にします。",
+					"An empty decoration or center panel texture path hides its target sprites."
 				));
 				ImGui::TextDisabled("%s", SelectEditorText(
 					editorLanguage_,
@@ -14606,6 +14667,14 @@ void ImGuiManager::DrawInspectorWindow() {
 								"Decoration Texture Path###ResultVariantDecoration"
 							),
 							variant.decorationTexturePath
+						);
+						resultPresenterChanged |= InputTextString(
+							SelectEditorText(
+								editorLanguage_,
+								"中央枠Texture Path###ResultVariantCenterPanel",
+								"Center Panel Texture Path###ResultVariantCenterPanel"
+							),
+							variant.centerPanelTexturePath
 						);
 						if (ImGui::SmallButton(SelectEditorText(
 							editorLanguage_, "削除###RemoveResultVariant", "Remove###RemoveResultVariant"

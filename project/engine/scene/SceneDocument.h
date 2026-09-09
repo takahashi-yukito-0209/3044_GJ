@@ -405,6 +405,7 @@ struct SceneFishingResultVisualVariant {
 	std::string id;
 	std::string backgroundTexturePath;
 	std::string decorationTexturePath;
+	std::string centerPanelTexturePath;
 };
 
 struct SceneFishingResultDecorationEntry {
@@ -439,6 +440,8 @@ struct SceneComponent {
 	std::string environmentSkyboxPath;
 	float environmentSkyboxIntensity = 1.0f;
 	float environmentReflectionIntensity = 0.3f;
+	Vector2 screenOverlayCanvasReferenceSize = { 1920.0f, 1080.0f };
+	std::string screenOverlayScaleMode = "Inherit";
 	Vector2 spriteSize = { 100.0f, 100.0f };
 	Vector2 spriteAnchor = { 0.5f, 0.5f };
 	std::string spriteRenderSpace = "Scene2D";
@@ -566,6 +569,7 @@ struct SceneComponent {
 	std::string fishingResultPresentationChannelId = "fishing.score_attack";
 	uint64_t fishingResultPresentationBackgroundEntityId = 0;
 	uint64_t fishingResultPresentationScoreTextEntityId = 0;
+	uint64_t fishingResultPresentationCenterPanelEntityId = 0;
 	std::string fishingResultPresentationScorePrefix = "SCORE ";
 	std::string fishingResultPresentationFallbackVariantId = "rank_1";
 	bool fishingResultPresentationIncludeSharkInWinnerSelection = false;

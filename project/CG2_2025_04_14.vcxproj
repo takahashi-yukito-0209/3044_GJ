@@ -230,6 +230,7 @@
     <ClCompile Include="application\scene\system\SceneMiniMapSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneMonitorSystem.cpp" />
 	<ClCompile Include="application\scene\system\SceneObjectSystem.cpp" />
+	<ClCompile Include="application\scene\system\SceneScreenOverlayCanvasLayout.cpp" />
 	<ClCompile Include="application\scene\system\SceneOptionMenuSystem.cpp" />
 	<ClCompile Include="application\scene\system\ScenePauseMenuSystem.cpp" />
     <ClCompile Include="application\scene\system\SceneParticleSystem.cpp" />
