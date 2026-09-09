@@ -478,7 +478,6 @@ private:
 	std::vector<SceneFishingScoreAttackHookBubbleRequest> hookBubbleRequests_;
 	SceneFishingScoreAttackScorePopup scorePopup_{};
 	float formationParticleEmissionAccumulator_ = 0.0f;
-	size_t formationParticlePointCursor_ = 0;
 	bool formationParticleActive_ = false;
 	std::string formationParticlePauseOwnerKey_;
 	int formationParticlePointCount_ = 0;

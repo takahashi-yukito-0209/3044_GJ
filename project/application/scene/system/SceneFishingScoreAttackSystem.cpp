@@ -1136,12 +1136,12 @@ namespace {
 		return points;
 	}
 
-	std::vector<XZPoint> BuildFormationParticlePoints(
+	/// <summary>群れの進行範囲内に進行方向を示す矢印の粒子発生点を作る。</summary>
+	std::vector<XZPoint> BuildFormationDirectionParticlePoints(
 		float radius,
 		float halfSegmentLength,
 		int sampleCount
 	) {
-		constexpr float kPi = 3.14159265358979323846f;
 		constexpr float kLengthEpsilon = 0.000001f;
 		if (
 			!std::isfinite(radius) ||
@@ -1151,59 +1151,49 @@ namespace {
 		) {
 			return {};
 		}
-		const int clampedSampleCount = std::clamp(sampleCount, 12, 128);
-		const float straightLength = 2.0f * halfSegmentLength;
-		const float arcLength = kPi * radius;
-		const float totalLength =
-			2.0f * straightLength + 2.0f * arcLength;
-		if (!std::isfinite(totalLength) || totalLength <= kLengthEpsilon) {
-			return {};
-		}
+		const int clampedSampleCount = std::clamp(sampleCount, 12, 64);
+		const float shaftStartZ = -halfSegmentLength * 0.35f; // 矢印軸の開始位置。
+		const float headBaseZ =
+			halfSegmentLength + radius * 0.25f; // 矢印頭の根元位置。
+		const float headTipZ =
+			halfSegmentLength + radius * 0.90f; // 矢印が指す先端位置。
+		const float headHalfWidth = radius * 0.65f; // 矢印頭の半幅。
+		const int shaftPointCount =
+			(std::max)(4, clampedSampleCount / 2); // 中央軸の粒子数。
+		const int remainingPointCount =
+			clampedSampleCount - shaftPointCount; // 矢印頭に割り当てる粒子数。
+		const int leftHeadPointCount =
+			remainingPointCount / 2; // 左側の矢印頭の粒子数。
+		const int rightHeadPointCount =
+			remainingPointCount - leftHeadPointCount; // 右側の矢印頭の粒子数。
+
 		std::vector<XZPoint> points;
 		points.reserve(static_cast<size_t>(clampedSampleCount));
-		for (int index = 0; index < clampedSampleCount; ++index) {
-			const float distance = totalLength *
-				static_cast<float>(index) /
-				static_cast<float>(clampedSampleCount);
-			if (distance < straightLength || arcLength <= kLengthEpsilon) {
-				const float ratio = straightLength > kLengthEpsilon
-					? distance / straightLength
-					: 0.0f;
+		for (int index = 0; index < shaftPointCount; ++index) {
+			const float ratio = shaftPointCount > 1
+				? static_cast<float>(index) /
+					static_cast<float>(shaftPointCount - 1)
+				: 0.0f; // 矢印軸上の配置割合。
+			points.push_back({ 0.0f, shaftStartZ + (headBaseZ - shaftStartZ) * ratio });
+		}
+		auto addHeadLine = [&points, headBaseZ, headTipZ](
+			float baseX,
+			int pointCount
+		) {
+			for (int index = 0; index < pointCount; ++index) {
+				const float ratio = pointCount > 1
+					? static_cast<float>(index) / static_cast<float>(pointCount - 1)
+					: 1.0f; // 矢印頭の根元から先端までの配置割合。
 				points.push_back({
-					-radius,
-					-halfSegmentLength +
-						ratio * 2.0f * halfSegmentLength
+					baseX * (1.0f - ratio),
+					headBaseZ + (headTipZ - headBaseZ) * ratio
 				});
-				continue;
 			}
-			const float topArcEnd = straightLength + arcLength;
-			if (distance < topArcEnd) {
-				const float angle = kPi -
-					(distance - straightLength) / radius;
-				points.push_back({
-					radius * std::cos(angle),
-					halfSegmentLength + radius * std::sin(angle)
-				});
-				continue;
-			}
-			const float rightLineEnd = topArcEnd + straightLength;
-			if (distance < rightLineEnd) {
-				const float ratio = straightLength > kLengthEpsilon
-					? (distance - topArcEnd) / straightLength
-					: 0.0f;
-				points.push_back({
-					radius,
-					halfSegmentLength -
-					ratio * 2.0f * halfSegmentLength
-				});
-				continue;
-			}
-			const float angle = -
-				(distance - rightLineEnd) / radius;
-			points.push_back({
-				radius * std::cos(angle),
-				-halfSegmentLength + radius * std::sin(angle)
-			});
+		};
+		addHeadLine(-headHalfWidth, leftHeadPointCount);
+		addHeadLine(headHalfWidth, rightHeadPointCount);
+		if (points.empty()) {
+			points.push_back({ 0.0f, headTipZ });
 		}
 		return points;
 	}
@@ -3533,7 +3523,6 @@ void SceneFishingScoreAttackSystem::UpdateFormationParticleEffect(
 		particleManager->ClearParticleGroup(kGroupName);
 		particleManager->ClearParticleGroupParentTransform(kGroupName);
 		formationParticleEmissionAccumulator_ = 0.0f;
-		formationParticlePointCursor_ = 0;
 		formationParticleActive_ = false;
 	};
 	if (formationParticleTuningDirty_) {
@@ -3568,7 +3557,7 @@ void SceneFishingScoreAttackSystem::UpdateFormationParticleEffect(
 		return;
 	}
 	const int outlineSegments = std::clamp(formationParticlePointCount_, 12, 128);
-	const std::vector<XZPoint> points = BuildFormationParticlePoints(
+	const std::vector<XZPoint> points = BuildFormationDirectionParticlePoints(
 		capsule.radius,
 		capsule.halfSegmentLength,
 		outlineSegments
@@ -3626,7 +3615,7 @@ void SceneFishingScoreAttackSystem::UpdateFormationParticleEffect(
 		emitterSpread,
 		emitterSpread
 	};
-	if (!formationParticleActive_) {
+	auto emitDirectionMarker = [&]() {
 		for (const XZPoint& point : points) {
 			particleManager->Emit(
 				kGroupName,
@@ -3636,38 +3625,27 @@ void SceneFishingScoreAttackSystem::UpdateFormationParticleEffect(
 				behavior
 			);
 		}
-		formationParticlePointCursor_ = 0;
+	};
+	if (!formationParticleActive_) {
+		emitDirectionMarker();
 		formationParticleEmissionAccumulator_ = 0.0f;
 		formationParticleActive_ = true;
 	}
 	if (!std::isfinite(deltaTime) || deltaTime <= 0.0f) {
 		return;
 	}
-	const float interval = (std::max)(
-		0.001f,
-		0.80f / static_cast<float>(points.size())
+	const float refreshInterval = std::clamp(
+		formationParticleLifetime_ * 0.5f,
+		0.08f,
+		0.25f
 	);
 	formationParticleEmissionAccumulator_ = (std::min)(
 		formationParticleEmissionAccumulator_ + deltaTime,
-		interval * 8.0f
+		refreshInterval
 	);
-	uint32_t emitCount = static_cast<uint32_t>(
-		formationParticleEmissionAccumulator_ / interval
-	);
-	emitCount = (std::min)(emitCount, 8u);
-	formationParticleEmissionAccumulator_ -=
-		interval * static_cast<float>(emitCount);
-	for (uint32_t index = 0; index < emitCount; ++index) {
-		const XZPoint& point = points[formationParticlePointCursor_ % points.size()];
-		particleManager->Emit(
-			kGroupName,
-			{ point.x, 0.0f, point.z },
-			emitterRandomRange,
-			formationParticleCountPerEmission_,
-			behavior
-		);
-		formationParticlePointCursor_ =
-			(formationParticlePointCursor_ + 1) % points.size();
+	if (formationParticleEmissionAccumulator_ >= refreshInterval) {
+		formationParticleEmissionAccumulator_ = 0.0f;
+		emitDirectionMarker();
 	}
 }
 
@@ -6758,7 +6736,6 @@ void SceneFishingScoreAttackSystem::Clear(SceneDocument* document) {
 		particleManager->ClearParticleGroupParentTransform("FishingFormationCloudCpu");
 	}
 	formationParticleEmissionAccumulator_ = 0.0f;
-	formationParticlePointCursor_ = 0;
 	formationParticleActive_ = false;
 	formationParticlePauseOwnerKey_.clear();
 	formationParticlePointCount_ = 0;
