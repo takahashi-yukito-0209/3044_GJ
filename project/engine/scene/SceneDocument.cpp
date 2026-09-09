@@ -1701,11 +1701,16 @@ namespace {
 			result["skyboxIntensity"] = component.environmentSkyboxIntensity;
 			result["reflectionIntensity"] =
 				component.environmentReflectionIntensity;
+		} else if (component.type == "ScreenOverlayCanvas") {
+			result["referenceSize"] = VectorToJson(
+				component.screenOverlayCanvasReferenceSize
+			);
 		} else if (component.type == "SpriteRenderer") {
 			result["texturePath"] = component.texturePath;
 			result["size"] = VectorToJson(component.spriteSize);
 			result["anchor"] = VectorToJson(component.spriteAnchor);
 			result["renderSpace"] = component.spriteRenderSpace;
+			result["screenOverlayScaleMode"] = component.screenOverlayScaleMode;
 			result["viewportAnchor"] = VectorToJson(component.spriteViewportAnchor);
 			result["color"] = VectorToJson(component.spriteColor);
 			result["flipX"] = component.spriteFlipX;
@@ -1713,6 +1718,7 @@ namespace {
 		} else if (component.type == "TextRenderer") {
 			result["text"] = component.textValue;
 			result["renderSpace"] = component.textRenderSpace;
+			result["screenOverlayScaleMode"] = component.screenOverlayScaleMode;
 			result["fontSource"] = component.textFontSource;
 			result["fontResourcePath"] = component.textFontResourcePath;
 			result["fontFamily"] = component.textFontFamily;
@@ -1946,6 +1952,8 @@ namespace {
 				component.fishingResultPresentationBackgroundEntityId;
 			result["scoreTextEntityId"] =
 				component.fishingResultPresentationScoreTextEntityId;
+			result["centerPanelEntityId"] =
+				component.fishingResultPresentationCenterPanelEntityId;
 			result["scorePrefix"] = component.fishingResultPresentationScorePrefix;
 			result["fallbackVariantId"] =
 				component.fishingResultPresentationFallbackVariantId;
@@ -1959,7 +1967,8 @@ namespace {
 				variants.push_back({
 					{ "id", variant.id },
 					{ "backgroundTexturePath", variant.backgroundTexturePath },
-					{ "decorationTexturePath", variant.decorationTexturePath }
+					{ "decorationTexturePath", variant.decorationTexturePath },
+					{ "centerPanelTexturePath", variant.centerPanelTexturePath }
 				});
 			}
 			result["variants"] = std::move(variants);
@@ -3127,6 +3136,11 @@ namespace {
 			idMap,
 			preserveUnmappedIds
 		);
+		component.fishingResultPresentationCenterPanelEntityId = RemapEntityId(
+			component.fishingResultPresentationCenterPanelEntityId,
+			idMap,
+			preserveUnmappedIds
+		);
 		for (SceneFishingResultDecorationEntry& decoration :
 			component.fishingResultPresentationDecorations) {
 			decoration.spriteEntityId = RemapEntityId(
@@ -3289,6 +3303,12 @@ namespace {
 					"reflectionIntensity",
 					component.environmentReflectionIntensity
 				);
+				if (component.type == "ScreenOverlayCanvas" && value.contains("referenceSize")) {
+					component.screenOverlayCanvasReferenceSize = JsonToVector(
+						value.at("referenceSize"),
+						component.screenOverlayCanvasReferenceSize
+					);
+				}
 				component.texturePath = value.value("texturePath", std::string{});
 				if (value.contains("size")) {
 					component.spriteSize = JsonToVector(
@@ -3305,6 +3325,11 @@ namespace {
 				component.spriteRenderSpace = value.value(
 					"renderSpace", component.spriteRenderSpace
 				);
+				if (component.type == "SpriteRenderer") {
+					component.screenOverlayScaleMode = value.value(
+						"screenOverlayScaleMode", component.screenOverlayScaleMode
+					);
+				}
 				if (value.contains("viewportAnchor")) {
 					component.spriteViewportAnchor = JsonToVector(
 						value.at("viewportAnchor"),
@@ -3320,6 +3345,9 @@ namespace {
 				component.spriteFlipX = value.value("flipX", false);
 				component.spriteFlipY = value.value("flipY", false);
 				if (component.type == "TextRenderer") {
+					component.screenOverlayScaleMode = value.value(
+						"screenOverlayScaleMode", component.screenOverlayScaleMode
+					);
 					component.textValue = value.value(
 						"text", component.textValue
 					);
@@ -3965,6 +3993,10 @@ namespace {
 						"scoreTextEntityId",
 						component.fishingResultPresentationScoreTextEntityId
 					);
+					component.fishingResultPresentationCenterPanelEntityId = value.value(
+						"centerPanelEntityId",
+						component.fishingResultPresentationCenterPanelEntityId
+					);
 					component.fishingResultPresentationScorePrefix = value.value(
 						"scorePrefix", component.fishingResultPresentationScorePrefix
 					);
@@ -3995,6 +4027,9 @@ namespace {
 							);
 							variant.decorationTexturePath = sourceVariant.value(
 								"decorationTexturePath", variant.decorationTexturePath
+							);
+							variant.centerPanelTexturePath = sourceVariant.value(
+								"centerPanelTexturePath", variant.centerPanelTexturePath
 							);
 							component.fishingResultPresentationVariants.push_back(
 								std::move(variant)
@@ -9869,11 +9904,14 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.environmentSkyboxPath = "resources/rostock_laage_airport_4k.dds";
 		component.environmentSkyboxIntensity = 1.0f;
 		component.environmentReflectionIntensity = 0.3f;
+	} else if (type == "ScreenOverlayCanvas") {
+		component.screenOverlayCanvasReferenceSize = { 1920.0f, 1080.0f };
 	} else if (type == "SpriteRenderer") {
 		component.texturePath = entity->spriteTexturePath;
 		component.spriteSize = entity->spriteSize;
 		component.spriteAnchor = entity->spriteAnchor;
 		component.spriteRenderSpace = "Scene2D";
+		component.screenOverlayScaleMode = "Inherit";
 		component.spriteViewportAnchor = { 0.0f, 0.0f };
 		component.spriteColor = entity->spriteColor;
 		component.spriteFlipX = entity->spriteFlipX;
@@ -9881,6 +9919,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 	} else if (type == "TextRenderer") {
 		component.textValue = "Text";
 		component.textRenderSpace = "ScreenOverlay";
+		component.screenOverlayScaleMode = "Inherit";
 		component.textFontSource = "System";
 		component.textFontResourcePath.clear();
 		component.textFontFamily = "Yu Gothic UI";
@@ -10008,6 +10047,7 @@ bool SceneDocument::AddComponent(uint64_t id, const std::string& type) {
 		component.fishingResultPresentationChannelId = "fishing.score_attack";
 		component.fishingResultPresentationBackgroundEntityId = 0;
 		component.fishingResultPresentationScoreTextEntityId = 0;
+		component.fishingResultPresentationCenterPanelEntityId = 0;
 		component.fishingResultPresentationScorePrefix = "SCORE ";
 		component.fishingResultPresentationFallbackVariantId = "rank_1";
 		component.fishingResultPresentationIncludeSharkInWinnerSelection = false;

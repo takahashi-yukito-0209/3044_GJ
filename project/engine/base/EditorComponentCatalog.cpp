@@ -28,7 +28,7 @@ namespace {
 		EditorComponentTag::Prefab
 	}};
 
-	constexpr std::array<EditorComponentDefinition, 49> kDefinitions = {{
+	constexpr std::array<EditorComponentDefinition, 50> kDefinitions = {{
 		{
 			"MeshRenderer", "3Dモデル表示", "Mesh Renderer",
 			"3DモデルとMaterialをSceneへ表示します。",
@@ -61,6 +61,15 @@ namespace {
 			"Displays text, including Japanese, on screen or in the scene.",
 			EditorComponentCategory::Rendering,
 			SceneContext, 3, -1, "",
+			EditorComponentTagBit(EditorComponentTag::TwoD) |
+			EditorComponentTagBit(EditorComponentTag::UI)
+		},
+		{
+			"ScreenOverlayCanvas", "画面Overlay Canvas", "Screen Overlay Canvas",
+			"ScreenOverlayの基準解像度を定義します。",
+			"Defines the reference resolution for ScreenOverlay layout.",
+			EditorComponentCategory::Rendering,
+			SceneContext, 4, -1, "",
 			EditorComponentTagBit(EditorComponentTag::TwoD) |
 			EditorComponentTagBit(EditorComponentTag::UI)
 		},

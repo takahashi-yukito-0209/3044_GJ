@@ -231,6 +231,7 @@
         {
           "backgroundEntityId": 5,
           "channelId": "fishing.score_attack",
+          "centerPanelEntityId": 19,
           "decorations": [
             { "spriteEntityId": 7, "minScaleMultiplier": 0.85, "maxScaleMultiplier": 1.12, "periodSeconds": 1.4, "phaseOffset": 0.0 },
             { "spriteEntityId": 8, "minScaleMultiplier": 0.9, "maxScaleMultiplier": 1.15, "periodSeconds": 1.7, "phaseOffset": 0.17 },
@@ -247,18 +248,25 @@
           ],
           "enabled": true,
           "fallbackVariantId": "rank_1",
-          "includeSharkInWinnerSelection": false,
+          "includeSharkInWinnerSelection": true,
           "localId": 1,
           "scorePrefix": "SCORE ",
           "scoreTextEntityId": 6,
           "sharkVariantId": "shark",
           "type": "FishingResultPresenter",
           "variants": [
-            { "id": "rank_1", "backgroundTexturePath": "sashimi_Back.png", "decorationTexturePath": "sashimi.png" },
-            { "id": "rank_2", "backgroundTexturePath": "yukke_Back.png", "decorationTexturePath": "yukke.png" },
-            { "id": "rank_3", "backgroundTexturePath": "negitoro_Back.png", "decorationTexturePath": "negitoro.png" },
-            { "id": "rank_4", "backgroundTexturePath": "tunacan_Back.png", "decorationTexturePath": "tunacanTex.png" }
+            { "id": "rank_1", "backgroundTexturePath": "sashimi_Back.png", "decorationTexturePath": "sashimi.png", "centerPanelTexturePath": "" },
+            { "id": "rank_2", "backgroundTexturePath": "yukke_Back.png", "decorationTexturePath": "yukke.png", "centerPanelTexturePath": "" },
+            { "id": "rank_3", "backgroundTexturePath": "negitoro_Back.png", "decorationTexturePath": "negitoro.png", "centerPanelTexturePath": "" },
+            { "id": "rank_4", "backgroundTexturePath": "tunacan_Back.png", "decorationTexturePath": "tunacanTex.png", "centerPanelTexturePath": "" },
+            { "id": "shark", "backgroundTexturePath": "shark_bite.png", "decorationTexturePath": "", "centerPanelTexturePath": "scoreboard.png" }
           ]
+        },
+        {
+          "enabled": true,
+          "localId": 2,
+          "referenceSize": [1920.0, 1080.0],
+          "type": "ScreenOverlayCanvas"
         }
       ],
       "folder": false,
@@ -275,7 +283,7 @@
     {
       "active": true,
       "components": [
-        { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [1920.0, 1080.0], "texturePath": "sashimi_Back.png", "type": "SpriteRenderer", "viewportAnchor": [0.5, 0.5] }
+        { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "screenOverlayScaleMode": "Cover", "size": [1920.0, 1080.0], "texturePath": "sashimi_Back.png", "type": "SpriteRenderer", "viewportAnchor": [0.5, 0.5] }
       ],
       "folder": false,
       "folderTeamEnabled": false,
@@ -418,6 +426,13 @@
       "active": true,
       "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [220.0, 150.0], "texturePath": "sashimi.png", "type": "SpriteRenderer", "viewportAnchor": [0.82, 0.95] }],
       "folder": false, "folderTeamEnabled": false, "id": 18, "locked": false, "modelPath": "", "name": "Fishing Result Decoration 12", "parentId": 0,
+      "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
+      "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
+    },
+    {
+      "active": true,
+      "components": [{ "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "enabled": true, "flipX": false, "flipY": false, "localId": 1, "renderSpace": "ScreenOverlay", "size": [1120.0, 458.0], "texturePath": "", "type": "SpriteRenderer", "viewportAnchor": [0.5, 0.5] }],
+      "folder": false, "folderTeamEnabled": false, "id": 19, "locked": false, "modelPath": "", "name": "Fishing Result Center Scoreboard", "parentId": 0,
       "sprite": { "anchor": [0.5, 0.5], "color": [1.0, 1.0, 1.0, 1.0], "flipX": false, "flipY": false, "size": [100.0, 100.0], "texturePath": "" }, "team": "",
       "transform": { "rotation": [0.0, 0.0, 0.0, 1.0], "scale": [1.0, 1.0, 1.0], "translate": [0.0, 0.0, 0.0] }
     }

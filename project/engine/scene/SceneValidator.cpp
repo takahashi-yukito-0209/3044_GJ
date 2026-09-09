@@ -50,6 +50,11 @@ namespace {
 			domain == "WorldEffects" || domain == "Audio";
 	}
 
+	bool IsValidScreenOverlayScaleMode(const std::string& mode) {
+		return mode == "Inherit" || mode == "Legacy" ||
+			mode == "Fit" || mode == "Cover";
+	}
+
 	std::string DescribeAudioChannelMismatch(
 		const std::string& spatialMode,
 		uint32_t channelCount
@@ -269,9 +274,35 @@ bool SceneValidator::ValidateDocument(
 	uint64_t firstFishingDirectorEntityId = 0;
 	uint32_t fishingResultPresenterCount = 0;
 	uint64_t firstFishingResultPresenterEntityId = 0;
+	uint32_t screenOverlayCanvasCount = 0;
+	uint64_t firstScreenOverlayCanvasEntityId = 0;
 	uint32_t pauseControllerCount = 0;
 	std::unordered_map<uint64_t, std::unordered_set<uint64_t>> prefabLocalIds;
 	std::unordered_map<std::string, uint64_t> activeLeaderControllers;
+	for (const SceneEntity& entity : document.GetEntities()) {
+		if (!SceneEntityQuery::IsEntityActiveInHierarchy(document, entity)) {
+			continue;
+		}
+		for (const SceneComponent& component : entity.components) {
+			if (!component.enabled || component.type != "ScreenOverlayCanvas") {
+				continue;
+			}
+			++screenOverlayCanvasCount;
+			if (firstScreenOverlayCanvasEntityId == 0) {
+				firstScreenOverlayCanvasEntityId = entity.id;
+			}
+			if (!std::isfinite(component.screenOverlayCanvasReferenceSize.x) ||
+				!std::isfinite(component.screenOverlayCanvasReferenceSize.y) ||
+				component.screenOverlayCanvasReferenceSize.x <= 0.0f ||
+				component.screenOverlayCanvasReferenceSize.y <= 0.0f) {
+				addIssue(
+					SceneValidationSeverity::Error,
+					entity.id,
+					"ScreenOverlayCanvas referenceSize must contain finite positive values"
+				);
+			}
+		}
+	}
 	for (const SceneTeamSettings& team : document.GetTeams()) {
 		if (!team.agentFormationCapsuleEnabled) {
 			if (team.agentFormationCapsuleScaleWithActiveMembers) {
@@ -752,6 +783,31 @@ bool SceneValidator::ValidateDocument(
 							component.spriteRenderSpace
 					);
 				}
+				if (!IsValidScreenOverlayScaleMode(component.screenOverlayScaleMode)) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"SpriteRenderer has an unknown screenOverlayScaleMode: " +
+							component.screenOverlayScaleMode
+					);
+				} else if (component.spriteRenderSpace == "Scene2D" &&
+					(component.screenOverlayScaleMode == "Fit" ||
+						component.screenOverlayScaleMode == "Cover")) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"SpriteRenderer Fit/Cover scale mode requires ScreenOverlay renderSpace"
+					);
+				} else if (component.spriteRenderSpace == "ScreenOverlay" &&
+					(component.screenOverlayScaleMode == "Fit" ||
+						component.screenOverlayScaleMode == "Cover") &&
+					screenOverlayCanvasCount == 0) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"SpriteRenderer explicit Fit/Cover scale mode requires an active ScreenOverlayCanvas"
+					);
+				}
 			} else if (component.type == "TextRenderer") {
 				if (
 					component.textRenderSpace != "ScreenOverlay" &&
@@ -761,7 +817,32 @@ bool SceneValidator::ValidateDocument(
 						SceneValidationSeverity::Error,
 						entity.id,
 						"TextRenderer has an unknown renderSpace: " +
-							component.textRenderSpace
+						component.textRenderSpace
+					);
+				}
+				if (component.screenOverlayScaleMode != "Inherit" &&
+					component.screenOverlayScaleMode != "Legacy" &&
+					component.screenOverlayScaleMode != "Fit") {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"TextRenderer has an unknown screenOverlayScaleMode: " +
+							component.screenOverlayScaleMode
+					);
+				} else if (component.textRenderSpace == "Scene2D" &&
+					component.screenOverlayScaleMode == "Fit") {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"TextRenderer Fit scale mode requires ScreenOverlay renderSpace"
+					);
+				} else if (component.textRenderSpace == "ScreenOverlay" &&
+					component.screenOverlayScaleMode == "Fit" &&
+					screenOverlayCanvasCount == 0) {
+					addIssue(
+						SceneValidationSeverity::Error,
+						entity.id,
+						"TextRenderer explicit Fit scale mode requires an active ScreenOverlayCanvas"
 					);
 				}
 				if (component.textFontFamily.empty()) {
@@ -2988,6 +3069,13 @@ bool SceneValidator::ValidateDocument(
 					"TextRenderer",
 					"Fishing Result Score Text"
 				);
+				if (component.fishingResultPresentationCenterPanelEntityId != 0) {
+					validatePresenterReference(
+						component.fishingResultPresentationCenterPanelEntityId,
+						"SpriteRenderer",
+						"Fishing Result Center Panel"
+					);
+				}
 				if (component.fishingResultPresentationFallbackVariantId.empty()) {
 					addIssue(
 						SceneValidationSeverity::Error,
@@ -3012,12 +3100,19 @@ bool SceneValidator::ValidateDocument(
 								variant.id
 						);
 					}
-					if (variant.backgroundTexturePath.empty() ||
-						variant.decorationTexturePath.empty()) {
+					if (variant.backgroundTexturePath.empty()) {
 						addIssue(
 							SceneValidationSeverity::Error,
 							entity.id,
-							"FishingResultPresenter variants require background and decoration textures"
+							"FishingResultPresenter variants require a background texture"
+						);
+					}
+					if (!variant.centerPanelTexturePath.empty() &&
+						component.fishingResultPresentationCenterPanelEntityId == 0) {
+						addIssue(
+							SceneValidationSeverity::Error,
+							entity.id,
+							"FishingResultPresenter center panel texture requires a center panel Entity"
 						);
 					}
 				}
@@ -3408,6 +3503,13 @@ bool SceneValidator::ValidateDocument(
 			SceneValidationSeverity::Error,
 			firstFishingResultPresenterEntityId,
 			"Scene contains multiple active FishingResultPresenter components"
+		);
+	}
+	if (screenOverlayCanvasCount > 1) {
+		addIssue(
+			SceneValidationSeverity::Error,
+			firstScreenOverlayCanvasEntityId,
+			"Scene contains multiple active ScreenOverlayCanvas components"
 		);
 	}
 	if (activeAudioListenerCount > 1) {
