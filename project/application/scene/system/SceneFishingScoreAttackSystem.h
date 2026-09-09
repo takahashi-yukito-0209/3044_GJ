@@ -148,6 +148,8 @@ public:
 	bool ConsumePlayerConstraintRequest(
 		SceneFishingScoreAttackPlayerConstraintRequest& request
 	);
+	// ポーズメニューから、現在のラウンドを維持して開始位置へ戻す。
+	bool RequestPlayerRespawn();
 	bool ConsumePlayerResetRequest(SceneFishingScoreAttackPlayerResetRequest& request);
 	void AddFormationOutlineDebugDraw(
 		const SceneDocument& document,

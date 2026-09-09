@@ -2447,6 +2447,16 @@ bool SceneFishingScoreAttackSystem::ConsumePlayerConstraintRequest(
 	return true;
 }
 
+bool SceneFishingScoreAttackSystem::RequestPlayerRespawn() {
+	if (!hasInitialPlayerTransform_) {
+		return false;
+	}
+	playerConstraintRequest_ = {};
+	hasPlayerConstraintRequest_ = false;
+	hasPlayerResetRequest_ = true;
+	return true;
+}
+
 bool SceneFishingScoreAttackSystem::ConsumePlayerResetRequest(
 	SceneFishingScoreAttackPlayerResetRequest& request
 ) {
