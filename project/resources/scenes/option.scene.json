@@ -614,6 +614,319 @@
           0.0
         ]
       }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "castsShadow": true,
+          "cullMode": "Back",
+          "enabled": true,
+          "environmentReflectionIntensity": 0.20000000298023224,
+          "environmentReflectionOverride": false,
+          "localId": 1,
+          "materialOverrides": [],
+          "modelPath": "FishingBoat.obj",
+          "type": "MeshRenderer",
+          "visualRotation": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 100,
+      "locked": false,
+      "modelPath": "FishingBoat.obj",
+      "name": "TitleFishingBoat",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          0.8199999928474426,
+          0.8199999928474426,
+          0.8199999928474426
+        ],
+        "translate": [
+          -2.847524881362915,
+          0.786749005317688,
+          0.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "enabled": true,
+          "farClip": 1000.0,
+          "fovY": 0.44999998807907104,
+          "invertPitch": false,
+          "invertYaw": false,
+          "isMain": true,
+          "localId": 1,
+          "nearClip": 0.10000000149011612,
+          "type": "Camera"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 101,
+      "locked": false,
+      "modelPath": "",
+      "name": "Title Main Camera",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.75,
+          -10.5
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "castsShadow": false,
+          "color": [
+            1.0,
+            0.9200000166893005,
+            0.7799999713897705,
+            1.0
+          ],
+          "decay": 1.0,
+          "enabled": true,
+          "innerAngle": 25.0,
+          "intensity": 5.0,
+          "lightType": "Point",
+          "localId": 1,
+          "outerAngle": 35.0,
+          "range": 16.0,
+          "shadow": {
+            "bias": 0.0024999999441206455,
+            "distance": 45.0,
+            "farClip": 120.0,
+            "nearClip": 0.10000000149011612,
+            "normalBias": 0.019999999552965164,
+            "orthographicSize": 40.0,
+            "strength": 0.550000011920929,
+            "texelSnap": true
+          },
+          "type": "Light"
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 102,
+      "locked": false,
+      "modelPath": "",
+      "name": "Title Boat Key Light",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          -2.799999952316284,
+          2.4000000953674316,
+          -3.0
+        ]
+      }
+    },
+    {
+      "active": true,
+      "components": [
+        {
+          "breakupStrength": 1.0,
+          "causticsIntensity": 0.3499999940395355,
+          "causticsScale": 0.07999999821186066,
+          "causticsSpeed": 1.0,
+          "drag": 4.0,
+          "enabled": true,
+          "gravityScale": 0.550000011920929,
+          "halfSize": [
+            10.0,
+            0.10000000149011612,
+            10.0
+          ],
+          "lightColor": [
+            0.550000011920929,
+            0.8999999761581421,
+            1.149999976158142,
+            1.0
+          ],
+          "lightDensity": 0.04500000178813934,
+          "lightDirection": [
+            -0.25,
+            -1.0,
+            0.18000000715255737
+          ],
+          "lightIntensity": 0.550000011920929,
+          "lightSampleCount": 16,
+          "lightShaftEnabled": true,
+          "localId": 1,
+          "maxFallSpeed": 5.0,
+          "moveSpeedMultiplier": 0.44999998807907104,
+          "noiseScale": 1.0,
+          "offset": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "surfaceAlpha": 0.42000001668930054,
+          "surfaceBaseColor": [
+            0.03999999910593033,
+            0.550000011920929,
+            0.7799999713897705,
+            1.0
+          ],
+          "surfaceEnabled": true,
+          "surfaceFresnelPower": 3.0,
+          "surfaceHighlightColor": [
+            0.41999998688697815,
+            0.949999988079071,
+            1.2000000476837158,
+            1.0
+          ],
+          "surfaceNormalStrength": 1.0500000715255737,
+          "surfaceWaveScale": 1.1800000667572021,
+          "swimUpSpeed": 12.0,
+          "type": "WaterVolume",
+          "warpStrength": 1.0
+        }
+      ],
+      "folder": false,
+      "folderTeamEnabled": false,
+      "id": 103,
+      "locked": false,
+      "modelPath": "",
+      "name": "Entity",
+      "parentId": 0,
+      "sprite": {
+        "anchor": [
+          0.5,
+          0.5
+        ],
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "flipX": false,
+        "flipY": false,
+        "size": [
+          100.0,
+          100.0
+        ],
+        "texturePath": ""
+      },
+      "team": "",
+      "transform": {
+        "rotation": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "translate": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      }
     }
   ],
   "fishingObstacle": {

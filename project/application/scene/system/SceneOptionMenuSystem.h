@@ -10,6 +10,7 @@ class SceneTextRenderSystem;
 
 struct SceneOptionMenuResult {
 	std::string requestedSceneId; // 決定操作で要求された遷移先Scene ID。
+	bool useSceneTransitionEffect = true; // 通常のScene切り替え演出を使うか。
 };
 
 // Option Sceneの音量変更と戻る項目の選択状態を担当する。

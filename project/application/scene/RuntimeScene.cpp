@@ -27,6 +27,8 @@ namespace {
 	constexpr const char* kTitleStartTargetSceneId = "gameplay";
 	constexpr const char* kGameplaySceneId = "gameplay"; // 通常Gameplay SceneのID。
 	constexpr const char* kTutorialSceneId = "tutorial"; // Tutorial SceneのID。
+	constexpr const char* kOptionSceneId = "option"; // Option SceneのID。
+	constexpr const char* kCreditSceneId = "credit"; // Credit SceneのID。
 	constexpr float kTitleStartTransitionSeconds = 0.85f;
 	constexpr float kTitleStartTextFadeSeconds = 0.25f;
 
@@ -46,6 +48,19 @@ namespace {
 			sceneId == kTutorialSceneId ||
 			sceneId == "GAMEPLAY" ||
 			sceneId == "TUTORIAL";
+	}
+
+	/// <summary>
+	/// タイトル背景の船と水面演出を使うSceneかを判定します。
+	/// </summary>
+	bool IsTitleBackdropScene(const std::string& sceneId) {
+		return
+			sceneId == kTitleSceneId ||
+			sceneId == kOptionSceneId ||
+			sceneId == kCreditSceneId ||
+			sceneId == "TITLE" ||
+			sceneId == "OPTION" ||
+			sceneId == "CREDIT";
 	}
 
 	/// <summary>
@@ -779,7 +794,8 @@ void RuntimeScene::Update(float deltaTime)
 						BeginTitleStartTransition();
 					} else {
 						sceneManager_->RequestSceneTransition(
-							titleMenuResult.requestedSceneId
+							titleMenuResult.requestedSceneId,
+							titleMenuResult.useSceneTransitionEffect
 						);
 						return;
 					}
@@ -792,7 +808,8 @@ void RuntimeScene::Update(float deltaTime)
 				optionMenuSystem_.Update(*activeDocument);
 			if (!optionMenuResult.requestedSceneId.empty()) {
 				sceneManager_->RequestSceneTransition(
-					optionMenuResult.requestedSceneId
+					optionMenuResult.requestedSceneId,
+					optionMenuResult.useSceneTransitionEffect
 				);
 				return;
 			}
@@ -1026,7 +1043,7 @@ void RuntimeScene::Update(float deltaTime)
 				runtimeBindingsValid = false;
 			}
 		}
-		if (playing && GetSceneAssetId() == "title") {
+		if (playing && IsTitleBackdropScene(GetSceneAssetId())) {
 			titleBoatMotionSystem_.Update(
 				*activeDocument,
 				runtimeObjectBindings_,

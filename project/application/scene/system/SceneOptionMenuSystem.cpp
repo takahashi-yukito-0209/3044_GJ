@@ -95,9 +95,11 @@ SceneOptionMenuResult SceneOptionMenuSystem::Update(
 		TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })
 	) {
 		result.requestedSceneId = "title";
+		result.useSceneTransitionEffect = false;
 	}
 	if (TriggerAnyKey(input, { DIK_ESCAPE })) {
 		result.requestedSceneId = "title";
+		result.useSceneTransitionEffect = false;
 	}
 	return result;
 }

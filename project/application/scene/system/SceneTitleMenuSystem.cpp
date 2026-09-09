@@ -14,15 +14,16 @@ namespace {
 	struct MenuDefinition {
 		const char* entityName; // Scene上で対応するTextRenderer Entity名。
 		const char* targetSceneId; // 決定時に要求するScene ID。
+		bool useSceneTransitionEffect; // 通常のScene切り替え演出を使うか。
 		bool exitRequested; // 決定時にゲーム終了を要求する項目か。
 	};
 
 	constexpr std::array<MenuDefinition, 5> kMenuDefinitions = { {
-		{ "TitleMenuStartText", "gameplay", false },
-		{ "TitleMenuTutorialText", "tutorial", false },
-		{ "TitleMenuOptionText", "option", false },
-		{ "TitleMenuCreditText", "credit", false },
-		{ "TitleMenuExitText", "", true },
+		{ "TitleMenuStartText", "gameplay", true, false },
+		{ "TitleMenuTutorialText", "tutorial", true, false },
+		{ "TitleMenuOptionText", "option", false, false },
+		{ "TitleMenuCreditText", "credit", false, false },
+		{ "TitleMenuExitText", "", true, true },
 	} };
 
 	constexpr Vector4 kSelectedColor = { 1.0f, 0.92f, 0.55f, 1.0f };
@@ -70,6 +71,8 @@ SceneTitleMenuResult SceneTitleMenuSystem::Update(
 			result.exitRequested = true;
 		} else {
 			result.requestedSceneId = selectedItem.targetSceneId;
+			result.useSceneTransitionEffect =
+				selectedItem.useSceneTransitionEffect;
 		}
 	}
 	return result;
@@ -123,6 +126,7 @@ SceneTitleMenuSystem::CollectMenuItems(const SceneDocument& document) const {
 			entity->id,
 			textRenderer->textValue,
 			definition.targetSceneId,
+			definition.useSceneTransitionEffect,
 			definition.exitRequested
 		});
 	}

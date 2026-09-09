@@ -12,6 +12,7 @@ class SceneTextRenderSystem;
 
 struct SceneTitleMenuResult {
 	std::string requestedSceneId; // 決定操作で要求された遷移先Scene ID。
+	bool useSceneTransitionEffect = true; // 通常のScene切り替え演出を使うか。
 	bool exitRequested = false; // 決定操作で要求されたゲーム終了。
 };
 
@@ -41,6 +42,7 @@ private:
 		uint64_t entityId = 0; // 表示を上書きするTextRenderer Entity ID。
 		std::string label; // メニューに表示する項目名。
 		std::string targetSceneId; // 決定時に遷移するScene ID。
+		bool useSceneTransitionEffect = true; // 通常のScene切り替え演出を使うか。
 		bool exitRequested = false; // 決定時にゲーム終了を要求する項目か。
 	};
 
