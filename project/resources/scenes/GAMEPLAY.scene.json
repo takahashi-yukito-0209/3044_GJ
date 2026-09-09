@@ -5664,7 +5664,7 @@
             70
           ],
           "fishMultiplierBase": 1.0,
-          "fishMultiplierPerAdditionalFish": 1.0,
+          "fishMultiplierPerAdditionalFish": 0.30000001192092896,
           "formationOutlineBloomIntensity": 3.0,
           "formationOutlineColor": [
             1.0,
@@ -5728,13 +5728,13 @@
               ]
             },
             {
-              "distanceMultiplier": 1.2000000476837158,
+              "distanceMultiplier": 1.100000023841858,
               "hookCount": 3,
               "hookMultiplierWeights": [
-                8.0,
-                8.0,
-                8.0,
-                24.0,
+                12.899999618530273,
+                29.899999618530273,
+                21.299999237060547,
+                13.199999809265137,
                 24.0,
                 24.0,
                 2.0,
@@ -5744,13 +5744,13 @@
               ]
             },
             {
-              "distanceMultiplier": 1.399999976158142,
+              "distanceMultiplier": 1.2000000476837158,
               "hookCount": 2,
               "hookMultiplierWeights": [
-                6.0,
-                6.0,
-                6.0,
-                20.0,
+                2.5999999046325684,
+                5.5,
+                10.100000381469727,
+                7.0,
                 20.0,
                 20.0,
                 10.0,
@@ -5760,12 +5760,12 @@
               ]
             },
             {
-              "distanceMultiplier": 1.600000023841858,
+              "distanceMultiplier": 1.2999999523162842,
               "hookCount": 2,
               "hookMultiplierWeights": [
-                3.0,
-                3.0,
-                3.0,
+                10.0,
+                0.20000000298023224,
+                0.20000000298023224,
                 10.0,
                 10.0,
                 10.0,
@@ -5923,11 +5923,11 @@
                 1.0,
                 1.0
               ],
-              "displayName": "Rank 1",
+              "displayName": "sahimi",
               "iconTexturePath": "resources/sashimi.png",
               "id": "rank_1",
               "modelPath": "Cube.obj",
-              "scoreMultiplier": 1.0
+              "scoreMultiplier": -500.0
             },
             {
               "bubbleIconOffset": [
@@ -5948,7 +5948,7 @@
               "iconTexturePath": "resources/yukke.png",
               "id": "rank_2",
               "modelPath": "Cube.obj",
-              "scoreMultiplier": 2.0
+              "scoreMultiplier": 100.0
             },
             {
               "bubbleIconOffset": [
@@ -5969,7 +5969,7 @@
               "iconTexturePath": "resources/negitoro.png",
               "id": "rank_3",
               "modelPath": "Cube.obj",
-              "scoreMultiplier": 3.0
+              "scoreMultiplier": 500.0
             },
             {
               "bubbleIconOffset": [
@@ -5990,7 +5990,7 @@
               "iconTexturePath": "resources/tunacanTex.png",
               "id": "rank_4",
               "modelPath": "Cube.obj",
-              "scoreMultiplier": 4.0
+              "scoreMultiplier": 1000.0
             },
             {
               "bubbleIconOffset": [
@@ -6122,10 +6122,10 @@
           "hookScoreUnit": 100.0,
           "hookSpawnAreaEntityId": 12,
           "hookTierScoreMultipliers": [
-            1.0,
-            2.0,
-            3.0,
-            4.0,
+            -500.0,
+            100.0,
+            500.0,
+            1000.0,
             5.0,
             6.0,
             7.0,
@@ -6145,7 +6145,7 @@
           "resultTextEntityId": 21,
           "scorePrefix": "すこあ ",
           "scoreTextEntityId": 19,
-          "sharkRouteDebugVisible": true,
+          "sharkRouteDebugVisible": false,
           "timerPrefix": "じかん ",
           "timerRunsDuringFishSelection": false,
           "timerTextEntityId": 18,
