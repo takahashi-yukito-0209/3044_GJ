@@ -220,7 +220,11 @@ private:
 		const SceneComponent& director,
 		std::string& diagnostic
 	) const;
-	void InitializeRun(SceneDocument& document, const SceneComponent& director);
+	void InitializeRun(
+		SceneDocument& document,
+		const SceneComponent& director,
+		bool tutorialScene
+	);
 	void UpdateSelection(SceneDocument& document, const SceneComponent& director);
 	bool SpawnHooks(SceneDocument& document, const SceneComponent& director);
 	void StartRound(SceneDocument& document, const SceneComponent& director);
@@ -242,7 +246,7 @@ private:
 		const SceneDocument& document,
 		const SceneComponent& director
 	);
-	void BuildTextRequests(const SceneComponent& director);
+	void BuildTextRequests(const SceneDocument& document, const SceneComponent& director);
 	void InitializeResultTracking(
 		const SceneDocument& document,
 		const SceneComponent& director
@@ -271,6 +275,10 @@ private:
 	/// 現在のチュートリアル段階でタイマーを進めるかを判定する。
 	/// </summary>
 	bool IsTutorialTimerAllowed() const;
+	/// <summary>
+	/// 現在のチュートリアル段階で釣り針の生成数を1本に絞るかを判定する。
+	/// </summary>
+	bool IsTutorialSingleHookSpawnStep() const;
 	/// <summary>
 	/// チュートリアル説明送り入力を処理する。
 	/// </summary>

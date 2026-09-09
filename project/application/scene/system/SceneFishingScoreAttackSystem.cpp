@@ -47,6 +47,9 @@ namespace {
 	constexpr float kTutorialMovePracticeRequiredSeconds = 0.75f; // 移動練習完了に必要な移動秒数。
 	constexpr float kTutorialMoveInputSpeedThreshold = 0.25f; // 移動入力とみなす最低速度。
 	constexpr int kTutorialMultiScoreRequiredCount = 3; // 複数得点練習で必要な得点回数。
+	constexpr int kTutorialMinimumHookDistanceBand = 3; // チュートリアル中に釣り針を出し始める遠距離帯。
+	constexpr const char* kTutorialMessageTextEntityName =
+		"Fishing Tutorial Message"; // チュートリアル説明専用Text Entity名。
 
 	/// <summary>
 	/// チュートリアル説明送り入力が押されたかを判定する。
@@ -1627,15 +1630,12 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 			Fault(document, *director, std::move(diagnostic));
 			return;
 		}
-		InitializeRun(document, *director);
-		if (tutorialScene) {
-			tutorialStep_ = SceneFishingScoreAttackTutorialStep::Overview;
-		}
+		InitializeRun(document, *director, tutorialScene);
 	}
 
 	if (tutorialScene && AdvanceTutorialByInput(document, *director)) {
 		UpdateCurrentPositionMultiplier(document, *director);
-		BuildTextRequests(*director);
+		BuildTextRequests(document, *director);
 		return;
 	}
 	if (
@@ -1648,7 +1648,7 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 		tutorialAutoStartNextRound_ = false;
 		StartRound(document, *director);
 		UpdateCurrentPositionMultiplier(document, *director);
-		BuildTextRequests(*director);
+		BuildTextRequests(document, *director);
 		return;
 	}
 
@@ -1686,7 +1686,7 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 		UpdateSharks(document, *director, deltaTime);
 	}
 	UpdateCurrentPositionMultiplier(document, *director);
-	BuildTextRequests(*director);
+	BuildTextRequests(document, *director);
 }
 
 void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
@@ -1836,7 +1836,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			formationNoProgressReferenceYaw_ = 0.0f;
 			formationNoProgressSeconds_ = 0.0f;
 			hasFormationNoProgressReference_ = false;
-			BuildTextRequests(*director);
+			BuildTextRequests(document, *director);
 			return;
 		}
 		formationCapsule.center.x = motionResult.center.x;
@@ -2021,7 +2021,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 			tutorialStep_ =
 				SceneFishingScoreAttackTutorialStep::HookExplanation;
 			tutorialMovePracticeSeconds_ = 0.0f;
-			BuildTextRequests(*director);
+			BuildTextRequests(document, *director);
 		}
 		return;
 	}
@@ -2138,7 +2138,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		}
 		state_ = SceneFishingScoreAttackState::SelectingNext;
 		SetFishPreview(document, *director);
-		BuildTextRequests(*director);
+		BuildTextRequests(document, *director);
 		return;
 	}
 	const ActiveHook* hitHook = nullptr;
@@ -2298,7 +2298,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	}
 	state_ = SceneFishingScoreAttackState::SelectingNext;
 	SetFishPreview(document, *director);
-	BuildTextRequests(*director);
+	BuildTextRequests(document, *director);
 }
 
 void SceneFishingScoreAttackSystem::ApplyHookVisualOverrides(
@@ -3834,6 +3834,22 @@ bool SceneFishingScoreAttackSystem::IsTutorialTimerAllowed() const {
 }
 
 /// <summary>
+/// 現在のチュートリアル段階で釣り針の生成数を1本に絞るかを判定する。
+/// </summary>
+bool SceneFishingScoreAttackSystem::IsTutorialSingleHookSpawnStep() const {
+	switch (tutorialStep_) {
+	case SceneFishingScoreAttackTutorialStep::Overview:
+	case SceneFishingScoreAttackTutorialStep::MoveExplanation:
+	case SceneFishingScoreAttackTutorialStep::MovePractice:
+	case SceneFishingScoreAttackTutorialStep::HookExplanation:
+	case SceneFishingScoreAttackTutorialStep::ScoreOnePractice:
+		return true;
+	default:
+		return false;
+	}
+}
+
+/// <summary>
 /// チュートリアル説明送り入力を処理する。
 /// </summary>
 bool SceneFishingScoreAttackSystem::AdvanceTutorialByInput(
@@ -3883,14 +3899,12 @@ void SceneFishingScoreAttackSystem::NotifyTutorialHookScored() {
 		tutorialStep_ = SceneFishingScoreAttackTutorialStep::ScoreMultiPractice;
 		tutorialMultiScoreCount_ = 1;
 		tutorialAutoStartNextRound_ = true;
-		scorePopup_ = {};
 		return;
 	case SceneFishingScoreAttackTutorialStep::ScoreMultiPractice:
 		++tutorialMultiScoreCount_;
 		if (tutorialMultiScoreCount_ >= kTutorialMultiScoreRequiredCount) {
 			tutorialStep_ = SceneFishingScoreAttackTutorialStep::FishCountExplanation;
 			tutorialAutoStartNextRound_ = false;
-			scorePopup_ = {};
 			return;
 		}
 		tutorialAutoStartNextRound_ = true;
@@ -3900,7 +3914,6 @@ void SceneFishingScoreAttackSystem::NotifyTutorialHookScored() {
 		if (tutorialMultiScoreCount_ >= kTutorialMultiScoreRequiredCount) {
 			tutorialStep_ = SceneFishingScoreAttackTutorialStep::SharkExplanation;
 			tutorialAutoStartNextRound_ = false;
-			scorePopup_ = {};
 			return;
 		}
 		tutorialAutoStartNextRound_ = true;
@@ -3916,17 +3929,17 @@ void SceneFishingScoreAttackSystem::NotifyTutorialHookScored() {
 std::string SceneFishingScoreAttackSystem::GetTutorialMessage() const {
 	switch (tutorialStep_) {
 	case SceneFishingScoreAttackTutorialStep::Overview:
-		return "ツナになるために魚を集めよう ENTER/Y";
+		return "ツナになるために魚を集めよう ENTER / Y";
 	case SceneFishingScoreAttackTutorialStep::MoveExplanation:
-		return "WASD / 左スティックで移動 ENTER/Y";
+		return "WASD / 左スティックで移動 ENTER / Y";
 	case SceneFishingScoreAttackTutorialStep::MovePractice:
 		return "移動して水中を進んでみよう";
 	case SceneFishingScoreAttackTutorialStep::HookExplanation:
-		return "釣り針に触れると得点になる ENTER/Y";
+		return "釣り針に触れると得点になる ENTER / Y";
 	case SceneFishingScoreAttackTutorialStep::ScoreOnePractice:
 		return "釣り針を1つ取ってみよう";
 	case SceneFishingScoreAttackTutorialStep::FishCountExplanation:
-		return "魚を増やすと得点も増える ENTER/Y";
+		return "魚を増やすと得点も増える ENTER / Y";
 	case SceneFishingScoreAttackTutorialStep::FishCountPractice:
 		return "ホイール/十字キーで魚数を変えて CLICK/A";
 	case SceneFishingScoreAttackTutorialStep::ScoreMultiPractice:
@@ -3934,7 +3947,7 @@ std::string SceneFishingScoreAttackSystem::GetTutorialMessage() const {
 	case SceneFishingScoreAttackTutorialStep::ScoreAdjustedPractice:
 		return "増やした魚数で何度か取ってみよう";
 	case SceneFishingScoreAttackTutorialStep::SharkExplanation:
-		return "サメに当たると減点される ENTER/Y";
+		return "サメに当たると減点される ENTER / Y";
 	default:
 		return {};
 	}
@@ -3942,7 +3955,8 @@ std::string SceneFishingScoreAttackSystem::GetTutorialMessage() const {
 
 void SceneFishingScoreAttackSystem::InitializeRun(
 	SceneDocument& document,
-	const SceneComponent& director
+	const SceneComponent& director,
+	bool tutorialScene
 ) {
 	if (director.fishingRandomizeSeedOnPlay) {
 		std::random_device randomDevice;
@@ -3964,7 +3978,9 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 	timerRunning_ = false;
 	resultInputArmed_ = false;
 	diagnostic_.clear();
-	tutorialStep_ = SceneFishingScoreAttackTutorialStep::Disabled;
+	tutorialStep_ = tutorialScene
+		? SceneFishingScoreAttackTutorialStep::Overview
+		: SceneFishingScoreAttackTutorialStep::Disabled;
 	tutorialMovePracticeSeconds_ = 0.0f;
 	tutorialFishCountPracticeStart_ = selectedFishCount_;
 	tutorialFishCountAdjusted_ = false;
@@ -4093,7 +4109,7 @@ void SceneFishingScoreAttackSystem::InitializeRun(
 	}
 	SetFishPreview(document, director);
 	state_ = SceneFishingScoreAttackState::SelectingInitial;
-	BuildTextRequests(director);
+	BuildTextRequests(document, director);
 }
 
 void SceneFishingScoreAttackSystem::UpdateSelection(
@@ -4217,11 +4233,36 @@ bool SceneFishingScoreAttackSystem::SpawnHooks(
 	std::vector<float> spawnRadii;
 	const bool useHookBandSettings = director.fishingUseHookBandSettings;
 	const int distanceBandCount = useHookBandSettings ? 5 : director.fishingDistanceBandCount;
+	const bool restrictTutorialHookDistance =
+		useHookBandSettings &&
+		tutorialStep_ != SceneFishingScoreAttackTutorialStep::Disabled &&
+		tutorialStep_ != SceneFishingScoreAttackTutorialStep::FreePlay; // チュートリアル中に近距離帯を除外するか。
+	const int tutorialHookSpawnLimit =
+		IsTutorialSingleHookSpawnStep()
+			? 1
+			: (std::numeric_limits<int>::max)(); // 序盤チュートリアルで生成する釣り針の上限。
+	const int tutorialMinimumHookBand =
+		distanceBandCount > kTutorialMinimumHookDistanceBand
+			? kTutorialMinimumHookDistanceBand
+			: distanceBandCount - 1; // チュートリアル中に残す最初の距離帯。
+	int spawnedHookCount = 0; // 今回の配置で有効化した釣り針数。
 	for (int bandIndex = 0; bandIndex < distanceBandCount; ++bandIndex) {
+		if (spawnedHookCount >= tutorialHookSpawnLimit) {
+			break;
+		}
+		const bool skipTutorialNearHookBand =
+			restrictTutorialHookDistance &&
+			bandIndex < tutorialMinimumHookBand; // チュートリアル中に使わない近距離帯か。
+		if (skipTutorialNearHookBand) {
+			continue;
+		}
 		const int hooksInBand = useHookBandSettings
 			? director.fishingHookBands[static_cast<size_t>(bandIndex)].hookCount
 			: director.fishingHooksPerDistanceBand;
 		for (int hookIndex = 0; hookIndex < hooksInBand; ++hookIndex) {
+			if (spawnedHookCount >= tutorialHookSpawnLimit) {
+				break;
+			}
 			const SceneFishingHookPoolEntry* selectedEntry = nullptr;
 			int hookMultiplierTier = 1;
 			if (useHookBandSettings) {
@@ -4420,6 +4461,7 @@ bool SceneFishingScoreAttackSystem::SpawnHooks(
 				: director.fishingDistanceMultiplierBase +
 					director.fishingDistanceMultiplierStep * static_cast<float>(bandIndex);
 			activeHooks_.push_back({ hookEntity->id, bandIndex, distanceMultiplier, hookMultiplierTier });
+			++spawnedHookCount;
 		}
 	}
 	return true;
@@ -5317,7 +5359,7 @@ void SceneFishingScoreAttackSystem::Finish(
 		resultSessionPublishRequest_.record = std::move(record);
 	}
 	state_ = SceneFishingScoreAttackState::Result;
-	BuildTextRequests(director);
+	BuildTextRequests(document, director);
 }
 
 void SceneFishingScoreAttackSystem::Fault(
@@ -5345,7 +5387,7 @@ void SceneFishingScoreAttackSystem::Fault(
 		}
 	}
 	state_ = SceneFishingScoreAttackState::Faulted;
-	BuildTextRequests(director);
+	BuildTextRequests(document, director);
 }
 
 void SceneFishingScoreAttackSystem::SetFishPreview(
@@ -5434,6 +5476,7 @@ void SceneFishingScoreAttackSystem::UpdateCurrentPositionMultiplier(
 }
 
 void SceneFishingScoreAttackSystem::BuildTextRequests(
+	const SceneDocument& document,
 	const SceneComponent& director
 ) {
 	textRequests_.clear();
@@ -5471,7 +5514,19 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 			: std::string{}
 	);
 	const std::string tutorialMessage = GetTutorialMessage(); // 中央HUDへ表示するチュートリアル説明文。
-	if (!tutorialMessage.empty()) {
+	const SceneEntity* tutorialMessageEntity =
+		document.FindEntityByName(kTutorialMessageTextEntityName); // 説明専用Text Entity。
+	const uint64_t tutorialMessageTextEntityId =
+		tutorialMessageEntity &&
+			IsEntityActiveInHierarchy(document, *tutorialMessageEntity) &&
+			FindEnabledComponent(*tutorialMessageEntity, "TextRenderer")
+			? tutorialMessageEntity->id
+			: 0; // 説明専用Text Entity ID。
+	if (tutorialMessageTextEntityId != 0) {
+		addText(tutorialMessageTextEntityId, tutorialMessage);
+	}
+	if (!tutorialMessage.empty() && tutorialMessageTextEntityId == 0) {
+		scorePopup_ = {}; // 説明専用Entityがない場合のみ、既存Entity共有の競合を避ける。
 		addText(
 			director.fishingResultTextEntityId,
 			tutorialMessage
