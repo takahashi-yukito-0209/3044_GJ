@@ -561,6 +561,8 @@ void RuntimeScene::Initialize()
 		Object3dCommon::GetInstance()->GetDxCommon()
 	);
 	if (initialDocument) {
+		// 実行中にSceneEntity配列を再配置しないよう、演出魚群はbinding生成前に確保する。
+		fishingScoreAttackSystem_.PrepareFishCatchEffectPool(*initialDocument);
 		objectSystem_.BuildBindings(
 			*initialDocument,
 			runtimeObjectBindings_
@@ -851,7 +853,7 @@ void RuntimeScene::Update(float deltaTime)
 			);
 		}
 	} else {
-		fishingScoreAttackSystem_.Clear();
+		fishingScoreAttackSystem_.Clear(activeDocument);
 	}
 	if (activeDocument && playing && executionContext) {
 		SceneFishingScoreAttackSessionBeginRequest beginRequest{};
@@ -1371,6 +1373,11 @@ void RuntimeScene::Update(float deltaTime)
 		fishingScoreAttackSystem_.ApplySharkVisualOverrides(
 			*activeDocument,
 			runtimeObjectBindings_
+		);
+		fishingScoreAttackSystem_.ApplyFishCatchVisualOverrides(
+			*activeDocument,
+			runtimeObjectBindings_,
+			GetSceneViewCamera()
 		);
 	}
 	if (activeDocument) {

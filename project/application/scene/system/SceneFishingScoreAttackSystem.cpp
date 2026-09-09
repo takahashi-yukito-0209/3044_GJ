@@ -11,6 +11,7 @@
 #include "../../../engine/debug/DebugRenderer.h"
 #include "../../../engine/io/Input.h"
 #include "../../../engine/math/Math.h"
+#include "../../../engine/3d/Camera.h"
 #include "../../../engine/3d/Object3d.h"
 #include "../../../engine/3d/ModelManager.h"
 #include "../../../engine/particle/ParticleManager.h"
@@ -1580,6 +1581,8 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 	float deltaTime,
 	bool playing
 ) {
+	// Runtime専用の追加・削除はObject/Colliderのbindingを作り直す前に完了させる。
+	MaterializePendingFishCatchEffects(document);
 	uint64_t foundDirectorEntityId = 0;
 	bool duplicateDirector = false;
 	const SceneComponent* director = FindDirector(
@@ -1596,13 +1599,17 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 			iconRequests_.clear();
 			hookBubbleRequests_.clear();
 		} else {
-			Clear();
+			Clear(&document);
 		}
 		return;
 	}
 
 	if (directorEntityId_ != foundDirectorEntityId) {
-		Clear();
+		Clear(&document);
+		director = FindDirector(document, foundDirectorEntityId, duplicateDirector);
+		if (!director || duplicateDirector) {
+			return;
+		}
 		directorEntityId_ = foundDirectorEntityId;
 	}
 	hasDirector_ = true;
@@ -1620,6 +1627,11 @@ void SceneFishingScoreAttackSystem::UpdateBeforeSimulation(
 		if (scorePopup_.elapsedSeconds >= scorePopup_.durationSeconds) {
 			scorePopup_ = {};
 		}
+	}
+	const float safeDeltaTime = (std::max)(deltaTime, 0.0f);
+	fishCatchEffectPoolElapsedSeconds_ += safeDeltaTime;
+	for (FishCatchAnimation& animation : fishCatchAnimations_) {
+		animation.elapsedSeconds += safeDeltaTime;
 	}
 	if (state_ == SceneFishingScoreAttackState::Result) {
 		resultInputArmed_ = true;
@@ -1693,7 +1705,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	SceneDocument& document,
 	const std::string& sceneId,
 	const std::vector<SceneRuntimeObjectBinding>& bindings,
-	const SceneAgentSystem& agentSystem,
+	SceneAgentSystem& agentSystem,
 	bool playing,
 	float deltaTime,
 	const Vector3& planarVelocity
@@ -1712,7 +1724,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		? FindEnabledComponent(*directorEntity, "FishingScoreAttackDirector")
 		: nullptr;
 	if (!director) {
-		Clear();
+		Clear(&document);
 		return;
 	}
 	FormationCapsule formationCapsule{};
@@ -2299,6 +2311,10 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	state_ = SceneFishingScoreAttackState::SelectingNext;
 	SetFishPreview(document, *director);
 	BuildTextRequests(document, *director);
+	// 複製はSceneEntity配列を再確保し得るため、director参照を使い切った後に行う。
+	StartFishCatchAnimation(
+		document, *director, bindings, agentSystem, rank.color
+	);
 }
 
 void SceneFishingScoreAttackSystem::ApplyHookVisualOverrides(
@@ -2471,6 +2487,607 @@ void SceneFishingScoreAttackSystem::ApplySharkVisualOverrides(
 		binding->object->SetColor(color);
 		binding->object->SetEmissive(emissiveIntensity * pulse, alertColor);
 	}
+}
+
+void SceneFishingScoreAttackSystem::ApplyFishCatchVisualOverrides(
+	SceneDocument& document,
+	const std::vector<SceneRuntimeObjectBinding>& bindings,
+	const Camera* camera
+) {
+	constexpr float kCameraReachSeconds = 1.5f;
+	std::vector<uint64_t> completedEffectEntityIds;
+	std::vector<uint64_t> completedEffectHookEntityIds;
+	for (FishCatchAnimation& animation : fishCatchAnimations_) {
+		const SceneRuntimeObjectBinding* binding = FindBinding(
+			bindings, animation.entityId
+		);
+		SceneEntity* fish = document.FindEntity(animation.entityId);
+		if (!binding || !binding->object || !fish ||
+			!IsEntityActiveInHierarchy(document, *fish)) {
+			continue;
+		}
+		Transform catchWorldTransform = animation.sourceWorldTransform;
+		if (camera && !animation.hasTargetCameraHeight) {
+			animation.targetCameraHeight = camera->GetTranslate().y;
+			animation.hasTargetCameraHeight = true;
+		}
+		if (animation.hasTargetCameraHeight) {
+			const float progress = std::clamp(
+				animation.elapsedSeconds / kCameraReachSeconds, 0.0f, 1.0f
+			);
+			catchWorldTransform.translate.y +=
+				(animation.targetCameraHeight - catchWorldTransform.translate.y) *
+				progress;
+		} else {
+			catchWorldTransform.translate.y += 60.0f * animation.elapsedSeconds;
+		}
+		if (camera) {
+			const Vector3 toCamera = Math::Subtract(
+				camera->GetTranslate(), catchWorldTransform.translate
+			);
+			if (Math::Length(toCamera) > kTransformEpsilon) {
+				const Vector3 cameraDirection = Math::Normalize(toCamera);
+				Vector3 screenRight = Math::Cross(
+					{ 0.0f, 1.0f, 0.0f }, cameraDirection
+				);
+				if (Math::Length(screenRight) <= kTransformEpsilon) {
+					screenRight = { 1.0f, 0.0f, 0.0f };
+				} else {
+					screenRight = Math::Normalize(screenRight);
+				}
+				Vector3 screenUp = Math::Cross(cameraDirection, screenRight);
+				if (Math::Length(screenUp) <= kTransformEpsilon) {
+					screenUp = { 0.0f, 1.0f, 0.0f };
+				} else {
+					screenUp = Math::Normalize(screenUp);
+				}
+				// カメラ正面で上下・左右へ広がる魚群として配置する。
+				catchWorldTransform.translate = Math::Add(
+					catchWorldTransform.translate,
+					Math::Multiply(
+						screenRight, animation.screenHorizontalOffset
+					)
+				);
+				catchWorldTransform.translate = Math::Add(
+					catchWorldTransform.translate,
+					Math::Multiply(
+						screenUp, animation.verticalOffset
+					)
+				);
+				catchWorldTransform.translate = Math::Add(
+					catchWorldTransform.translate,
+					Math::Multiply(cameraDirection, animation.depthOffset)
+				);
+			}
+		}
+		if (animation.controlsAttractor) {
+			SceneEntity* attractor = document.FindEntity(
+				animation.attractorEntityId
+			);
+			if (!attractor) {
+				continue;
+			}
+			// リーダーだけが上昇目標を追い、他の魚はリーダーへ追従する。
+			attractor->transform.translate = catchWorldTransform.translate;
+		}
+		if (animation.effectHookEntityId != 0) {
+			const SceneRuntimeObjectBinding* hookBinding = FindBinding(
+				bindings, animation.effectHookEntityId
+			);
+			SceneEntity* hookEntity = document.FindEntity(
+				animation.effectHookEntityId
+			);
+			Transform hookLocalTransform{};
+			const Transform fishWorldTransform =
+				SceneTransformResolver::ResolveScene3DTransform(document, *fish);
+			if (hookBinding && hookBinding->object && hookEntity &&
+				SceneTransformResolver::TryConvertSceneWorldTransformToLocal(
+					document, *hookEntity, fishWorldTransform, hookLocalTransform
+				)) {
+				hookBinding->object->GetTransform().translate =
+					hookLocalTransform.translate;
+				// 命中した釣り針ランクの色を、演出針の発光色へ引き継ぐ。
+				hookBinding->object->SetColor(animation.effectHookColor);
+				hookBinding->object->SetEmissive(
+					100.0f, animation.effectHookColor
+				);
+			}
+		}
+		const Matrix4x4& fishWorldMatrix = binding->object->GetWorldMatrix();
+		const bool reachedCameraHeight = camera &&
+			fishWorldMatrix.m[3][1] >= camera->GetTranslate().y;
+		if ((animation.controlsAttractor && reachedCameraHeight) ||
+			animation.elapsedSeconds >= 4.0f) {
+			completedEffectEntityIds.push_back(animation.entityId);
+			if (animation.controlsAttractor) {
+				completedEffectEntityIds.push_back(animation.attractorEntityId);
+				if (animation.effectHookEntityId != 0) {
+					completedEffectHookEntityIds.push_back(
+						animation.effectHookEntityId
+					);
+				}
+			}
+		}
+	}
+	for (uint64_t entityId : completedEffectEntityIds) {
+		if (SceneEntity* effectFish = document.FindEntity(entityId)) {
+			effectFish->active = false;
+		}
+	}
+	for (uint64_t effectHookEntityId : completedEffectHookEntityIds) {
+		if (SceneEntity* effectHook = document.FindEntity(effectHookEntityId)) {
+			effectHook->active = false;
+		}
+	}
+	std::erase_if(fishCatchAnimations_, [&completedEffectEntityIds](
+		const FishCatchAnimation& animation
+	) {
+		return std::find(
+			completedEffectEntityIds.begin(),
+			completedEffectEntityIds.end(),
+			animation.entityId
+		) != completedEffectEntityIds.end();
+	});
+}
+
+void SceneFishingScoreAttackSystem::MaterializePendingFishCatchEffects(
+	SceneDocument& document
+) {
+	for (uint64_t entityId : pendingFishCatchEffectRemovals_) {
+		const SceneEntity* effectFish = document.FindEntity(entityId);
+		if (!effectFish || !effectFish->runtimeOnly) {
+			continue;
+		}
+		const bool wasDirty = document.IsDirty();
+		document.RemoveEntity(entityId);
+		if (!wasDirty) {
+			document.MarkClean();
+		}
+	}
+	pendingFishCatchEffectRemovals_.clear();
+	uint64_t leaderEffectEntityId = 0;
+	uint64_t leaderTargetEntityId = 0;
+	uint64_t materializingGroupId = 0;
+	for (const PendingFishCatchEffect& pending : pendingFishCatchEffects_) {
+		if (pending.groupId != materializingGroupId) {
+			materializingGroupId = pending.groupId;
+			leaderEffectEntityId = 0;
+			leaderTargetEntityId = 0;
+		}
+		const SceneEntity* sourceFish = document.FindEntity(
+			pending.sourceFishEntityId
+		);
+		if (!sourceFish || !IsEntityActiveInHierarchy(document, *sourceFish)) {
+			continue;
+		}
+		const bool wasDirty = document.IsDirty();
+		const uint64_t effectEntityId = document.DuplicateEntity(
+			pending.sourceFishEntityId
+		);
+		SceneEntity* effectFish = document.FindEntity(effectEntityId);
+		if (!effectFish) {
+			continue;
+		}
+		effectFish->name = "Fishing Catch Effect";
+		effectFish->runtimeOnly = true;
+		effectFish->locked = true;
+		// 元の魚群の親・Team制御から切り離し、演出専用のAgentにする。
+		effectFish->parentId = 0;
+		effectFish->teamName.clear();
+		effectFish->transform.scale = pending.sourceWorldTransform.scale;
+		effectFish->transform.rotate = pending.sourceWorldTransform.quaternionRotate;
+		effectFish->transform.translate = pending.sourceWorldTransform.translate;
+		// 追従開始前から球面上の位置へ置き、縦列化を防ぐ。
+		effectFish->transform.translate.x += pending.screenHorizontalOffset;
+		effectFish->transform.translate.y += pending.verticalOffset;
+		effectFish->transform.translate.z += pending.depthOffset;
+		effectFish->components.erase(
+			std::remove_if(
+				effectFish->components.begin(),
+				effectFish->components.end(),
+				[](const SceneComponent& component) {
+					return component.type != "MeshRenderer" &&
+						component.type != "Animator" &&
+						component.type != "AgentBehavior";
+				}
+			),
+			effectFish->components.end()
+		);
+		const bool isLeader = leaderEffectEntityId == 0;
+		uint64_t followerTargetEntityId = 0;
+		if (isLeader) {
+			SceneEntity& target = document.CreateEntity("Fishing Catch Attractor");
+			leaderTargetEntityId = target.id;
+			target.runtimeOnly = true;
+			target.locked = true;
+			target.transform.translate = pending.sourceWorldTransform.translate;
+			document.AddComponent(leaderTargetEntityId, "AgentAttractor");
+			document.AddComponent(effectEntityId, "AgentAttractor");
+			leaderEffectEntityId = effectEntityId;
+		} else {
+			// リーダーの子として置くことで、上昇には追従しつつ左右の位置を保つ。
+			SceneEntity& followerTarget = document.CreateEntity(
+				"Fishing Catch Follower Target", leaderEffectEntityId
+			);
+			followerTargetEntityId = followerTarget.id;
+			followerTarget.runtimeOnly = true;
+			followerTarget.locked = true;
+			followerTarget.transform.translate = {
+				pending.screenHorizontalOffset,
+				pending.verticalOffset,
+				pending.depthOffset
+			};
+			document.AddComponent(followerTargetEntityId, "AgentAttractor");
+		}
+		SceneEntity* configuredEffectFish = document.FindEntity(effectEntityId);
+		if (!configuredEffectFish) {
+			continue;
+		}
+		for (SceneComponent& component : configuredEffectFish->components) {
+			if (component.type == "AgentAttractor") {
+				component.attractorRadius = 0.25f;
+				component.attractorStrength = 12.0f;
+			}
+		}
+		const uint64_t agentTargetEntityId = isLeader
+			? leaderTargetEntityId
+			: followerTargetEntityId;
+		if (SceneEntity* target = document.FindEntity(agentTargetEntityId)) {
+			for (SceneComponent& component : target->components) {
+				if (component.type == "AgentAttractor") {
+					component.attractorRadius = 0.25f;
+					component.attractorStrength = 12.0f;
+				}
+			}
+		}
+		for (SceneComponent& component : configuredEffectFish->components) {
+			if (component.type != "AgentBehavior") {
+				continue;
+			}
+			component.agentAttractorEntityId = agentTargetEntityId;
+			component.agentAttractorTag.clear();
+			component.agentAttractorWeight = 8.0f;
+			component.agentUseWaterBounds = false;
+			component.agentBoundsEntityId = 0;
+			component.agentBoundsName.clear();
+			// 個別Attractorの位置が隊形を決めるため、群れ補正は使わない。
+			// 高速時の分離反発による魚群の爆散を防ぐ。
+			component.agentMinSpeed = 45.0f;
+			component.agentMaxSpeed = 60.0f;
+			component.agentTurnSpeed = 60.0f;
+			component.agentWanderStrength = 0.0f;
+			component.agentSchooling = false;
+			component.agentSeparationRadius = 0.0f;
+			component.agentSeparationWeight = 0.0f;
+			component.agentCohesionWeight = 0.0f;
+			component.agentAlignForwardToVelocity = false;
+			component.agentRotateAxisX = false;
+			component.agentRotateAxisY = false;
+			component.agentRotateAxisZ = false;
+			component.agentGroupName = "FishingCatchEffect" +
+				std::to_string(leaderEffectEntityId);
+		}
+		configuredEffectFish->transform.rotate = MakeQuaternionFromEuler(
+			{ 0.0f, 0.0f, -1.5f }
+		);
+		if (!wasDirty) {
+			document.MarkClean();
+		}
+		FishCatchAnimation animation{};
+		animation.groupId = pending.groupId;
+		animation.entityId = effectEntityId;
+		animation.attractorEntityId = agentTargetEntityId;
+		animation.controlsAttractor = isLeader;
+		animation.sourceWorldTransform = pending.sourceWorldTransform;
+		animation.screenHorizontalOffset = pending.screenHorizontalOffset;
+		animation.depthOffset = pending.depthOffset;
+		animation.verticalOffset = pending.verticalOffset;
+		fishCatchAnimations_.push_back(std::move(animation));
+	}
+	pendingFishCatchEffects_.clear();
+}
+
+void SceneFishingScoreAttackSystem::PrepareFishCatchEffectPool(
+	SceneDocument& document
+) {
+	if (!fishCatchEffectPool_.empty()) {
+		return;
+	}
+	uint64_t directorEntityId = 0;
+	bool duplicateDirector = false;
+	const SceneComponent* director = FindDirector(
+		document, directorEntityId, duplicateDirector
+	);
+	if (!director || duplicateDirector) {
+		return;
+	}
+	const SceneComponent* hookPool = FindComponent(
+		document, director->fishingHookPoolEntityId, "FishingHookPool"
+	);
+	const uint64_t hookSourceEntityId = hookPool &&
+		!hookPool->fishingHookPoolEntries.empty()
+		? hookPool->fishingHookPoolEntries.front().hookEntityId
+		: 0;
+	struct PoolCandidate {
+		uint64_t entityId = 0;
+		Transform worldTransform{};
+	};
+	std::vector<PoolCandidate> candidates;
+	Vector3 groupCenter{};
+	for (uint64_t fishEntityId : director->fishingFishEntityIds) {
+		const SceneEntity* fish = document.FindEntity(fishEntityId);
+		if (!fish || !IsEntityActiveInHierarchy(document, *fish)) {
+			continue;
+		}
+		const Transform worldTransform =
+			SceneTransformResolver::ResolveScene3DTransform(document, *fish);
+		candidates.push_back({ fishEntityId, worldTransform });
+		groupCenter = Math::Add(groupCenter, worldTransform.translate);
+	}
+	if (candidates.empty()) {
+		return;
+	}
+	groupCenter = Math::Multiply(
+		groupCenter, 1.0f / static_cast<float>(candidates.size())
+	);
+	constexpr uint32_t kPoolGroupCount = 2;
+	constexpr float kFishSphereRadius = 2.5f;
+	constexpr float kGoldenAngle = 2.39996323f;
+	for (uint32_t slotIndex = 0; slotIndex < kPoolGroupCount; ++slotIndex) {
+		const uint64_t groupId = nextFishCatchEffectGroupId_++;
+		for (size_t index = 0; index < candidates.size(); ++index) {
+			const float normalizedIndex =
+				(static_cast<float>(index) + 0.5f) /
+				static_cast<float>(candidates.size());
+			const float vertical = 1.0f - normalizedIndex * 2.0f;
+			const float horizontalRadius = std::sqrt((std::max)(
+				0.0f, 1.0f - vertical * vertical
+			));
+			const float angle = static_cast<float>(index) * kGoldenAngle;
+			Transform sourceTransform = candidates[index].worldTransform;
+			sourceTransform.translate = groupCenter;
+			pendingFishCatchEffects_.push_back({
+				groupId,
+				candidates[index].entityId,
+				sourceTransform,
+				std::cos(angle) * horizontalRadius * kFishSphereRadius,
+				std::sin(angle) * horizontalRadius * kFishSphereRadius,
+				vertical * kFishSphereRadius
+			});
+		}
+		MaterializePendingFishCatchEffects(document);
+		FishCatchEffectPoolSlot slot{};
+		slot.groupId = groupId;
+		if (hookSourceEntityId != 0) {
+			const bool wasDirty = document.IsDirty();
+			const uint64_t effectHookEntityId = document.DuplicateEntity(
+				hookSourceEntityId
+			);
+			if (SceneEntity* effectHook = document.FindEntity(
+				effectHookEntityId
+			)) {
+				effectHook->name = "Fishing Catch Effect Hook";
+				effectHook->runtimeOnly = true;
+				effectHook->locked = true;
+				effectHook->parentId = 0;
+			effectHook->teamName.clear();
+			effectHook->active = false;
+			effectHook->components.erase(
+				std::remove_if(
+					effectHook->components.begin(), effectHook->components.end(),
+					[](const SceneComponent& component) {
+						return component.type != "MeshRenderer" &&
+							component.type != "Animator";
+					}
+				),
+				effectHook->components.end()
+			);
+			slot.effectHookEntityId = effectHookEntityId;
+			}
+			if (!wasDirty) {
+				document.MarkClean();
+			}
+		}
+		for (const FishCatchAnimation& animation : fishCatchAnimations_) {
+			if (animation.groupId != groupId) {
+				continue;
+			}
+			slot.fishEntityIds.push_back(animation.entityId);
+			slot.followerAttractorEntityIds.push_back(animation.attractorEntityId);
+			if (animation.controlsAttractor) {
+				slot.leaderAttractorEntityId = animation.attractorEntityId;
+			}
+			if (SceneEntity* fish = document.FindEntity(animation.entityId)) {
+				fish->active = false;
+			}
+			if (SceneEntity* attractor = document.FindEntity(
+				animation.attractorEntityId
+			)) {
+				attractor->active = false;
+			}
+		}
+		std::erase_if(fishCatchAnimations_, [groupId](
+			const FishCatchAnimation& animation
+		) {
+			return animation.groupId == groupId;
+		});
+		if (!slot.fishEntityIds.empty() && slot.leaderAttractorEntityId != 0) {
+			fishCatchEffectPool_.push_back(std::move(slot));
+		}
+	}
+}
+
+void SceneFishingScoreAttackSystem::StartFishCatchAnimation(
+	SceneDocument& document,
+	const SceneComponent& director,
+	const std::vector<SceneRuntimeObjectBinding>& bindings,
+	SceneAgentSystem& agentSystem,
+	const Vector4& effectHookColor
+) {
+	// 演出用Entityの生成は次フレームへ遅延するため、対象IDと現在位置を先に記録する。
+	const std::vector<uint64_t> fishEntityIds = director.fishingFishEntityIds;
+	struct FishCatchCandidate {
+		uint64_t entityId = 0;
+		Transform worldTransform{};
+	};
+	std::vector<FishCatchCandidate> candidates;
+	Vector3 groupCenter{};
+	for (int fishIndex = 0; fishIndex < roundFishCount_; ++fishIndex) {
+		if (fishIndex >= static_cast<int>(fishEntityIds.size())) {
+			break;
+		}
+		const uint64_t fishEntityId = fishEntityIds[
+			static_cast<size_t>(fishIndex)
+		];
+		const SceneRuntimeObjectBinding* fishBinding = FindBinding(
+			bindings, fishEntityId
+		);
+		const SceneEntity* fish = document.FindEntity(fishEntityId);
+		if (!fishBinding || !fishBinding->object || !fish ||
+			!IsEntityActiveInHierarchy(document, *fish)) {
+			continue;
+		}
+		const Transform sourceWorldTransform =
+			SceneTransformResolver::ResolveScene3DTransform(document, *fish);
+		groupCenter = Math::Add(groupCenter, sourceWorldTransform.translate);
+		candidates.push_back({ fishEntityId, sourceWorldTransform });
+	}
+	if (candidates.empty()) {
+		return;
+	}
+	if (fishCatchEffectPool_.empty()) {
+		return;
+	}
+	FishCatchEffectPoolSlot* slot = nullptr;
+	for (FishCatchEffectPoolSlot& candidate : fishCatchEffectPool_) {
+		const bool inUse = std::any_of(
+			fishCatchAnimations_.begin(), fishCatchAnimations_.end(),
+			[&candidate](const FishCatchAnimation& animation) {
+				return animation.groupId == candidate.groupId;
+			}
+		);
+		if (!inUse) {
+			slot = &candidate;
+			break;
+		}
+	}
+	if (!slot) {
+		slot = &*std::min_element(
+			fishCatchEffectPool_.begin(), fishCatchEffectPool_.end(),
+			[](const FishCatchEffectPoolSlot& left,
+				const FishCatchEffectPoolSlot& right) {
+				return left.lastUsedSeconds < right.lastUsedSeconds;
+			}
+		);
+		for (const FishCatchAnimation& animation : fishCatchAnimations_) {
+			if (animation.groupId != slot->groupId) {
+				continue;
+			}
+			if (SceneEntity* fish = document.FindEntity(animation.entityId)) {
+				fish->active = false;
+			}
+		}
+		if (SceneEntity* attractor = document.FindEntity(
+			slot->leaderAttractorEntityId
+		)) {
+			attractor->active = false;
+		}
+		std::erase_if(fishCatchAnimations_, [slot](
+			const FishCatchAnimation& animation
+		) {
+			return animation.groupId == slot->groupId;
+		});
+	}
+	const size_t fishCount = (std::min)(
+		candidates.size(), slot->fishEntityIds.size()
+	);
+	if (fishCount == 0 || slot->followerAttractorEntityIds.size() < fishCount) {
+		return;
+	}
+	groupCenter = Math::Multiply(
+		groupCenter, 1.0f / static_cast<float>(fishCount)
+	);
+	constexpr float kFishSphereRadius = 2.5f;
+	constexpr float kGoldenAngle = 2.39996323f;
+	if (SceneEntity* leaderAttractor = document.FindEntity(
+		slot->leaderAttractorEntityId
+	)) {
+		leaderAttractor->active = true;
+		leaderAttractor->transform.translate = groupCenter;
+	}
+	if (SceneEntity* effectHook = document.FindEntity(
+		slot->effectHookEntityId
+	)) {
+		effectHook->active = true;
+	}
+	for (size_t index = 0; index < slot->fishEntityIds.size(); ++index) {
+		if (SceneEntity* fish = document.FindEntity(slot->fishEntityIds[index])) {
+			fish->active = index < fishCount;
+		}
+		if (index > 0) {
+			if (SceneEntity* attractor = document.FindEntity(
+				slot->followerAttractorEntityIds[index]
+			)) {
+				attractor->active = index < fishCount;
+			}
+		}
+	}
+	for (size_t index = 0; index < fishCount; ++index) {
+		const float normalizedIndex =
+			(static_cast<float>(index) + 0.5f) /
+			static_cast<float>(candidates.size());
+		const float vertical = 1.0f - normalizedIndex * 2.0f;
+		const float horizontalRadius = std::sqrt((std::max)(
+			0.0f, 1.0f - vertical * vertical
+		));
+		const float angle = static_cast<float>(index) * kGoldenAngle;
+		const float horizontalOffset =
+			std::cos(angle) * horizontalRadius * kFishSphereRadius;
+		const float depthOffset =
+			std::sin(angle) * horizontalRadius * kFishSphereRadius;
+		const float verticalOffset = vertical * kFishSphereRadius;
+		SceneEntity* effectFish = document.FindEntity(slot->fishEntityIds[index]);
+		if (!effectFish) {
+			continue;
+		}
+		effectFish->transform.scale = candidates[index].worldTransform.scale;
+		effectFish->transform.rotate = MakeQuaternionFromEuler(
+			{ 0.0f, 0.0f, -1.5f }
+		);
+		effectFish->transform.translate = {
+			groupCenter.x + horizontalOffset,
+			groupCenter.y + verticalOffset,
+			groupCenter.z + depthOffset
+		};
+		// 前回の上昇速度を再利用しない。休止済みスロットからの再開でも
+		// 最初のフレームを追従先へ向けて安定させる。
+		agentSystem.ResetAgent(effectFish->id);
+		if (index > 0) {
+			if (SceneEntity* followerAttractor = document.FindEntity(
+				slot->followerAttractorEntityIds[index]
+			)) {
+				followerAttractor->transform.translate = {
+					horizontalOffset, verticalOffset, depthOffset
+				};
+			}
+		}
+		FishCatchAnimation animation{};
+		animation.groupId = slot->groupId;
+		animation.entityId = effectFish->id;
+		animation.effectHookEntityId = index == 0
+			? slot->effectHookEntityId
+			: 0;
+		animation.effectHookColor = effectHookColor;
+		animation.attractorEntityId = slot->followerAttractorEntityIds[index];
+		animation.controlsAttractor = index == 0;
+		animation.sourceWorldTransform = candidates[index].worldTransform;
+		animation.sourceWorldTransform.translate = groupCenter;
+		animation.screenHorizontalOffset = horizontalOffset;
+		animation.depthOffset = depthOffset;
+		animation.verticalOffset = verticalOffset;
+		fishCatchAnimations_.push_back(std::move(animation));
+	}
+	slot->lastUsedSeconds = fishCatchEffectPoolElapsedSeconds_;
 }
 
 bool SceneFishingScoreAttackSystem::IsPlayerMovementAllowed() const {
@@ -5623,11 +6240,52 @@ void SceneFishingScoreAttackSystem::BuildTextRequests(
 	}
 }
 
-void SceneFishingScoreAttackSystem::Clear() {
+void SceneFishingScoreAttackSystem::Clear(SceneDocument* document) {
+	if (document) {
+		for (const FishCatchAnimation& animation : fishCatchAnimations_) {
+			const SceneEntity* effectFish = document->FindEntity(animation.entityId);
+			if (!effectFish || !effectFish->runtimeOnly) {
+				continue;
+			}
+			const bool wasDirty = document->IsDirty();
+			document->RemoveEntity(animation.entityId);
+			if (!wasDirty) {
+				document->MarkClean();
+			}
+			const SceneEntity* attractor = document->FindEntity(
+				animation.attractorEntityId
+			);
+			if (!attractor || !attractor->runtimeOnly) {
+				continue;
+			}
+			const bool wasDirtyAfterFishRemoval = document->IsDirty();
+			document->RemoveEntity(animation.attractorEntityId);
+			if (!wasDirtyAfterFishRemoval) {
+				document->MarkClean();
+			}
+		}
+		for (uint64_t entityId : pendingFishCatchEffectRemovals_) {
+			const SceneEntity* effectFish = document->FindEntity(entityId);
+			if (!effectFish || !effectFish->runtimeOnly) {
+				continue;
+			}
+			const bool wasDirty = document->IsDirty();
+			document->RemoveEntity(entityId);
+			if (!wasDirty) {
+				document->MarkClean();
+			}
+		}
+	}
 	state_ = SceneFishingScoreAttackState::Inactive;
 	directorEntityId_ = 0;
 	resultInputArmed_ = false;
 	activeHooks_.clear();
+	fishCatchAnimations_.clear();
+	pendingFishCatchEffects_.clear();
+	pendingFishCatchEffectRemovals_.clear();
+	nextFishCatchEffectGroupId_ = 1;
+	// 演出魚群プールはRuntimeSceneの初期化時に生成済み。Edit→Play切替で
+	// Clearが呼ばれても保持し、次の得点時に再利用する。
 	hookVisualModelPaths_.clear();
 	sharkRuntimes_.clear();
 	tutorialStep_ = SceneFishingScoreAttackTutorialStep::Disabled;

@@ -17,6 +17,7 @@
 
 class SceneDocument;
 class SceneAgentSystem;
+class Camera;
 struct SceneComponent;
 
 enum class SceneFishingScoreAttackState {
@@ -143,7 +144,7 @@ public:
 		SceneDocument& document,
 		const std::string& sceneId,
 		const std::vector<SceneRuntimeObjectBinding>& bindings,
-		const SceneAgentSystem& agentSystem,
+		SceneAgentSystem& agentSystem,
 		bool playing,
 		float deltaTime,
 		const Vector3& planarVelocity
@@ -156,6 +157,18 @@ public:
 		const SceneDocument& document,
 		const std::vector<SceneRuntimeObjectBinding>& bindings
 	);
+	/// <summary>
+	/// 実魚とは別に複製した釣り上げ演出用の魚群を、上方へ引き上げる。
+	/// </summary>
+	void ApplyFishCatchVisualOverrides(
+		SceneDocument& document,
+		const std::vector<SceneRuntimeObjectBinding>& bindings,
+		const Camera* camera
+	);
+	/// <summary>
+	/// 演出魚群を固定プールとして事前生成する。Runtime binding構築前にのみ呼び出す。
+	/// </summary>
+	void PrepareFishCatchEffectPool(SceneDocument& document);
 
 	bool IsPlayerMovementAllowed() const;
 	/// <summary>
@@ -213,7 +226,7 @@ public:
 		return scorePopup_;
 	}
 	const std::string& GetDiagnostic() const { return diagnostic_; }
-	void Clear();
+	void Clear(SceneDocument* document = nullptr);
 
 private:
 	bool Preflight(
@@ -289,6 +302,14 @@ private:
 	/// チュートリアルの得点成功を段階へ反映する。
 	/// </summary>
 	void NotifyTutorialHookScored();
+	void StartFishCatchAnimation(
+		SceneDocument& document,
+		const SceneComponent& director,
+		const std::vector<SceneRuntimeObjectBinding>& bindings,
+		SceneAgentSystem& agentSystem,
+		const Vector4& effectHookColor
+	);
+	void MaterializePendingFishCatchEffects(SceneDocument& document);
 	/// <summary>
 	/// 現在のチュートリアル説明文を取得する。
 	/// </summary>
@@ -310,6 +331,43 @@ private:
 		int hookMultiplierTier = 1;
 	};
 	std::vector<ActiveHook> activeHooks_;
+	struct FishCatchAnimation {
+		uint64_t groupId = 0;
+		uint64_t entityId = 0;
+		uint64_t effectHookEntityId = 0;
+		Vector4 effectHookColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+		uint64_t attractorEntityId = 0;
+		bool controlsAttractor = false;
+		Transform sourceWorldTransform{};
+		float elapsedSeconds = 0.0f;
+		float targetCameraHeight = 0.0f;
+		bool hasTargetCameraHeight = false;
+		float screenHorizontalOffset = 0.0f;
+		float depthOffset = 0.0f;
+		float verticalOffset = 0.0f;
+	};
+	std::vector<FishCatchAnimation> fishCatchAnimations_;
+	struct PendingFishCatchEffect {
+		uint64_t groupId = 0;
+		uint64_t sourceFishEntityId = 0;
+		Transform sourceWorldTransform{};
+		float screenHorizontalOffset = 0.0f;
+		float depthOffset = 0.0f;
+		float verticalOffset = 0.0f;
+	};
+	std::vector<PendingFishCatchEffect> pendingFishCatchEffects_;
+	std::vector<uint64_t> pendingFishCatchEffectRemovals_;
+	uint64_t nextFishCatchEffectGroupId_ = 1;
+	struct FishCatchEffectPoolSlot {
+		uint64_t groupId = 0;
+		uint64_t leaderAttractorEntityId = 0;
+		uint64_t effectHookEntityId = 0;
+		std::vector<uint64_t> fishEntityIds;
+		std::vector<uint64_t> followerAttractorEntityIds;
+		float lastUsedSeconds = 0.0f;
+	};
+	std::vector<FishCatchEffectPoolSlot> fishCatchEffectPool_;
+	float fishCatchEffectPoolElapsedSeconds_ = 0.0f;
 	Transform initialPlayerTransform_{};
 	std::vector<uint64_t> initialFishEntityIds_;
 	std::vector<Transform> initialFishTransforms_;
