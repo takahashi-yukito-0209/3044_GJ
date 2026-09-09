@@ -30,6 +30,7 @@ public:
 	void ApplyTextOverrides(
 		const SceneDocument& document,
 		const std::string& currentSceneId,
+		const SceneOptionMenuSystem& optionMenuSystem,
 		SceneTextRenderSystem& textRenderSystem
 	) const;
 	void Clear();

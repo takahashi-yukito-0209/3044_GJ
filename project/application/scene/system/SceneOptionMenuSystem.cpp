@@ -1,6 +1,7 @@
 // 役割: Option Sceneの音量調整、戻る遷移要求、選択中表示を処理する。
 #include "SceneOptionMenuSystem.h"
 
+#include "SceneSoundEffectPlayer.h"
 #include "SceneTextRenderSystem.h"
 #include "../../../engine/Audio/Audio.h"
 #include "../../../engine/io/Input.h"
@@ -59,6 +60,19 @@ namespace {
 		return static_cast<float>(clampedPercent) / 100.0f;
 	}
 
+	/// <summary>
+	/// 音量メニュー用の表示文字列を作成します。
+	/// </summary>
+	std::string BuildVolumeText(const char* label, int volumePercent) {
+		const int clampedPercent = std::clamp(
+			volumePercent,
+			kMinimumVolumePercent,
+			kMaximumVolumePercent
+		); // 表示に使う0から100の音量値。
+		return std::string(label) + " 音量 < " +
+			std::to_string(clampedPercent) + "% >";
+	}
+
 }
 
 SceneOptionMenuResult SceneOptionMenuSystem::Update(
@@ -75,10 +89,14 @@ SceneOptionMenuResult SceneOptionMenuSystem::Update(
 	selectedIndex_ = std::clamp(selectedIndex_, 0, itemCount - 1);
 
 	Input* input = Input::GetInstance(); // 入力状態の参照。
+	const int previousSelectedIndex = selectedIndex_; // 入力前の選択項目Index。
 	if (TriggerAnyKey(input, { DIK_UP, DIK_W })) {
 		selectedIndex_ = (selectedIndex_ + itemCount - 1) % itemCount;
 	} else if (TriggerAnyKey(input, { DIK_DOWN, DIK_S })) {
 		selectedIndex_ = (selectedIndex_ + 1) % itemCount;
+	}
+	if (selectedIndex_ != previousSelectedIndex) {
+		SceneSoundEffectPlayer::PlaySelect();
 	}
 
 	const MenuItem& selectedItem = menuItems[selectedIndex_]; // 現在操作対象の項目。
@@ -94,6 +112,7 @@ SceneOptionMenuResult SceneOptionMenuSystem::Update(
 		selectedItem.actionId == "Back" &&
 		TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })
 	) {
+		SceneSoundEffectPlayer::PlayDecision();
 		result.requestedSceneId = "title";
 		result.useSceneTransitionEffect = false;
 	}
@@ -118,6 +137,17 @@ void SceneOptionMenuSystem::ApplyTextOverrides(
 	for (int index = 0; index < itemCount; ++index) { // 選択色を更新する項目Index。
 		const MenuItem& item = menuItems[index]; // 表示対象のメニュー項目。
 		const bool selected = index == selectedIndex; // この項目が選択中か。
+		if (item.actionId == "BGM") {
+			textRenderSystem.SetTextOverride(
+				item.entityId,
+				BuildVolumeText("BGM", gBgmVolumePercent)
+			);
+		} else if (item.actionId == "SE") {
+			textRenderSystem.SetTextOverride(
+				item.entityId,
+				BuildVolumeText("SE ", gSeVolumePercent)
+			);
+		}
 		textRenderSystem.SetTextColorOverride(
 			item.entityId,
 			selected ? kSelectedColor : kNormalColor

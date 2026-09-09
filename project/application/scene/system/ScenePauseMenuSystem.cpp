@@ -3,6 +3,7 @@
 
 #include "SceneOptionMenuSystem.h"
 #include "ScenePauseSystem.h"
+#include "SceneSoundEffectPlayer.h"
 #include "SceneTextRenderSystem.h"
 #include "../../../engine/io/Input.h"
 #include "../../../engine/scene/SceneDocument.h"
@@ -46,6 +47,15 @@ namespace {
 		return clamped < 0.5f
 			? 4.0f * clamped * clamped * clamped
 			: 1.0f - std::pow(-2.0f * clamped + 2.0f, 3.0f) * 0.5f;
+	}
+
+	/// <summary>
+	/// 音量メニュー用の表示文字列を作成します。
+	/// </summary>
+	std::string BuildVolumeText(const char* label, int volumePercent) {
+		const int clampedPercent = std::clamp(volumePercent, 0, 100); // 表示に使う0から100の音量値。
+		return std::string(label) + " 音量 < " +
+			std::to_string(clampedPercent) + "% >";
 	}
 }
 
@@ -102,10 +112,14 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 	}
 	const int itemCount = static_cast<int>(menuItems.size());
 	selectedIndex_ = std::clamp(selectedIndex_, 0, itemCount - 1);
+	const int previousSelectedIndex = selectedIndex_; // 入力前の選択項目Index。
 	if (TriggerAnyKey(input, { DIK_UP, DIK_W })) {
 		selectedIndex_ = (selectedIndex_ + itemCount - 1) % itemCount;
 	} else if (TriggerAnyKey(input, { DIK_DOWN, DIK_S })) {
 		selectedIndex_ = (selectedIndex_ + 1) % itemCount;
+	}
+	if (selectedIndex_ != previousSelectedIndex) {
+		SceneSoundEffectPlayer::PlaySelect();
 	}
 	const MenuItem& selectedItem = menuItems[selectedIndex_];
 	if (optionOpen_) {
@@ -124,10 +138,12 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 		}
 		if (selectedIndex_ == 2 &&
 			TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })) {
+			SceneSoundEffectPlayer::PlayDecision();
 			optionOpen_ = false;
 			selectedIndex_ = 0;
 		}
 	} else if (TriggerAnyKey(input, { DIK_RETURN, DIK_SPACE })) {
+		SceneSoundEffectPlayer::PlayDecision();
 		if (selectedItem.action == MenuItem::Action::OpenOptions) {
 			optionOpen_ = true;
 			selectedIndex_ = 0;
@@ -147,6 +163,7 @@ ScenePauseMenuResult ScenePauseMenuSystem::Update(
 void ScenePauseMenuSystem::ApplyTextOverrides(
 	const SceneDocument& document,
 	const std::string& currentSceneId,
+	const SceneOptionMenuSystem& optionMenuSystem,
 	SceneTextRenderSystem& textRenderSystem
 ) const {
 	const auto applyVisibility = [this, &document, &textRenderSystem](
@@ -172,12 +189,31 @@ void ScenePauseMenuSystem::ApplyTextOverrides(
 			visible ? presentationProgress : 0.0f
 		);
 	};
+	const auto applyText = [&document, &textRenderSystem](
+		const char* name,
+		const std::string& text
+	) {
+		const SceneEntity* entity = document.FindEntityByName(name); // 表示を差し替えるText Entity。
+		if (!entity || !SceneEntityQuery::IsEntityActiveInHierarchy(document, *entity) ||
+			!SceneEntityQuery::FindEnabledComponent(*entity, "TextRenderer")) {
+			return;
+		}
+		textRenderSystem.SetTextOverride(entity->id, text);
+	};
 	if (optionOpen_) {
 		const SceneEntity* header = document.FindEntityByName("PauseMenuHeaderText");
 		if (header && SceneEntityQuery::IsEntityActiveInHierarchy(document, *header) &&
 			SceneEntityQuery::FindEnabledComponent(*header, "TextRenderer")) {
 			textRenderSystem.SetTextOverride(header->id, "おぷしょん");
 		}
+		applyText(
+			"PauseOptionBgmText",
+			BuildVolumeText("BGM", optionMenuSystem.GetBgmVolumePercent())
+		);
+		applyText(
+			"PauseOptionSeText",
+			BuildVolumeText("SE ", optionMenuSystem.GetSeVolumePercent())
+		);
 	}
 	applyVisibility("PauseMenuHeaderText", true, 0);
 	applyVisibility("PauseMenuGuideText", true, 4);

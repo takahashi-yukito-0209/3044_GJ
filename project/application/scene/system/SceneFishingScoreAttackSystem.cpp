@@ -3,6 +3,7 @@
 
 #include "SceneAgentSystem.h"
 #include "FishingFormationMotion.h"
+#include "SceneSoundEffectPlayer.h"
 #include "../SceneRuntimeInput.h"
 
 #include "../../../engine/collision/Collider.h"
@@ -2111,6 +2112,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 		}
 	}
 	if (sharkPenaltyApplied) {
+		SceneSoundEffectPlayer::PlaySharkEat();
 		const long long minimumScore =
 			(std::numeric_limits<long long>::lowest)();
 		if (totalScore_ < minimumScore + sharkPenaltyTotal) {
@@ -2206,6 +2208,7 @@ void SceneFishingScoreAttackSystem::UpdateAfterSimulation(
 	if (!hitHook || !hitHookComponent) {
 		return;
 	}
+	SceneSoundEffectPlayer::PlayFishingScore();
 	const SceneFishingHookRankDefinition rank = ResolveFishingHookRank(
 		*director,
 		hitHook->hookMultiplierTier
@@ -4164,6 +4167,7 @@ void SceneFishingScoreAttackSystem::UpdateSelection(
 	);
 	if (selectedFishCount_ != clampedFishCount) {
 		selectedFishCount_ = static_cast<int>(clampedFishCount);
+		SceneSoundEffectPlayer::PlayFishSelect();
 		if (tutorialStep_ ==
 			SceneFishingScoreAttackTutorialStep::FishCountPractice &&
 			selectedFishCount_ != tutorialFishCountPracticeStart_) {
@@ -4187,6 +4191,7 @@ void SceneFishingScoreAttackSystem::UpdateSelection(
 		tutorialStep_ = SceneFishingScoreAttackTutorialStep::ScoreAdjustedPractice;
 		tutorialMultiScoreCount_ = 0;
 	}
+	SceneSoundEffectPlayer::PlayDecision();
 	StartRound(document, director);
 }
 
